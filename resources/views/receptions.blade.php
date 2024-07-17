@@ -28,88 +28,88 @@
                      <div class="row g-3 align-items-end">
                          <br>
                          <form method="POST" action="{{ route('receiptOrder', $order->ACMVOIDOC) }}">
-    @csrf
-    <div class="row g-3 align-items-end">
-        <div class="col-md-2">
-            <label for="numero" class="form-label">Número:</label>
-            <div class="input-group">
-                <input type="text" id="numero" name="carrier_number" class="form-control" required>
-                <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <ul id="numeroList" class="list-group" style="display: none;"></ul>
-        </div>
-        <div class="col-md-4">
-            <label for="fletero" class="form-label">Fletero:</label>
-            <div class="input-group">
-                <input type="text" id="fletero" name="carrier_name" class="form-control" required>
-                <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <ul id="fleteroList" class="list-group" style="display: none;"></ul>
-        </div>
-        <div class="col-md-1">
-            <label for="tipo_doc" class="form-label">Tipo Doc:</label>
-            <input type="text" id="tipo_doc" name="document_type" class="form-control" value="{{ $order->CNTDOCID }}" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="num_doc" class="form-label">No. de Doc:</label>
-            <input type="text" id="num_doc" name="document_number" class="form-control" value="{{ $order->ACMVOIDOC }}" readonly required>
-        </div>
-        <div class="col-md-4">
-            <label for="nombre_proveedor" class="form-label">Nombre del Proveedor:</label>
-            <input type="text" id="nombre_proveedor" name="supplier_name" class="form-control" value="{{ $provider ? $provider->CNCDIRNOM : 'No disponible' }}" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="referencia" class="form-label">Referencia:</label>
-            <select id="referencia" name="reference_type" class="form-control" required>
-                <option value="1">FACTURA</option>
-                <option value="2">REMISION</option>
-                <option value="3">MISELANEO</option>
-            </select>
-        </div>
-        <div class="col-md-1">
-            <label for="almacen" class="form-label">Almacén:</label>
-            <input type="text" id="almacen" name="store" class="form-control" value="{{ $order->ACMVOIALID }}" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="ACMROIREF" class="form-label">Referencia:</label>
-            <input type="text" id="ACMROIREF" name="reference" class="form-control" required>
-        </div>
-        <div class="col-md-2">
-            <label for="fecha" class="form-label">Fecha Recepcion:</label>
-            <input type="date" id="fecha" name="reception_date" class="form-control" value="{{ $currentDate }}" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="rcn_final" class="form-label">DOC:</label>
-            <input type="text" id="rcn_final" name="document_type1" class="form-control" value="RCN" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="num_rcn_letras" class="form-label">NO DE DOC:</label>
-            <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
-        </div>
-        <div class="col-md-1">
-            <label for="flete_select" class="form-label">Flete:</label>
-            <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
-                <option value="0">Sin Flete</option>
-                <option value="1">Con Flete</option>
-            </select>
-        </div>
-        <div id="flete_input_div" class="col-md-1" style="display: none;">
-            <label for="flete" class="form-label">Flete:</label>
-            <input type="text" id="flete" name="cost" class="form-control" placeholder="Monto">
-        </div>
-        <div class="col-md-2">
-            <a href="{{ route('orders') }}" class="btn btn-secondary me-2">Volver a Órdenes</a>
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-warning">Recepcionar</button>
-        </div>
-    </div>
-    <br>
-</form>
+                             @csrf
+                             <div class="row g-3 align-items-end">
+                                 <div class="col-md-2">
+                                     <label for="numero" class="form-label">Número:</label>
+                                     <div class="input-group">
+                                         <input type="text" id="numero" name="carrier_number" class="form-control" required>
+                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
+                                             <i class="fas fa-times"></i>
+                                         </button>
+                                     </div>
+                                     <ul id="numeroList" class="list-group" style="display: none;"></ul>
+                                 </div>
+                                 <div class="col-md-4">
+                                     <label for="fletero" class="form-label">Fletero:</label>
+                                     <div class="input-group">
+                                         <input type="text" id="fletero" name="carrier_name" class="form-control" required>
+                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
+                                             <i class="fas fa-times"></i>
+                                         </button>
+                                     </div>
+                                     <ul id="fleteroList" class="list-group" style="display: none;"></ul>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="tipo_doc" class="form-label">Tipo Doc:</label>
+                                     <input type="text" id="tipo_doc" name="document_type" class="form-control" value="{{ $order->CNTDOCID }}" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="num_doc" class="form-label">No. de Doc:</label>
+                                     <input type="text" id="num_doc" name="document_number" class="form-control" value="{{ $order->ACMVOIDOC }}" readonly required>
+                                 </div>
+                                 <div class="col-md-4">
+                                     <label for="nombre_proveedor" class="form-label">Nombre del Proveedor:</label>
+                                     <input type="text" id="nombre_proveedor" name="supplier_name" class="form-control" value="{{ $provider ? $provider->CNCDIRNOM : 'No disponible' }}" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="referencia" class="form-label">Referencia:</label>
+                                     <select id="referencia" name="reference_type" class="form-control" required>
+                                         <option value="1">FACTURA</option>
+                                         <option value="2">REMISION</option>
+                                         <option value="3">MISELANEO</option>
+                                     </select>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="almacen" class="form-label">Almacén:</label>
+                                     <input type="text" id="almacen" name="store" class="form-control" value="{{ $order->ACMVOIALID }}" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="ACMROIREF" class="form-label">Referencia:</label>
+                                     <input type="text" id="ACMROIREF" name="reference" class="form-control" required>
+                                 </div>
+                                 <div class="col-md-2">
+                                     <label for="fecha" class="form-label">Fecha Recepcion:</label>
+                                     <input type="date" id="fecha" name="reception_date" class="form-control" value="{{ $currentDate }}" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="rcn_final" class="form-label">DOC:</label>
+                                     <input type="text" id="rcn_final" name="document_type1" class="form-control" value="RCN" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="num_rcn_letras" class="form-label">NO DE DOC:</label>
+                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <label for="flete_select" class="form-label">Flete:</label>
+                                     <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
+                                         <option value="0">Sin Flete</option>
+                                         <option value="1">Con Flete</option>
+                                     </select>
+                                 </div>
+                                 <div id="flete_input_div" class="col-md-1" style="display: none;">
+                                     <label for="flete" class="form-label">Flete:</label>
+                                     <input type="text" id="flete" name="cost" class="form-control" placeholder="Monto">
+                                 </div>
+                                 <div class="col-md-2">
+                                     <a href="{{ route('orders') }}" class="btn btn-secondary me-2">Volver a Órdenes</a>
+                                 </div>
+                                 <div class="col-md-1">
+                                     <button type="submit" class="btn btn-warning">Recepcionar</button>
+                                 </div>
+                             </div>
+                             <br>
+                         </form>
 
 
                      </div>

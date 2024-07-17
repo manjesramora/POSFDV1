@@ -74,6 +74,15 @@
         </li>
         @endif
 
+        @if(auth()->user()->hasPermission('FLETES'))
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('freights') }}">
+                <i class="fa-solid fa-money-check-dollar"></i>
+                <span>Fletes</span>
+            </a>
+        </li>
+        @endif
+
         <!-- Divider -->
         <hr class="sidebar-divider">
 

@@ -9,9 +9,10 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\LabelcatalogController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\InsdosController;
-use App\Http\Middleware\Authenticate;
+use App\Http\Controllers\FreightController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\AVPRECController;
+
 Route::get('/', function () {
     return view('login');
 })->name('home');
@@ -55,16 +56,20 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/permissions/{id}', [PermissionController::class, 'update'])->name('permissions.update');
     Route::delete('permissions/{id}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 
-    
+
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('providers/autocomplete', [ProviderController::class, 'autocomplete'])->name('providers.autocomplete')->middleware('permission:ORDENES');
     Route::get('/receptions/{ACMVOIDOC}', [OrderController::class, 'showReceptions'])->name('receptions.show')->middleware('permission:RECEPCIONES');
     Route::post('/receiptOrder/{ACMVOIDOC}', [OrderController::class, 'receiptOrder'])->name('receiptOrder');
 
-    
+
     Route::get('/check-username', [UserController::class, 'checkUsername'])->name('check-username');
     Route::get('/labelscatalog', [LabelcatalogController::class, 'labelscatalog'])->name('labelscatalog')->middleware('permission:ETIQUETAS');
+
+    // Rutas relacionadas con fletes
+    Route::get('/freights', [FreightController::class, 'index'])->name('freights')->middleware('permission:ETIQUETAS');
+    Route::get('/freights/pdf', [FreightController::class, 'generatePDF'])->name('freights.pdf');
 });
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -85,4 +90,3 @@ Route::get('/insdos', [InsdosController::class, 'index']);
 
 // Ruta para mostrar los datos de AVPREC
 Route::get('/avprec/show', [AVPRECController::class, 'show']);
-
