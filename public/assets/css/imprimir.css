@@ -1,0 +1,27 @@
+/* Estilos para imprimir */
+@media print {
+    .imprimir-reportes {
+        width: 100%; /* Ajusta el ancho al 100% para que ocupe toda la página */
+        margin: 0; /* Elimina los márgenes */
+        padding: 0; /* Elimina el relleno */
+        font-size: 12px; /* Tamaño de fuente */
+    }
+
+    /* Estilos para la tabla */
+    .imprimir-reportes table {
+        width: 100%; /* Ajusta el ancho al 100% */
+        border-collapse: collapse; /* Colapsa los bordes de la tabla */
+    }
+
+    /* Estilos para las celdas de la tabla */
+    .imprimir-reportes th, .imprimir-reportes td {
+        border: 1px solid #000; /* Añade un borde de 1px sólido */
+        padding: 8px; /* Añade relleno de 8px */
+        text-align: center; /* Alinea el texto al centro */
+    }
+
+    /* Estilo para el encabezado de la tabla */
+    .imprimir-reportes th {
+        background-color: #f2f2f2; /* Color de fondo */
+    }
+}
