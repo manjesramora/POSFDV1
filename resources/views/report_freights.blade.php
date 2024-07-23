@@ -28,16 +28,12 @@
     <table>
         <thead>
             <tr>
-                <th >DOC</th>
                 <th >NO.OL</th>
-                <th >DOC</th>
                 <th >NO.RCN</th>
                 <th >COSTO</th>
                 <th >NO.PROV</th>
                 <th >NO.TRANS</th>
                 <th >FEC.REC</th>
-                <th >REF</th>
-                <th >TIPO REF</th>
                 <th >PROVE</th>
                 <th >TRANS</th>
                 <th >ALMACEN</th>
@@ -46,16 +42,12 @@
         <tbody>
             @foreach($freights as $freight)
             <tr>
-                <td >{{ $freight->document_type }}</td>
                 <td >{{ $freight->document_number }}</td>
-                <td >{{ $freight->document_type1 }}</td>
                 <td >{{ $freight->document_number1 }}</td>
                 <td >${{ $freight->cost }}</td>
                 <td >{{ $freight->supplier_number }}</td>
                 <td >{{ $freight->carrier_number }}</td>
                 <td >{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
-                <td >{{ $freight->reference }}</td>
-                <td >{{ $freight->reference_type }}</td>
                 <td >{{ $freight->carrier_name }}</td>
                 <td >{{ $freight->supplier_name }}</td>
                 <td >{{ $freight->store }}</td>

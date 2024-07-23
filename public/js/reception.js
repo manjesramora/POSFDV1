@@ -132,4 +132,26 @@
     let input = document.getElementById('flete');
     input.addEventListener('input', updateFormattedValue);
 
-    
+    function calculateCost() {
+        let cantidadRecibidaElements = document.querySelectorAll('.cantidad-recibida');
+        let precioUnitarioElements = document.querySelectorAll('.precio-unitario');
+        let totalCost = 0;
+
+        cantidadRecibidaElements.forEach((cantidadElement, index) => {
+            let cantidad = parseFloat(cantidadElement.value) || 0;
+            let precio = parseFloat(precioUnitarioElements[index].value) || 0;
+            totalCost += cantidad * precio;
+        });
+
+        document.getElementById('totalCost').value = totalCost.toFixed(2);
+    }
+
+    function toggleFleteInput() {
+        let fleteSelect = document.getElementById('flete_select');
+        let fleteInputDiv = document.getElementById('flete_input_div');
+        if (fleteSelect.value == '1') {
+            fleteInputDiv.style.display = 'block';
+        } else {
+            fleteInputDiv.style.display = 'none';
+        }
+    }

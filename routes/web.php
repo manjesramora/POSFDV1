@@ -62,14 +62,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('providers/autocomplete', [ProviderController::class, 'autocomplete'])->name('providers.autocomplete')->middleware('permission:ORDENES');
     Route::get('/receptions/{ACMVOIDOC}', [OrderController::class, 'showReceptions'])->name('receptions.show')->middleware('permission:RECEPCIONES');
     Route::post('/receiptOrder/{ACMVOIDOC}', [OrderController::class, 'receiptOrder'])->name('receiptOrder');
-
-
-    Route::get('/check-username', [UserController::class, 'checkUsername'])->name('check-username');
-    Route::get('/labelscatalog', [LabelcatalogController::class, 'labelscatalog'])->name('labelscatalog')->middleware('permission:ETIQUETAS');
+    Route::get('/freights', [OrderController::class, 'showFreights'])->name('freights');
 
     // Rutas relacionadas con fletes
     Route::get('/freights', [FreightController::class, 'index'])->name('freights')->middleware('permission:ETIQUETAS');
     Route::get('/freights/pdf', [FreightController::class, 'generatePDF'])->name('freights.pdf');
+
+
+    Route::get('/check-username', [UserController::class, 'checkUsername'])->name('check-username');
+    Route::get('/labelscatalog', [LabelcatalogController::class, 'labelscatalog'])->name('labelscatalog')->middleware('permission:ETIQUETAS');
 });
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);

@@ -64,12 +64,12 @@
                         </div>
                     </div>
                     <div class="container" style="height: 60px;">
-<!-- Botón para imprimir reporte -->
-<div class="d-flex justify-content-center">
-    <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary">
-        <i class="fas fa-print mr-2"></i>Imprimir Reporte
-    </a>
-</div>
+                        <!-- Botón para imprimir reporte -->
+                        <div class="d-flex justify-content-center">
+                            <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary">
+                                <i class="fas fa-print mr-2"></i>Imprimir Reporte
+                            </a>
+                        </div>
 
                     </div>
                     <!-- Begin Page Content -->
@@ -82,19 +82,16 @@
                                             <tr>
                                                 @php
                                                 $columns = [
-                                                'document_type' => 'DOC',
                                                 'document_number' => 'NO.OL',
-                                                'document_type1' => 'DOC',
                                                 'document_number1' => 'NO.RCN',
-                                                'cost' => 'COSTO',
                                                 'supplier_number' => 'NO.PROV',
+                                                'supplier_name' => 'PROVE',
                                                 'carrier_number' => 'NO.TRANS',
+                                                'carrier_name' => 'TRANS',
                                                 'reception_date' => 'FEC.RECEP',
-                                                'reference' => 'REF',
-                                                'reference_type' => 'TIPO REF',
-                                                'carrier_name' => 'PROVE',
-                                                'supplier_name' => 'TRANS',
-                                                'store' => 'ALMACEN'
+                                                'cost' => 'COSTO',
+                                                'freight' => 'FLETE',
+                                                'freight_percentage' => 'PORC.FLETE'
                                                 ];
                                                 @endphp
                                                 @foreach ($columns as $field => $label)
@@ -118,23 +115,31 @@
                                         <tbody>
                                             @foreach($freights as $freight)
                                             <tr>
-                                                <td class="col-1 text-center align-middle">{{ $freight->document_type }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $freight->document_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->document_type1 }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $freight->document_number1 }}</td>
-                                                <td class="col-1 text-center align-middle">${{ $freight->cost }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $freight->supplier_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->reference }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->reference_type }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_name }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $freight->supplier_name }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->store }}</td>
+                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_number }}</td>
+                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_name }}</td>
+                                                <td class="col-1 text-center align-middle">{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
+                                                <td class="col-1 text-center align-middle">${{ number_format($freight->cost, 2) }}</td>
+                                                <td class="col-1 text-center align-middle">${{ number_format($freight->freight, 2) }}</td>
+                                                <td class="col-1 text-center align-middle">{{ number_format($freight->freight_percentage, 2) }}%</td>
                                             </tr>
                                             @endforeach
+                                            <tr>
+                                                <td colspan="7" class="text-end fw-bold">Total:</td>
+                                                <td class="text-center fw-bold">${{ number_format($totalCost, 2) }}</td>
+                                                <td class="text-center fw-bold">${{ number_format($totalFreight, 2) }}</td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="7" class="text-end fw-bold">Total General:</td>
+                                                <td colspan="3" class="text-center fw-bold">${{ number_format($totalCost + $totalFreight, 2) }}</td>
+                                            </tr>
                                         </tbody>
                                     </table>
+
                                 </div>
                             </div>
                         </div>

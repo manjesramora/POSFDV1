@@ -36,7 +36,11 @@ class FreightController extends Controller
 
         $freights = $query->paginate(10)->appends($request->all());
 
-        return view('freights', compact('freights'));
+        // Cálculo de totales
+        $totalCost = $query->sum('cost');
+        $totalFreight = $query->sum('freight');
+
+        return view('freights', compact('freights', 'totalCost', 'totalFreight'));
     }
 
     public function generatePDF(Request $request)
@@ -66,9 +70,12 @@ class FreightController extends Controller
         }
     
         $freights = $query->get(); // Obtén todos los registros para el PDF
+
+        // Cálculo de totales
+        $totalCost = $query->sum('cost');
+        $totalFreight = $query->sum('freight');
     
-        $pdf = PDF::loadView('report_freights', compact('freights'));
+        $pdf = PDF::loadView('report_freights', compact('freights', 'totalCost', 'totalFreight'));
         return $pdf->download('freights_report.pdf');
     }
-    
 }

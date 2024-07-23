@@ -172,11 +172,11 @@ class OrderController extends Controller
     {
         $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
         $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
+    
         if (!$order || !$provider) {
             return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
         }
-
+    
         // Validación de todos los campos del formulario
         $validatedData = $request->validate([
             'carrier_number' => 'required|string',
@@ -190,18 +190,26 @@ class OrderController extends Controller
             'reception_date' => 'required|date',
             'document_type1' => 'required|string',
             'document_number1' => 'required|string',
-            'cost' => 'nullable|string',
+            'total_cost' => 'required|numeric',
+            'freight' => 'nullable|string' // Se valida como string para permitir comas
         ]);
-
+    
+        // Eliminar comas del valor de freight
+        $validatedData['freight'] = str_replace(',', '', $validatedData['freight']);
+    
         // Subfunción para manejar la inserción cuando hay flete
         if ($request->input('flete_select') == 1) {
-            $this->insertFreight($validatedData, $provider);
+            $validatedData['freight'] = (float)$validatedData['freight'];
+        } else {
+            $validatedData['freight'] = 0.0;
         }
-
+    
+        $this->insertFreight($validatedData, $provider);
+    
         // Redirección después de procesar los datos
         return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
     }
-
+    
     private function insertFreight($validatedData, $provider)
     {
         // Inserción de todos los campos en la tabla Freights
@@ -210,7 +218,8 @@ class OrderController extends Controller
             'document_number' => $validatedData['document_number'],
             'document_type1' => $validatedData['document_type1'],
             'document_number1' => $validatedData['document_number1'],
-            'cost' => $validatedData['cost'] ?? 0.0, // Valor predeterminado si no está presente
+            'cost' => $validatedData['total_cost'], // Se utiliza el costo total calculado
+            'freight' => $validatedData['freight'], // Guardar el valor del flete sin comas
             'supplier_number' => $provider->CNCDIRID,
             'carrier_number' => $validatedData['carrier_number'],
             'carrier_name' => $validatedData['carrier_name'],
@@ -219,6 +228,7 @@ class OrderController extends Controller
             'store' => $validatedData['store'],
             'reference' => $validatedData['reference'],
             'reception_date' => $validatedData['reception_date'],
+            'freight_percentage' => 0.0, // Valor predeterminado o ajusta según tu lógica
         ]);
-    }
+    }    
 }
