@@ -178,7 +178,7 @@ class OrderController extends Controller
         return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
     }
 
-    // Validación de todos los campos del formulario
+    // Validación de todos los campos del formulario excepto flete
     $validatedData = $request->validate([
         'carrier_number' => 'required|string',
         'carrier_name' => 'required|string',
@@ -192,23 +192,26 @@ class OrderController extends Controller
         'document_type1' => 'required|string',
         'document_number1' => 'required|string',
         'total_cost' => 'required|numeric',
-        'freight' => 'nullable|string',
         'cantidad_recibida.*' => 'required|numeric|min:0',
         'precio_unitario.*' => 'required|numeric|min:0',
     ]);
 
-    // Eliminar comas del valor de freight
-    $validatedData['freight'] = str_replace(',', '', $validatedData['freight']);
-
-    // Subfunción para manejar la inserción cuando hay flete
+    // Añadir validación del flete si está seleccionado
     if ($request->input('flete_select') == 1) {
-        $validatedData['freight'] = (float)$validatedData['freight'];
+        $request->validate([
+            'freight' => 'required|string',
+        ]);
+
+        // Eliminar comas del valor de freight y convertir a float
+        $validatedData['freight'] = (float)str_replace(',', '', $request->input('freight'));
     } else {
         $validatedData['freight'] = 0.0;
     }
 
     // Lógica de inserción en la tabla principal
-    $this->insertFreight($validatedData, $provider);
+    if ($validatedData['freight'] > 0) {
+        $this->insertFreight($validatedData, $provider);
+    }
 
     // Lógica de inserción por partidas
     $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
@@ -217,7 +220,8 @@ class OrderController extends Controller
     return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
 }
 
-private function insertFreight($validatedData, $provider)
+    
+    private function insertFreight($validatedData, $provider)
 {
     // Inserción de todos los campos en la tabla Freights
     DB::table('Freights')->insert([
@@ -238,6 +242,7 @@ private function insertFreight($validatedData, $provider)
         'freight_percentage' => 0.0,
     ]);
 }
+
 private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
 {
     $fechaActual = now();

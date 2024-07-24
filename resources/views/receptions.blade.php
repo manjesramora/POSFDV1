@@ -90,17 +90,18 @@
                                     <label for="num_rcn_letras" class="form-label">NO DE DOC:</label>
                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
                                 </div>
-                                <div class="col-md-1">
-                                    <label for="flete_select" class="form-label">Flete:</label>
-                                    <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
-                                        <option value="0">Sin Flete</option>
-                                        <option value="1">Con Flete</option>
-                                    </select>
-                                </div>
-                                <div id="flete_input_div" class="col-md-1" style="display: none;">
-                                    <label for="flete" class="form-label">Flete:</label>
-                                    <input type="text" id="flete" name="freight" class="form-control" placeholder="Monto">
-                                </div>
+                               <div class="col-md-1">
+    <label for="flete_select" class="form-label">Flete:</label>
+    <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
+        <option value="0">Sin Flete</option>
+        <option value="1">Con Flete</option>
+    </select>
+</div>
+<div id="flete_input_div" class="col-md-1" style="display: none;">
+    <label for="flete" class="form-label">Flete:</label>
+    <input type="text" id="flete" name="freight" class="form-control" placeholder="Monto">
+</div>
+
                                 <div class="col-md-2">
                                     <a href="{{ route('orders') }}" class="btn btn-secondary me-2">Volver a Órdenes</a>
                                 </div>
@@ -129,6 +130,8 @@
                                                             <th class="col-md-1">Cantidad <br> Recibida</th>
                                                             <th class="col-md-0">Precio Unitario</th>
                                                             <th class="col-md-0">IVA</th>
+                                                            <th class="col-md-0">Subtotal</th>
+                                                            <th class="col-md-0">Total</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">
@@ -141,12 +144,14 @@
                                                             <td>{{ $partida->ACMVOIUMT }}</td>
                                                             <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
                                                             <td>
-                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateCost()">
+                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateTotals(this)">
                                                             </td>
                                                             <td>
-                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateCost()">
+                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)">
                                                             </td>
                                                             <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
+                                                            <td class="subtotal">0.00</td>
+                                                            <td class="total">0.00</td>
                                                         </tr>
                                                         @endforeach
                                                     </tbody>
@@ -171,6 +176,30 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script>
+    <script>
+        function calculateTotals(input) {
+            const row = input.closest('tr');
+            const cantidadRecibida = parseFloat(row.querySelector('.cantidad-recibida').value) || 0;
+            const precioUnitario = parseFloat(row.querySelector('.precio-unitario').value) || 0;
+            const iva = parseFloat(row.cells[8].innerText) || 0;
+
+            const subtotal = cantidadRecibida * precioUnitario;
+            const total = subtotal + (subtotal * (iva / 100));
+
+            row.querySelector('.subtotal').innerText = subtotal.toFixed(2);
+            row.querySelector('.total').innerText = total.toFixed(2);
+
+            updateTotalCost();
+        }
+
+        function updateTotalCost() {
+            let totalCost = 0;
+            document.querySelectorAll('.total').forEach(totalCell => {
+                totalCost += parseFloat(totalCell.innerText) || 0;
+            });
+            document.getElementById('totalCost').value = totalCost.toFixed(2);
+        }
+    </script>
 </body>
 
 </html>
