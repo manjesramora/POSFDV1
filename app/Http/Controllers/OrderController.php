@@ -8,6 +8,7 @@ use App\Models\Receptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log; // Importa la clase Log
 
 class OrderController extends Controller
 {
@@ -169,66 +170,134 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-    {
-        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-    
-        if (!$order || !$provider) {
-            return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
-        }
-    
-        // Validación de todos los campos del formulario
-        $validatedData = $request->validate([
-            'carrier_number' => 'required|string',
-            'carrier_name' => 'required|string',
-            'document_type' => 'required|string',
-            'document_number' => 'required|string',
-            'supplier_name' => 'required|string',
-            'reference_type' => 'required|string',
-            'store' => 'required|string',
-            'reference' => 'required|string',
-            'reception_date' => 'required|date',
-            'document_type1' => 'required|string',
-            'document_number1' => 'required|string',
-            'total_cost' => 'required|numeric',
-            'freight' => 'nullable|string' // Se valida como string para permitir comas
-        ]);
-    
-        // Eliminar comas del valor de freight
-        $validatedData['freight'] = str_replace(',', '', $validatedData['freight']);
-    
-        // Subfunción para manejar la inserción cuando hay flete
-        if ($request->input('flete_select') == 1) {
-            $validatedData['freight'] = (float)$validatedData['freight'];
-        } else {
-            $validatedData['freight'] = 0.0;
-        }
-    
-        $this->insertFreight($validatedData, $provider);
-    
-        // Redirección después de procesar los datos
-        return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
+{
+    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+    if (!$order || !$provider) {
+        return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
     }
+
+    // Validación de todos los campos del formulario
+    $validatedData = $request->validate([
+        'carrier_number' => 'required|string',
+        'carrier_name' => 'required|string',
+        'document_type' => 'required|string',
+        'document_number' => 'required|string',
+        'supplier_name' => 'required|string',
+        'reference_type' => 'required|string',
+        'store' => 'required|string',
+        'reference' => 'required|string',
+        'reception_date' => 'required|date',
+        'document_type1' => 'required|string',
+        'document_number1' => 'required|string',
+        'total_cost' => 'required|numeric',
+        'freight' => 'nullable|string',
+        'cantidad_recibida.*' => 'required|numeric|min:0',
+        'precio_unitario.*' => 'required|numeric|min:0',
+    ]);
+
+    // Eliminar comas del valor de freight
+    $validatedData['freight'] = str_replace(',', '', $validatedData['freight']);
+
+    // Subfunción para manejar la inserción cuando hay flete
+    if ($request->input('flete_select') == 1) {
+        $validatedData['freight'] = (float)$validatedData['freight'];
+    } else {
+        $validatedData['freight'] = 0.0;
+    }
+
+    // Lógica de inserción en la tabla principal
+    $this->insertFreight($validatedData, $provider);
+
+    // Lógica de inserción por partidas
+    $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+
+    // Redirección después de procesar los datos
+    return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
+}
+
+private function insertFreight($validatedData, $provider)
+{
+    // Inserción de todos los campos en la tabla Freights
+    DB::table('Freights')->insert([
+        'document_type' => $validatedData['document_type'],
+        'document_number' => $validatedData['document_number'],
+        'document_type1' => $validatedData['document_type1'],
+        'document_number1' => $validatedData['document_number1'],
+        'cost' => $validatedData['total_cost'],
+        'freight' => $validatedData['freight'],
+        'supplier_number' => $provider->CNCDIRID,
+        'carrier_number' => $validatedData['carrier_number'],
+        'carrier_name' => $validatedData['carrier_name'],
+        'supplier_name' => $validatedData['supplier_name'],
+        'reference_type' => $validatedData['reference_type'],
+        'store' => $validatedData['store'],
+        'reference' => $validatedData['reference'],
+        'reception_date' => $validatedData['reception_date'],
+        'freight_percentage' => 0.0,
+    ]);
+}
+private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
+{
+    $fechaActual = now();
+    $horaActual = now()->format('H:i:s');
+    $usuario = Auth::user()->name;
+
+    // Obtener partidas del pedido
+    $partidas = DB::table('acmvor1')
+        ->where('ACMVOIDOC', $order->ACMVOIDOC)
+        ->get();
+
+    foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
+        if (isset($partidas[$index])) {
+            $partida = $partidas[$index];
+            $costoUnitario = (float) $preciosUnitarios[$index];
+            $cantidadRecibida = (float) $cantidadRecibida; // Convertir a decimal
+            $costoTotal = $cantidadRecibida * $costoUnitario;
+
+            DB::table('incrdx')->insert([
+                'INALMNID' => $validatedData['store'], // char(15)
+                'INPRODID' => (int) $partida->ACMVOIPRID, // decimal(10,0)
+                'INLOTEID' => ' ', // char(30) (valor en blanco)
+                'CNTDOCID' => 'RCN', // char(3)
+                'INCRDXDOC' => (int) $validatedData['document_number1'], // decimal(10,0)
+                'INCRDXLIN' => (float) $index + 1, // smallmoney
+                'INCRDXLIB' => 'NL', // char(2)
+                'INCRDXMON' => 'MXP', // char(3)
+                'INCRDXFTRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                'CNCIASID' => 1, // decimal(10,0)
+                'INCRDXFCRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                'INCRDXFVEN' => '1753-01-01 00:00:00.000', // datetime
+                'INCRDXDOT' => 'OL1', // char(3)
+                'INCRDXDON' => (int) $partida->ACMVOIDOC, // decimal(10,0)
+                'CNCDIRID' => (int) $provider->CNCDIRID, // decimal(10,0)
+                'INCRDXCU' => (float) $costoUnitario, // decimal(17,6)
+                'INCRDXQTY' => (float) $cantidadRecibida, // decimal(16,4)
+                'INCRDXCUNT' => (float) $costoUnitario, // decimal(17,6)
+                'INCRDXVAL' => (float) $costoTotal, // decimal(17,6)
+                'INCRDXVANT' => (float) $costoTotal, // decimal(17,6)
+                'INCRDXUMB' => (string) $partida->ACMVOIUMT, // char(3)
+                'INCRDXUMT' => (string) $partida->ACMVOIUMT, // char(3)
+                'INCRDXPOST' => 'N', // char(1)
+                'INCRDXEXP' => 'RECEPCION DE MATERIAL', // char(50)
+                'INCRDXSEO' => 1, // decimal(10,0)
+                'INCRDXUFC' => '1753-01-01 00:00:00.000', // datetime
+                'INCRDXUHC' => $horaActual, // datetime
+                'INCRDXUSU' => $usuario, // char(10)
+                'INCRDXUFU' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                'INCRDXUHU' => $horaActual, // datetime
+                'INCRDXFUF' => '1753-01-01 00:00:00.000', // datetime
+                'ACRCOICD01ID' => 'REQ', // char(10)
+            ]);
+        } else {
+            // Manejar el caso donde la partida no existe
+            throw new \Exception("La partida en la posición {$index} no existe.");
+        }
+    }
+}
+
+
+
     
-    private function insertFreight($validatedData, $provider)
-    {
-        // Inserción de todos los campos en la tabla Freights
-        DB::table('Freights')->insert([
-            'document_type' => $validatedData['document_type'],
-            'document_number' => $validatedData['document_number'],
-            'document_type1' => $validatedData['document_type1'],
-            'document_number1' => $validatedData['document_number1'],
-            'cost' => $validatedData['total_cost'], // Se utiliza el costo total calculado
-            'freight' => $validatedData['freight'], // Guardar el valor del flete sin comas
-            'supplier_number' => $provider->CNCDIRID,
-            'carrier_number' => $validatedData['carrier_number'],
-            'carrier_name' => $validatedData['carrier_name'],
-            'supplier_name' => $validatedData['supplier_name'],
-            'reference_type' => $validatedData['reference_type'],
-            'store' => $validatedData['store'],
-            'reference' => $validatedData['reference'],
-            'reception_date' => $validatedData['reception_date'],
-            'freight_percentage' => 0.0, // Valor predeterminado o ajusta según tu lógica
-        ]);
-    }    
 }
