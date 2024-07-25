@@ -99,8 +99,10 @@
                                                 'INPROD.INPR03ID' => 'LINEA',
                                                 'INPROD.INPR04ID' => 'SUBLINEA',
                                                 'INSDOS.INALMNID' => 'ALMACÉN',
+                                                'INPROD.INUMBAID' => 'UMB',
                                                 'PrecioBase' => 'PRECIO BASE',
-                                                'AlmacenPrecio' => 'A/P'
+                                                'AlmacenPrecio' => 'A/P',
+                                                'INPROD.INPRODRD' => 'RDO',
                                             ];
                                             @endphp
                                             @foreach ($columns as $column => $label)
@@ -134,15 +136,16 @@
                                             <td>{{ $label->INPR03ID }}</td>
                                             <td>{{ $label->INPR04ID }}</td>
                                             <td>{{ $label->CentroCostos }}</td>
+                                            <td>{{ $label->INUMBAID }}</td>
                                             <td>{{ $label->PrecioBase }}</td>
                                             <td>{{ $label->AlmacenPrecio }}</td>
+                                            <td>{{ $label->INPRODRD }}</td>
                                             <td>
                                                 <div class="btn-group" role="group" aria-label="Acciones">
                                                     <button class="btn btn-secondary" onclick="showPrintModal('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}')" style="margin-right: 10px;">SKU
                                                         <i class="fas fa-barcode"></i>
                                                     </button>
-                                                    <button class="btn btn-primary" onclick="showPrintModalWithPrice('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}', '{{ $label->PrecioBase }}')">SKU Y PRECIO
-                                                        <i class="fas fa-tag"></i>
+                                                    <button class="btn btn-primary" onclick="showPrintModalWithPrice('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}', '{{ $label->PrecioBase }}', '{{ $label->INPRODID }}')">Imprimir SKU y Precio
                                                     </button>
                                                 </div>
                                             </td>
@@ -190,7 +193,7 @@
         </div>
     </div>
 
-    <!-- Modal para seleccionar la cantidad de etiquetas a imprimir con SKU y Precio -->
+ <!-- Modal para seleccionar la cantidad de etiquetas a imprimir con SKU y Precio -->
 <div class="modal fade" id="printModalWithPrice" tabindex="-1" aria-labelledby="printModalWithPriceLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -204,9 +207,16 @@
                     <input type="hidden" name="sku" id="modalSkuWithPrice">
                     <input type="hidden" name="description" id="modalDescriptionWithPrice">
                     <input type="hidden" name="precioBase" id="modalPrecioBase">
+                    <input type="hidden" name="productId" id="modalProductId"> <!-- Campo oculto para productId -->
                     <div class="form-group">
                         <label for="quantityWithPrice">Cantidad de etiquetas</label>
                         <input type="number" name="quantity" id="quantityWithPrice" class="form-control" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="umvSelect">Unidad de Medida de Venta (UMV)</label>
+                        <select name="umv" id="umvSelect" class="form-control">
+                            <!-- Las opciones se cargarán dinámicamente -->
+                        </select>
                     </div>
                 </form>
             </div>
@@ -217,6 +227,9 @@
         </div>
     </div>
 </div>
+
+
+
     <!-- Bootstrap core JavaScript -->
     <script src="assets/vendor/jquery/jquery.min.js"></script>
     <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>

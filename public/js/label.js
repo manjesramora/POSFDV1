@@ -104,12 +104,47 @@ function validateInput(input, maxLength) {
     }
 }
 
-function showPrintModalWithPrice(sku, description, precioBase) {
+function showPrintModalWithPrice(sku, description, precioBase, productId) {
     document.getElementById("modalSkuWithPrice").value = sku;
     document.getElementById("modalDescriptionWithPrice").value = description;
     document.getElementById("modalPrecioBase").value = precioBase;
+    document.getElementById("modalProductId").value = productId; // Añadir el productId
+
+    // Limpiar y deshabilitar el combobox mientras se cargan los datos
+    let umvSelect = document.getElementById("umvSelect");
+    umvSelect.innerHTML = '<option>Cargando...</option>';
+    umvSelect.disabled = true;
+
+    // Realizar la solicitud para obtener las UMV disponibles y la UMB
+    fetch(`/get-umv/${productId}`)
+        .then(response => response.json())
+        .then(data => {
+            // Limpiar y habilitar el combobox
+            umvSelect.innerHTML = '';
+            umvSelect.disabled = false;
+
+            // Añadir la opción para la unidad de medida base (UMB)
+            let option = document.createElement("option");
+            option.value = "";
+            option.text = data.umBase; // Usar la UMB dinámica
+            umvSelect.appendChild(option);
+
+            // Añadir las UMV disponibles
+            data.umvList.forEach(umv => {
+                let option = document.createElement("option");
+                option.value = umv;
+                option.text = umv;
+                umvSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error al cargar las UMV:', error);
+            umvSelect.innerHTML = '<option>Error al cargar</option>';
+        });
+
     $("#printModalWithPrice").modal("show");
 }
+
 
 function submitPrintFormWithPrice() {
     var printForm = document.getElementById("printFormWithPrice");

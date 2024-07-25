@@ -85,7 +85,10 @@ Route::get('/etiquetascatalogo', [LabelcatalogController::class, 'labelscatalog'
 Route::post('/print-label', [LabelcatalogController::class, 'printLabel'])->name('print.label');
 // Ruta para imprimir etiqueta con SKU y Precio
 Route::post('/print-label-with-price', [LabelcatalogController::class, 'printLabelWithPrice'])->name('print.label.with.price');
-
+// Ruta para obtener las UMV disponibles
+Route::get('/get-umv/{productId}', [LabelcatalogController::class, 'getUMV']);
+// Ruta para convertir el precio base según la UMV seleccionada
+Route::post('/convert-price', [LabelcatalogController::class, 'convertPrice']);
 
 Route::get('/insdos', [InsdosController::class, 'index']);
 

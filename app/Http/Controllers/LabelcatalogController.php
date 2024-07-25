@@ -96,8 +96,10 @@ class LabelcatalogController extends Controller
             'INPROD.INPR02ID',
             'INPROD.INPR03ID',
             'INPROD.INPR04ID',
+            'INPROD.INUMBAID',
             'INPROD.INPRODCBR',
             'INPROD.INTPALID',
+            'INPROD.INPRODRD',
             DB::raw('ROUND(INSDOS.INSDOSQDS, 2) as Existencia'),
             'INSDOS.INALMNID as CentroCostos',
             'INALPR.INAPR17ID as TipoStock',
@@ -179,53 +181,125 @@ class LabelcatalogController extends Controller
     }
 
     public function printLabelWithPrice(Request $request)
-{
-    try {
-        Log::info('Datos recibidos en printLabelWithPrice:', $request->all());
-
-        $sku = $request->input('sku');
-        $description = $request->input('description');
-        $quantity = $request->input('quantity', 1);
-        $precioBase = $request->input('precioBase');
-
-        if (empty($sku) || empty($description)) {
-            throw new \Exception('Datos incompletos');
+    {
+        try {
+            Log::info('Datos recibidos en printLabelWithPrice:', $request->all());
+    
+            $sku = $request->input('sku');
+            $description = $request->input('description');
+            $quantity = $request->input('quantity', 1);
+            $precioBase = $request->input('precioBase');
+            $umv = $request->input('umv');
+            $productId = $request->input('productId'); // Asegúrate de que se pase el productId
+    
+            if (empty($sku) || empty($description)) {
+                throw new \Exception('Datos incompletos');
+            }
+    
+            if (is_null($precioBase) || $precioBase === '') {
+                $precioBase = '0.00';
+            }
+    
+            if (!is_numeric($precioBase)) {
+                throw new \Exception('Precio base no es un número válido');
+            }
+    
+            // Formatear precio base a dos decimales sin redondear
+            $precioBaseFormatted = number_format((float)$precioBase, 2, '.', '');
+    
+            $precioAjustado = $precioBaseFormatted;
+    
+            // Si se selecciona una UMV diferente a la UMB, realizar la conversión
+            if (!empty($umv)) {
+                $conversionFactor = DB::table('INFCCN')
+                    ->where('INPRODID', $productId)
+                    ->where('INUMINID', function($query) use ($productId) {
+                        $query->select('INUMBAID')
+                            ->from('INPROD')
+                            ->where('INPRODID', $productId);
+                    })
+                    ->where('INUMFNID', $umv)
+                    ->value('INFCCNQTF');
+    
+                if ($conversionFactor) {
+                    $precioAjustado = number_format($precioBaseFormatted * $conversionFactor, 2, '.', '');
+                }
+            }
+    
+            $generator = new BarcodeGeneratorHTML();
+            $barcodeHtml = $generator->getBarcode($sku, $generator::TYPE_CODE_128);
+    
+            $data = [
+                'sku' => $sku,
+                'description' => $description,
+                'barcode' => $barcodeHtml,
+                'precioBase' => $precioAjustado
+            ];
+    
+            $labels = array_fill(0, $quantity, $data);
+    
+            $pdf = Pdf::loadView('label_with_price', ['labels' => $labels]);
+    
+            $pdfOutput = $pdf->output();
+            $filename = 'labels_with_price.pdf';
+            file_put_contents(public_path($filename), $pdfOutput);
+    
+            return response()->json(['url' => asset($filename)]);
+        } catch (\Exception $e) {
+            Log::error('Error generando el PDF: ' . $e->getMessage());
+            return response()->json(['error' => 'Error generando el PDF: ' . $e->getMessage()], 500);
         }
-
-        if (is_null($precioBase) || $precioBase === '') {
-            $precioBase = '0.00';
-        }
-
-        if (!is_numeric($precioBase)) {
-            throw new \Exception('Precio base no es un número válido');
-        }
-
-        // Formatear precio base a dos decimales sin redondear
-        $precioBaseFormatted = number_format((float)$precioBase, 2, '.', '');
-
-        $generator = new BarcodeGeneratorHTML();
-        $barcodeHtml = $generator->getBarcode($sku, $generator::TYPE_CODE_128);
-
-        $data = [
-            'sku' => $sku,
-            'description' => $description,
-            'barcode' => $barcodeHtml,
-            'precioBase' => $precioBaseFormatted
-        ];
-
-        $labels = array_fill(0, $quantity, $data);
-
-        $pdf = Pdf::loadView('label_with_price', ['labels' => $labels]);
-
-        $pdfOutput = $pdf->output();
-        $filename = 'labels_with_price.pdf';
-        file_put_contents(public_path($filename), $pdfOutput);
-
-        return response()->json(['url' => asset($filename)]);
-    } catch (\Exception $e) {
-        Log::error('Error generando el PDF: ' . $e->getMessage());
-        return response()->json(['error' => 'Error generando el PDF: ' . $e->getMessage()], 500);
     }
+    
+
+    public function getUMV($productId)
+    {
+        // Obtener la unidad de medida base del producto
+        $umBase = DB::table('INPROD')
+                    ->where('INPRODID', $productId)
+                    ->value('INUMBAID');
+    
+        // Obtener las unidades de medida finales disponibles para el producto
+        $umvList = DB::table('INFCCN')
+                    ->where('INPRODID', $productId)
+                    ->where('INUMINID', $umBase)
+                    ->pluck('INUMFNID');
+    
+        return response()->json([
+            'umBase' => $umBase,
+            'umvList' => $umvList
+        ]);
+    }
+    
+
+public function convertPrice(Request $request)
+{
+    $sku = $request->input('sku');
+    $umv = $request->input('umv');
+    $precioBase = $request->input('precioBase');
+
+    // Obtener la unidad de medida base del producto
+    $umBase = DB::table('INPROD')
+                ->where('INPRODID', $sku)
+                ->value('INUMBAID');
+
+    // Si la UMV es la misma que la UMB, no hay conversión
+    if ($umv === $umBase || empty($umv)) {
+        return response()->json(['precioAjustado' => $precioBase]);
+    }
+
+    // Obtener el factor de conversión
+    $conversionFactor = DB::table('INFCCN')
+                          ->where('INPRODID', $sku)
+                          ->where('INUMINID', $umBase)
+                          ->where('INUMFNID', $umv)
+                          ->value('INFCCNQTF');
+
+    // Calcular el precio ajustado
+    $precioAjustado = $precioBase * $conversionFactor;
+
+    return response()->json(['precioAjustado' => number_format($precioAjustado, 2, '.', '')]);
 }
+
 
 }
