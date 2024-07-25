@@ -170,55 +170,59 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-{
-    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-    if (!$order || !$provider) {
-        return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
-    }
-
-    // Validación de todos los campos del formulario excepto flete
-    $validatedData = $request->validate([
-        'carrier_number' => 'required|string',
-        'carrier_name' => 'required|string',
-        'document_type' => 'required|string',
-        'document_number' => 'required|string',
-        'supplier_name' => 'required|string',
-        'reference_type' => 'required|string',
-        'store' => 'required|string',
-        'reference' => 'required|string',
-        'reception_date' => 'required|date',
-        'document_type1' => 'required|string',
-        'document_number1' => 'required|string',
-        'total_cost' => 'required|numeric',
-        'cantidad_recibida.*' => 'required|numeric|min:0',
-        'precio_unitario.*' => 'required|numeric|min:0',
-    ]);
-
-    // Añadir validación del flete si está seleccionado
-    if ($request->input('flete_select') == 1) {
-        $request->validate([
-            'freight' => 'required|string',
+    {
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+    
+        if (!$order || !$provider) {
+            return redirect()->route('orders')->with('error', 'Orden o proveedor no encontrado.');
+        }
+    
+        // Validación de todos los campos del formulario excepto flete
+        $validatedData = $request->validate([
+            'carrier_number' => 'required|string',
+            'carrier_name' => 'required|string',
+            'document_type' => 'required|string',
+            'document_number' => 'required|string',
+            'supplier_name' => 'required|string',
+            'reference_type' => 'required|string',
+            'store' => 'required|string',
+            'reference' => 'required|string',
+            'reception_date' => 'required|date',
+            'document_type1' => 'required|string',
+            'document_number1' => 'required|string',
+            'total_cost' => 'required|numeric',
+            'cantidad_recibida.*' => 'required|numeric|min:0',
+            'precio_unitario.*' => 'required|numeric|min:0',
         ]);
-
-        // Eliminar comas del valor de freight y convertir a float
-        $validatedData['freight'] = (float)str_replace(',', '', $request->input('freight'));
-    } else {
-        $validatedData['freight'] = 0.0;
+    
+        // Añadir validación del flete si está seleccionado
+        if ($request->input('flete_select') == 1) {
+            $request->validate([
+                'freight' => 'required|string',
+            ]);
+    
+            // Eliminar comas del valor de freight y convertir a float
+            $validatedData['freight'] = (float)str_replace(',', '', $request->input('freight'));
+        } else {
+            $validatedData['freight'] = 0.0;
+        }
+    
+        // Lógica de inserción en la tabla principal
+        if ($validatedData['freight'] > 0) {
+            $this->insertFreight($validatedData, $provider);
+        }
+    
+        // Lógica de inserción por partidas
+        $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+    
+        // Lógica para afectar los campos en insdos
+    
+        // Redirección después de procesar los datos
+        return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
     }
+    
 
-    // Lógica de inserción en la tabla principal
-    if ($validatedData['freight'] > 0) {
-        $this->insertFreight($validatedData, $provider);
-    }
-
-    // Lógica de inserción por partidas
-    $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
-
-    // Redirección después de procesar los datos
-    return redirect()->route('orders')->with('success', 'Recepción registrada correctamente.');
-}
 
     
     private function insertFreight($validatedData, $provider)
@@ -242,7 +246,6 @@ class OrderController extends Controller
         'freight_percentage' => 0.0,
     ]);
 }
-
 private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
 {
     $fechaActual = now();
@@ -261,40 +264,109 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
             $cantidadRecibida = (float) $cantidadRecibida; // Convertir a decimal
             $costoTotal = $cantidadRecibida * $costoUnitario;
 
-            DB::table('incrdx')->insert([
-                'INALMNID' => $validatedData['store'], // char(15)
-                'INPRODID' => (int) $partida->ACMVOIPRID, // decimal(10,0)
-                'INLOTEID' => ' ', // char(30) (valor en blanco)
-                'CNTDOCID' => 'RCN', // char(3)
-                'INCRDXDOC' => (int) $validatedData['document_number1'], // decimal(10,0)
-                'INCRDXLIN' => (float) $index + 1, // smallmoney
-                'INCRDXLIB' => 'NL', // char(2)
-                'INCRDXMON' => 'MXP', // char(3)
-                'INCRDXFTRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
-                'CNCIASID' => 1, // decimal(10,0)
-                'INCRDXFCRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
-                'INCRDXFVEN' => '1753-01-01 00:00:00.000', // datetime
-                'INCRDXDOT' => 'OL1', // char(3)
-                'INCRDXDON' => (int) $partida->ACMVOIDOC, // decimal(10,0)
-                'CNCDIRID' => (int) $provider->CNCDIRID, // decimal(10,0)
-                'INCRDXCU' => (float) $costoUnitario, // decimal(17,6)
-                'INCRDXQTY' => (float) $cantidadRecibida, // decimal(16,4)
-                'INCRDXCUNT' => (float) $costoUnitario, // decimal(17,6)
-                'INCRDXVAL' => (float) $costoTotal, // decimal(17,6)
-                'INCRDXVANT' => (float) $costoTotal, // decimal(17,6)
-                'INCRDXUMB' => (string) $partida->ACMVOIUMT, // char(3)
-                'INCRDXUMT' => (string) $partida->ACMVOIUMT, // char(3)
-                'INCRDXPOST' => 'N', // char(1)
-                'INCRDXEXP' => 'RECEPCION DE MATERIAL', // char(50)
-                'INCRDXSEO' => 1, // decimal(10,0)
-                'INCRDXUFC' => '1753-01-01 00:00:00.000', // datetime
-                'INCRDXUHC' => $horaActual, // datetime
-                'INCRDXUSU' => $usuario, // char(10)
-                'INCRDXUFU' => $fechaActual->format('Y-m-d H:i:s'), // datetime
-                'INCRDXUHU' => $horaActual, // datetime
-                'INCRDXFUF' => '1753-01-01 00:00:00.000', // datetime
-                'ACRCOICD01ID' => 'REQ', // char(10)
-            ]);
+            // Verificar si el registro ya existe en incrdx
+            $exists = DB::table('incrdx')
+                ->where('INALMNID', $validatedData['store'])
+                ->where('INPRODID', (int) $partida->ACMVOIPRID)
+                ->where('CNTDOCID', 'RCN')
+                ->where('INCRDXDOC', (int) $validatedData['document_number1'])
+                ->where('INCRDXLIN', $index + 1)
+                ->exists();
+
+            if ($exists) {
+                // Si el registro existe, puedes decidir actualizarlo o ignorar la inserción
+                Log::info("Registro ya existe en incrdx: Store {$validatedData['store']}, Product ID {$partida->ACMVOIPRID}, Document Number {$validatedData['document_number1']}, Line " . ($index + 1));
+            } else {
+                // Si el registro no existe, insertarlo
+                DB::table('incrdx')->insert([
+                    'INALMNID' => $validatedData['store'], // char(15)
+                    'INPRODID' => (int) $partida->ACMVOIPRID, // decimal(10,0)
+                    'INLOTEID' => ' ', // char(30) (valor en blanco)
+                    'CNTDOCID' => 'RCN', // char(3)
+                    'INCRDXDOC' => (int) $validatedData['document_number1'], // decimal(10,0)
+                    'INCRDXLIN' => $index + 1, // smallmoney
+                    'INCRDXLIB' => 'NL', // char(2)
+                    'INCRDXMON' => 'MXP', // char(3)
+                    'INCRDXFTRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                    'CNCIASID' => 1, // decimal(10,0)
+                    'INCRDXFCRN' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                    'INCRDXFVEN' => '1753-01-01 00:00:00.000', // datetime
+                    'INCRDXDOT' => 'OL1', // char(3)
+                    'INCRDXDON' => (int) $partida->ACMVOIDOC, // decimal(10,0)
+                    'CNCDIRID' => (int) $provider->CNCDIRID, // decimal(10,0)
+                    'INCRDXCU' => (float) $costoUnitario, // decimal(17,6)
+                    'INCRDXQTY' => (float) $cantidadRecibida, // decimal(16,4)
+                    'INCRDXCUNT' => (float) $costoUnitario, // decimal(17,6)
+                    'INCRDXVAL' => (float) $costoTotal, // decimal(17,6)
+                    'INCRDXVANT' => (float) $costoTotal, // decimal(17,6)
+                    'INCRDXUMB' => (string) $partida->ACMVOIUMT, // char(3)
+                    'INCRDXUMT' => (string) $partida->ACMVOIUMT, // char(3)
+                    'INCRDXPOST' => 'N', // char(1)
+                    'INCRDXEXP' => 'RECEPCION DE MATERIAL', // char(50)
+                    'INCRDXSEO' => 1, // decimal(10,0)
+                    'INCRDXUFC' => '1753-01-01 00:00:00.000', // datetime
+                    'INCRDXUHC' => $horaActual, // datetime
+                    'INCRDXUSU' => $usuario, // char(10)
+                    'INCRDXUFU' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                    'INCRDXUHU' => $horaActual, // datetime
+                    'INCRDXFUF' => '1753-01-01 00:00:00.000', // datetime
+                    'ACRCOICD01ID' => 'REQ', // char(10)
+                ]);
+                Log::info("Nueva entrada en incrdx insertada: " . json_encode([
+                    'INALMNID' => $validatedData['store'],
+                    'INPRODID' => (int) $partida->ACMVOIPRID,
+                    'CNTDOCID' => 'RCN',
+                    'INCRDXDOC' => (int) $validatedData['document_number1'],
+                    'INCRDXLIN' => $index + 1,
+                    // Otros campos omitidos para brevedad
+                ]));
+            }
+
+            // Actualizar insdos
+            $insdos = DB::table('insdos')
+                ->where('INALMNID', $validatedData['store'])
+                ->where('INPRODID', (int) $partida->ACMVOIPRID)
+                ->first();
+
+            if ($insdos) {
+                // Actualizar los valores existentes
+                $nuevoINSDOSVAL = $insdos->INSDOSVAL + $costoTotal;
+                $nuevoINSDOSQDS = $insdos->INSDOSQDS + $cantidadRecibida;
+
+                DB::table('insdos')
+                    ->where('INALMNID', $validatedData['store'])
+                    ->where('INPRODID', (int) $partida->ACMVOIPRID)
+                    ->update([
+                        'INSDOSVAL' => $nuevoINSDOSVAL,
+                        'INSDOSVANT' => $insdos->INSDOSVAL, // Guardar el valor anterior
+                        'INSDOSQDS' => $nuevoINSDOSQDS,
+                        'INSDOSQCT' => $insdos->INSDOSQCT, // Mantener el valor existente
+                    ]);
+                Log::info("Actualización de insdos realizada: " . json_encode([
+                    'INSDOSVAL' => $nuevoINSDOSVAL,
+                    'INSDOSVANT' => $insdos->INSDOSVAL,
+                    'INSDOSQDS' => $nuevoINSDOSQDS,
+                    'INSDOSQCT' => $insdos->INSDOSQCT,
+                ]));
+            } else {
+                // Insertar nuevos valores
+                DB::table('insdos')->insert([
+                    'INALMNID' => $validatedData['store'],
+                    'INPRODID' => (int) $partida->ACMVOIPRID,
+                    'INSDOSVAL' => $costoTotal,
+                    'INSDOSVANT' => 0.0, // No hay valor anterior
+                    'INSDOSQDS' => $cantidadRecibida,
+                    'INSDOSQCT' => 0.0, // No hay cantidad en tránsito
+                ]);
+                Log::info("Nueva entrada en insdos insertada: " . json_encode([
+                    'INALMNID' => $validatedData['store'],
+                    'INPRODID' => (int) $partida->ACMVOIPRID,
+                    'INSDOSVAL' => $costoTotal,
+                    'INSDOSVANT' => 0.0,
+                    'INSDOSQDS' => $cantidadRecibida,
+                    'INSDOSQCT' => 0.0,
+                ]));
+            }
         } else {
             // Manejar el caso donde la partida no existe
             throw new \Exception("La partida en la posición {$index} no existe.");
