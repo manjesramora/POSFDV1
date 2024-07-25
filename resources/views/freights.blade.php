@@ -91,7 +91,7 @@
                                                 'reception_date' => 'FEC.RECEP',
                                                 'cost' => 'COSTO',
                                                 'freight' => 'FLETE',
-                                                'freight_percentage' => 'PORC.FLETE'
+                                                'freight_percentage' => '% FLETE'
                                                 ];
                                                 @endphp
                                                 @foreach ($columns as $field => $label)
@@ -135,7 +135,8 @@
                                             </tr>
                                             <tr>
                                                 <td colspan="7" class="text-end fw-bold">Total General:</td>
-                                                <td colspan="3" class="text-center fw-bold">${{ number_format($totalCost + $totalFreight, 2) }}</td>
+                                                <td colspan="2" class="text-center fw-bold">${{ number_format($totalCost + $totalFreight, 2) }}</td>
+                                                <td></td>
                                             </tr>
                                         </tbody>
                                     </table>

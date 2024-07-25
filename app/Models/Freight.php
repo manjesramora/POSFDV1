@@ -1,6 +1,5 @@
 <?php
 
-// app/Models/Freight.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,8 +26,19 @@ class Freight extends Model
         'reference_type',
         'carrier_name',
         'supplier_name',
-        'store'
+        'store',
+        'freight'
     ];
+
+    public function getFreightPercentageAttribute()
+    {
+        // Calcular el total general (cost + freight) para todos los registros
+        $totalCost = Freight::sum('cost');
+        $totalFreight = Freight::sum('freight');
+        $totalGeneral = $totalCost + $totalFreight;
+
+        // Calcular el porcentaje de flete en relación con el total general
+        return $totalGeneral > 0 ? ($this->freight / $totalGeneral) * 100 : 0;
+    }
 }
 
-    
