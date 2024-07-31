@@ -104,11 +104,22 @@ function validateInput(input, maxLength) {
     }
 }
 
+function showPrintModal(sku, description) {
+    document.getElementById("modalSku").value = sku;
+    document.getElementById("modalDescription").value = description;
+    document.getElementById("modalSkuInput").value = sku;
+    document.getElementById("modalDescriptionInput").value = description;
+    $("#printModal").modal("show");
+}
+
 function showPrintModalWithPrice(sku, description, precioBase, productId) {
     document.getElementById("modalSkuWithPrice").value = sku;
     document.getElementById("modalDescriptionWithPrice").value = description;
     document.getElementById("modalPrecioBase").value = precioBase;
-    document.getElementById("modalProductId").value = productId; // Añadir el productId
+    document.getElementById("modalProductId").value = productId;
+    document.getElementById("modalSkuInputWithPrice").value = sku;
+    document.getElementById("modalDescriptionInputWithPrice").value = description;
+    document.getElementById("modalPrecioBaseInput").value = precioBase;
 
     // Limpiar y deshabilitar el combobox mientras se cargan los datos
     let umvSelect = document.getElementById("umvSelect");
@@ -126,7 +137,7 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
             // Añadir la opción para la unidad de medida base (UMB)
             let option = document.createElement("option");
             option.value = "";
-            option.text = data.umBase; // Usar la UMB dinámica
+            option.text = data.umBase;
             umvSelect.appendChild(option);
 
             // Añadir las UMV disponibles
@@ -136,6 +147,32 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
                 option.text = umv;
                 umvSelect.appendChild(option);
             });
+
+            // Función para actualizar el precio en el modal
+            function updatePrice() {
+                let selectedUmv = umvSelect.value;
+                let basePrice = parseFloat(precioBase);
+                let adjustedPrice = basePrice;
+
+                if (selectedUmv) {
+                    let conversionFactor = data.umvFactors[selectedUmv];
+                    if (conversionFactor) {
+                        adjustedPrice = basePrice * conversionFactor;
+                    }
+                }
+
+                if (data.impuesto == 1) {
+                    adjustedPrice *= 1.16; // Aplicar IVA si corresponde
+                }
+
+                document.getElementById("modalPrecioBaseInput").value = adjustedPrice.toFixed(2);
+            }
+
+            // Actualizar el precio inicialmente
+            updatePrice();
+
+            // Actualizar el precio ajustado si se selecciona una UMV diferente a la UMB
+            umvSelect.addEventListener('change', updatePrice);
         })
         .catch(error => {
             console.error('Error al cargar las UMV:', error);
@@ -145,7 +182,67 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
     $("#printModalWithPrice").modal("show");
 }
 
+function showPrintModalWithPrice(sku, description, precioBase, productId) {
+    document.getElementById("modalSkuWithPrice").value = sku;
+    document.getElementById("modalDescriptionWithPrice").value = description;
+    document.getElementById("modalPrecioBase").value = precioBase;
+    document.getElementById("modalProductId").value = productId;
+    document.getElementById("modalSkuInputWithPrice").value = sku;
+    document.getElementById("modalDescriptionInputWithPrice").value = description;
+    document.getElementById("modalPrecioBaseInput").value = precioBase;
 
+    let umvSelect = document.getElementById("umvSelect");
+    umvSelect.innerHTML = '<option>Cargando...</option>';
+    umvSelect.disabled = true;
+
+    fetch(`/get-umv/${productId}`)
+        .then(response => response.json())
+        .then(data => {
+            umvSelect.innerHTML = '';
+            umvSelect.disabled = false;
+
+            let option = document.createElement("option");
+            option.value = "";
+            option.text = data.umBase;
+            umvSelect.appendChild(option);
+
+            data.umvList.forEach(umv => {
+                let option = document.createElement("option");
+                option.value = umv;
+                option.text = umv;
+                umvSelect.appendChild(option);
+            });
+
+            function updatePrice() {
+                let selectedUmv = umvSelect.value;
+                let basePrice = parseFloat(precioBase);
+                let adjustedPrice = basePrice;
+
+                if (selectedUmv) {
+                    let conversionFactor = data.umvFactors[selectedUmv];
+                    if (conversionFactor) {
+                        adjustedPrice = basePrice * conversionFactor;
+                    }
+                }
+
+                if (data.impuesto == 1) {
+                    adjustedPrice *= 1.16; // Aplicar IVA si corresponde
+                }
+
+                document.getElementById("modalPrecioBaseInput").value = (Math.floor(adjustedPrice * 100) / 100).toFixed(2);
+            }
+
+            updatePrice();
+            umvSelect.addEventListener('change', updatePrice);
+        })
+        .catch(error => {
+            console.error('Error al cargar las UMV:', error);
+            umvSelect.innerHTML = '<option>Error al cargar</option>';
+        });
+
+    $("#printModalWithPrice").modal("show");
+    
+}
 function submitPrintFormWithPrice() {
     var printForm = document.getElementById("printFormWithPrice");
     var formData = new FormData(printForm);
@@ -155,9 +252,8 @@ function submitPrintFormWithPrice() {
     fetch(printLabelUrlWithPrice, {
         method: "POST",
         headers: {
-            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]')
-                .value,
-            Accept: "application/json",
+            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
+            "Accept": "application/json",
             "Content-Type": "application/json",
         },
         body: JSON.stringify(Object.fromEntries(formData.entries())),
@@ -185,3 +281,10 @@ function submitPrintFormWithPrice() {
             console.error("Error:", error);
         });
 }
+
+   
+
+
+
+
+

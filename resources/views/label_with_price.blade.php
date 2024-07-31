@@ -33,7 +33,7 @@
             font-weight: bold;
             margin-bottom: 5px;
             width: 100%;
-            margin-left: 24px; /* Ajusta este valor según sea necesario */
+            margin-left: 24px;
         }
 
         .barcode-sku-container {
@@ -85,7 +85,7 @@
                     {{ $label['sku'] }}
                 </div>
                 <div class="precio-base">
-                    ${{ $label['precioBase'] }}
+                    ${{ $label['precioAjustado'] }}
                 </div>
             </div>
         </div>
