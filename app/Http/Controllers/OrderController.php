@@ -246,7 +246,8 @@ class OrderController extends Controller
         'freight_percentage' => 0.0,
     ]);
 }
-private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
+                    
+                    private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
 {
     $fechaActual = now();
     $horaActual = now()->format('H:i:s');
@@ -264,6 +265,15 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
             $cantidadRecibida = (float) $cantidadRecibida; // Convertir a decimal
             $costoTotal = $cantidadRecibida * $costoUnitario;
 
+            // Obtener los datos de INPROD
+            $producto = DB::table('inprod')
+                ->where('INPRODID', (int) $partida->ACMVOIPRID)
+                ->first();
+
+            if (!$producto) {
+                throw new \Exception("Producto con ID {$partida->ACMVOIPRID} no encontrado en la tabla inprod.");
+            }
+
             // Verificar si el registro ya existe en incrdx
             $exists = DB::table('incrdx')
                 ->where('INALMNID', $validatedData['store'])
@@ -279,7 +289,7 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
             } else {
                 // Si el registro no existe, insertarlo
                 DB::table('incrdx')->insert([
-                    'INALMNID' => $validatedData['store'], // char(15)
+                    'INALMNID' => substr($validatedData['store'], 0, 15), // char(15)
                     'INPRODID' => (int) $partida->ACMVOIPRID, // decimal(10,0)
                     'INLOTEID' => ' ', // char(30) (valor en blanco)
                     'CNTDOCID' => 'RCN', // char(3)
@@ -299,14 +309,14 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
                     'INCRDXCUNT' => (float) $costoUnitario, // decimal(17,6)
                     'INCRDXVAL' => (float) $costoTotal, // decimal(17,6)
                     'INCRDXVANT' => (float) $costoTotal, // decimal(17,6)
-                    'INCRDXUMB' => (string) $partida->ACMVOIUMT, // char(3)
-                    'INCRDXUMT' => (string) $partida->ACMVOIUMT, // char(3)
+                    'INCRDXUMB' => substr((string) $partida->ACMVOIUMT, 0, 3), // char(3)
+                    'INCRDXUMT' => substr((string) $partida->ACMVOIUMT, 0, 3), // char(3)
                     'INCRDXPOST' => 'N', // char(1)
                     'INCRDXEXP' => 'RECEPCION DE MATERIAL', // char(50)
                     'INCRDXSEO' => 1, // decimal(10,0)
                     'INCRDXUFC' => '1753-01-01 00:00:00.000', // datetime
                     'INCRDXUHC' => $horaActual, // datetime
-                    'INCRDXUSU' => $usuario, // char(10)
+                    'INCRDXUSU' => substr($usuario, 0, 10), // char(10)
                     'INCRDXUFU' => $fechaActual->format('Y-m-d H:i:s'), // datetime
                     'INCRDXUHU' => $horaActual, // datetime
                     'INCRDXFUF' => '1753-01-01 00:00:00.000', // datetime
@@ -367,6 +377,58 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
                     'INSDOSQCT' => 0.0,
                 ]));
             }
+
+            // Insertar datos en la tabla acmroi
+            DB::table('acmroi')->insert([
+                'CNCIASID' => 1, // decimal(10,0)
+                'ACMROITDOC' => substr('OL1', 0, 3), // char(3)
+                'ACMROINDOC' => (int) $order->ACMVOIDOC, // decimal(10,0)
+                'CNTDOCID' => substr('OL1', 0, 3), // char(3)
+                'ACMROIDOC' => (int) $validatedData['document_number1'], // decimal(10,0)
+                'ACMROILIN' => $index + 1, // smallmoney
+                'ACMROIFREC' => $order->ACMVOIFREC, // datetime
+                'CNCDIRID' => (int) $provider->CNCDIRID, // decimal(10,0)
+                'INALMNID' => substr($validatedData['store'], 0, 15), // char(15)
+                'ACMVOIAOD' => substr($order->ACMVOIAOD, 0, 3), // char(3)
+                'CNCMNMID' => substr($order->CNCMNMID, 0, 3), // char(3)
+                'ACMROIFDOC' => $order->ACMROIFDOC, // datetime
+                'ACMROIUSRC'=> 'USUARIOPRUEBAS',
+                'ACMROIFCEP' => $order->ACMROIFCEP, // datetime
+                'ACMROIFREQ' => $order->ACMROIFREQ, // datetime
+                'ACMROIFTRN' => $order->ACMROIFTRN, // datetime
+                'ACMROIFCNT' => $order->ACMROIFCNT, // datetime
+                'ACMVOIPR' => $order->ACMVOIPR, // smallint
+                'INPRODID' => (int) $partida->ACMVOIPRID, // decimal(10,0)
+                'ACMROIDSC' => substr($partida->ACMVOIPRDS, 0, 60), // char(60)
+                'ACMROIUMT' => substr($partida->ACMVOIUMT, 0, 3), // char(3)
+                'ACMROIIVA' => $partida->ACMVOIIVA, // smallmoney
+                'ACMROIQT' => $cantidadRecibida, // decimal(16,4)
+                'ACMROIQTTR' => $cantidadRecibida, // decimal(17,6)
+                'ACMROINP' => $costoUnitario, // decimal(17,6)
+                'ACMROINM' => $costoTotal, // decimal(17,6)
+                'ACMROINI' => $costoTotal * 1.16, // decimal(17,6), ajustar IVA si corresponde
+                'ACMROING' => $costoTotal, // decimal(17,6)
+                'ACMROIDOC2' => (int) $validatedData['document_number1'], // decimal(10,0)
+                'ACMROIDOI2' => substr('RCN', 0, 3), // char(3)
+                'ACMROITDOCCAN'=>1,
+                'ACMROINDOCCAN'=>1,
+                'ACMROIDOI3' => substr('PC', 0, 3), // char(3)
+                'ACMROIDOC3' => $this->getNewCNTDOCNSIG(), // decimal(10,0), obtener nuevo valor de CNTDOCNSIG
+                'ACMROIREF' => substr($validatedData['reference'], 0, 60), // char(60)
+                'ACMROITREF' => (int) $validatedData['reference_type'], // smallint
+                'ACRCOICD01ID' => substr('REQ', 0, 10), // char(10)
+                'ACMROIUSRC' => substr($usuario, 0, 10), // char(10)
+                'ACMROICAN' => substr(' ', 0, 1), // char(1)
+                'CGUNNGID' => substr($order->CGUNNGID, 0, 15), // char(15)
+                'ACMROIFGPT' => '1753-01-01 00:00:00.000', // datetime
+                'ACMROIFENT' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                'ACMROIFSAL' => $fechaActual->format('Y-m-d H:i:s'), // datetime
+                'ACMROIFECC' => '1753-01-01 00:00:00.000', // datetime
+                'ACMROIVOLU' => $producto->INPRODVOL * $cantidadRecibida, // decimal(14,7)
+                'ACMROIPESOU' => $producto->INPRODPESO * $cantidadRecibida, // decimal(14,7)
+                'ACMROIVOLT' => $producto->INPRODVOL * $cantidadRecibida, // decimal(14,7)
+                'ACMROIPESOT' => $producto->INPRODPESO * $cantidadRecibida, // decimal(14,7)
+            ]);
         } else {
             // Manejar el caso donde la partida no existe
             throw new \Exception("La partida en la posición {$index} no existe.");
@@ -374,7 +436,32 @@ private function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUn
     }
 }
 
+private function getNewCNTDOCNSIG()
+{
+    $cntdoc = DB::table('cntdoc')
+        ->where('cntdocid', 'PC')
+        ->first();
 
+    if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
+        $num_rcn_letras = $cntdoc->CNTDOCNSIG;
+
+        if (is_numeric($num_rcn_letras)) {
+            $new_value = intval($num_rcn_letras) + 1;
+        } else {
+            $new_value = chr(ord($num_rcn_letras) + 1);
+        }
+
+        DB::table('cntdoc')
+            ->where('cntdocid', 'PC')
+            ->update(['CNTDOCNSIG' => $new_value]);
+
+        return $new_value;
+    } else {
+        return 'NUMERO';
+    }
+}
 
     
 }
+
+

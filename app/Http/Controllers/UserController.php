@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
+    
     public function showDashFDForm()
     {
         $users = User::all();
@@ -193,15 +194,24 @@ class UserController extends Controller
     protected $employees;
     protected $centers;
 
+    
     public function __construct()
     {
         $this->middleware(function ($request, $next) {
+            // Obtener el usuario autenticado
             $user = Auth::user();
-            view()->share('user', $user);
-            $this->employees = Employee::all();
+
+            if ($user) {
+                // Obtener los roles del usuario autenticado
+                $userRoles = $user->roles;
+
+                // Compartir los roles del usuario con todas las vistas
+                view()->share('userRoles', $userRoles);
+                $this->employees = Employee::all();
             view()->share('employees', $this->employees);
             $this->centers = StoreCostCenter::all();
             view()->share('centers', $this->centers);
+            }
 
             return $next($request);
         });
