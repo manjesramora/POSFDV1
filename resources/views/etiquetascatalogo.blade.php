@@ -23,6 +23,10 @@
 </head>
 
 <body id="page-top">
+      <!-- Overlay para la animación de "Cargando" -->
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
     <div id="wrapper">
         @include('slidebar')
         <div id="content-wrapper" class="d-flex flex-column dash" style="overflow-y: hidden;">
@@ -57,7 +61,6 @@
                                     <input type="text" name="sublinea" id="sublinea" class="form-control" maxlength="7" pattern="\d*" value="{{ request('sublinea') ? str_replace('SB', '', request('sublinea')) : '' }}" aria-describedby="sublinea-addon" oninput="validateInput(this, 7)">
                                 </div>
                             </div>
-
                             <div class="col-md-1">
                                 <label for="departamento" class="form-label">DPTO</label>
                                 <input type="text" name="departamento" id="departamento" class="form-control" maxlength="3" pattern="\d*" value="{{ request('departamento') }}" oninput="validateInput(this, 3)">
@@ -81,8 +84,8 @@
                     </div>
                 </div>
 
-                                <!-- Tabla de datos -->
-                    <div class="card shadow mb-4">
+                    <!-- Tabla de datos -->
+                    <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">                        
                         <div class="card-body">
                             <div class="table-responsive small-font">
                                 <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
@@ -93,11 +96,22 @@
                                                 'INPROD.INPRODID' => 'PRODUCTO',
                                                 'INPROD.INPRODDSC' => 'DESCRIPCIÓN',
                                                 'INPROD.INPRODI2' => 'SKU',
+                                                'INPROD.INPRODCBR' => 'CODIGO BARRAS',
+                                                'INPROD.INPR03ID' => 'LINEA',
+                                                'INPROD.INPR04ID' => 'SUBLINEA',
+                                                'INPROD.INPR02ID' => 'DPTO',
+                                                'INSDOS.INSDOSQDS' => 'EXI',
+                                                'INPROD.INUMBAID' => 'UMB',
+                                            ];
+                                        
+                                                /*'INPROD.INPRODID' => 'PRODUCTO',
+                                                'INPROD.INPRODDSC' => 'DESCRIPCIÓN',
+                                                'INPROD.INPRODI2' => 'SKU',
                                                 'INSDOS.INSDOSQDS' => 'EXI',
                                                 'INPROD.INPR02ID' => 'DPTO',
-                                                //'INPROD.INPRODCBR' => 'CODIGO BARRAS',
-                                                //'INPROD.INPR03ID' => 'LINEA',
-                                                //'INPROD.INPR04ID' => 'SUBLINEA',
+                                                'INPROD.INPRODCBR' => 'CODIGO BARRAS',
+                                                'INPROD.INPR03ID' => 'LINEA',
+                                                'INPROD.INPR04ID' => 'SUBLINEA',
                                                 'INSDOS.INALMNID' => 'ALMACÉN',
                                                 'INPROD.INUMBAID' => 'UMB',
                                                 'PrecioBase' => 'PRECIO BASE',
@@ -105,6 +119,7 @@
                                                 'INPROD.INPRODRD' => 'RDO',
                                                 'INPROD.INPRODMIV' => 'IVA',
                                             ];
+                                            */
                                             @endphp
                                             @foreach ($columns as $column => $label)
                                             <th>
@@ -131,11 +146,23 @@
                                             <td>{{ $label->INPRODID }}</td>
                                             <td>{{ $label->INPRODDSC }}</td>
                                             <td>{{ $label->INPRODI2 }}</td>
+                                            <td>{{ $label->INPRODCBR }}</td>
+                                            <td>{{ $label->INPR03ID }}</td>
+                                            <td>{{ $label->INPR04ID }}</td>
+                                            <td>{{ $label->INPR02ID }}</td>
+                                            <td>{{ number_format($label->Existencia, 2) }}</td>
+                                            <td>{{ $label->INUMBAID }}</td>
+                                            
+                                            <td>
+                                            
+                                            <!--<td>{{ $label->INPRODID }}</td>
+                                            <td>{{ $label->INPRODDSC }}</td>
+                                            <td>{{ $label->INPRODI2 }}</td>
                                             <td>{{ number_format($label->Existencia, 2) }}</td>
                                             <td>{{ $label->INPR02ID }}</td>
-                                       <!-- <td>{{ $label->INPRODCBR }}</td>
+                                            <td>{{ $label->INPRODCBR }}</td>
                                             <td>{{ $label->INPR03ID }}</td>
-                                            <td>{{ $label->INPR04ID }}</td>-->
+                                            <td>{{ $label->INPR04ID }}</td>
                                             <td>{{ $label->CentroCostos }}</td>
                                             <td>{{ $label->INUMBAID }}</td>
                                             <td>{{ $label->PrecioBase }}</td>
@@ -143,13 +170,15 @@
                                             <td>{{ $label->INPRODRD }}</td>
                                             <td>{{ $label->INPRODMIV }}</td>
                                             <td>
+                                            -->
                                                 <div class="btn-group" role="group" aria-label="Acciones">
                                                     <button class="btn btn-secondary" onclick="showPrintModal('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}')" style="margin-right: 10px;">SKU
                                                         <i class="fas fa-barcode"></i>
                                                     </button>
-                                                    <button class="btn btn-primary" onclick="showPrintModalWithPrice('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}', '{{ $label->PrecioBase }}', '{{ $label->INPRODID }}')">SKU y Precio
+                                                    <!--<button class="btn btn-primary" onclick="showPrintModalWithPrice('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}', '{{ $label->PrecioBase }}', '{{ $label->INPRODID }}')">SKU y Precio
                                                     <i class="fas fa-barcode"></i>    
                                                      </button>
+                                                    -->
                                                 </div>
                                             </td>
                                         </tr>

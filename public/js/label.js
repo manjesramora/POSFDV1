@@ -1,38 +1,90 @@
-// Función para buscar y aplicar filtros en la tabla
-function buscarFiltros() {
-    let query = "";
-    const inputs = [
-        "productId",
-        "sku",
-        "name",
-        "linea",
-        "sublinea",
-        "departamento",
-    ];
-    inputs.forEach((input) => {
-        let value = document.getElementById(input).value;
-        if (input === "linea" && value) {
-            value = "LN" + value;
-        }
-        if (input === "sublinea" && value) {
-            value = "SB" + value;
-        }
-        if (value) {
-            query += `&${input}=${encodeURIComponent(value)}`;
-        }
-    });
+// Función para mostrar la animación de "Cargando"
+function showLoading() {
+    document.getElementById("loadingOverlay").style.display = "flex";
+}
 
-    const activo = document.getElementById("activo").value;
-    if (activo) {
-        query += `&activo=${encodeURIComponent(activo)}`;
+// Función para ocultar la animación de "Cargando"
+function hideLoading() {
+    document.getElementById("loadingOverlay").style.display = "none";
+}
+
+// Modificar la función buscarFiltros para incluir la animación
+function buscarFiltros() {
+    showLoading(); // Mostrar la animación de "Cargando"
+
+    // Obtener los valores de los filtros desde los elementos del DOM
+    var productId = document.getElementById("productId").value;
+    var sku = document.getElementById("sku").value;
+    var name = document.getElementById("name").value;
+    var linea = document.getElementById("linea").value;
+    var sublinea = document.getElementById("sublinea").value;
+    var departamento = document.getElementById("departamento").value;
+
+    // Incluir valores por defecto para Línea y Sublinea
+    if (linea) {
+        linea = "LN" + linea;
+    }
+    if (sublinea) {
+        sublinea = "SB" + sublinea;
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const sort = urlParams.get("sort") || "INPROD.INPRODID";
-    const direction = urlParams.get("direction") || "asc";
+    var url = new URL(window.location.href);
 
-    window.location.href = `${window.location.pathname}?sort=${sort}&direction=${direction}${query}`;
+    // Eliminar los parámetros anteriores de la URL
+    url.searchParams.delete("productId");
+    url.searchParams.delete("sku");
+    url.searchParams.delete("name");
+    url.searchParams.delete("linea");
+    url.searchParams.delete("sublinea");
+    url.searchParams.delete("departamento");
+    url.searchParams.delete("page"); // Reiniciar el paginado a la página 1
+
+    // Establecer los nuevos parámetros de búsqueda
+    if (productId) url.searchParams.set("productId", productId);
+    if (sku) url.searchParams.set("sku", sku);
+    if (name) url.searchParams.set("name", name);
+    if (linea) url.searchParams.set("linea", linea);
+    if (sublinea) url.searchParams.set("sublinea", sublinea);
+    if (departamento) url.searchParams.set("departamento", departamento);
+
+    // Actualizar la URL del navegador
+    window.history.pushState({}, "", url);
+
+    // Realizar la solicitud fetch para actualizar la tabla y la paginación
+    fetch(url)
+        .then((response) => response.text())
+        .then((html) => {
+            var parser = new DOMParser();
+            var doc = parser.parseFromString(html, "text/html");
+            var newContent = doc.getElementById("proveedorTable").innerHTML;
+            var newPagination = doc.getElementById("pagination-links").innerHTML;
+            document.getElementById("proveedorTable").innerHTML = newContent;
+            document.getElementById("pagination-links").innerHTML = newPagination;
+
+            // Reattach event listeners for pagination links
+            reattachPaginationEventListeners();
+        })
+        .catch((error) => console.error('Error en la solicitud fetch:', error))
+        .finally(() => hideLoading()); // Ocultar la animación de "Cargando" al finalizar
 }
+
+// Función para manejar el evento de tecla presionada en los campos de entrada
+function handleKeyPress(event) {
+    if (event.keyCode === 13) { // Código 13 es Enter
+        event.preventDefault(); // Prevenir el comportamiento por defecto (enviar formulario)
+        buscarFiltros(); // Llamar a la función de búsqueda
+    }
+}
+// Asignar el evento de tecla presionada a los campos de entrada relevantes
+document.getElementById("productId").addEventListener("keypress", handleKeyPress);
+document.getElementById("sku").addEventListener("keypress", handleKeyPress);
+document.getElementById("name").addEventListener("keypress", handleKeyPress);
+document.getElementById("linea").addEventListener("keypress", handleKeyPress);
+document.getElementById("sublinea").addEventListener("keypress", handleKeyPress);
+document.getElementById("departamento").addEventListener("keypress", handleKeyPress);
+document.getElementById("activo").addEventListener("keypress", handleKeyPress);
+
+
 
 function limpiarFiltros() {
     const inputs = [
@@ -118,20 +170,21 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
     document.getElementById("modalPrecioBase").value = precioBase;
     document.getElementById("modalProductId").value = productId;
     document.getElementById("modalSkuInputWithPrice").value = sku;
-    document.getElementById("modalDescriptionInputWithPrice").value = description;
+    document.getElementById("modalDescriptionInputWithPrice").value =
+        description;
     document.getElementById("modalPrecioBaseInput").value = precioBase;
 
     // Limpiar y deshabilitar el combobox mientras se cargan los datos
     let umvSelect = document.getElementById("umvSelect");
-    umvSelect.innerHTML = '<option>Cargando...</option>';
+    umvSelect.innerHTML = "<option>Cargando...</option>";
     umvSelect.disabled = true;
 
     // Realizar la solicitud para obtener las UMV disponibles y la UMB
     fetch(`/get-umv/${productId}`)
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => response.json())
+        .then((data) => {
             // Limpiar y habilitar el combobox
-            umvSelect.innerHTML = '';
+            umvSelect.innerHTML = "";
             umvSelect.disabled = false;
 
             // Añadir la opción para la unidad de medida base (UMB)
@@ -141,7 +194,7 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
             umvSelect.appendChild(option);
 
             // Añadir las UMV disponibles
-            data.umvList.forEach(umv => {
+            data.umvList.forEach((umv) => {
                 let option = document.createElement("option");
                 option.value = umv;
                 option.text = umv;
@@ -165,18 +218,19 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
                     adjustedPrice *= 1.16; // Aplicar IVA si corresponde
                 }
 
-                document.getElementById("modalPrecioBaseInput").value = adjustedPrice.toFixed(2);
+                document.getElementById("modalPrecioBaseInput").value =
+                    adjustedPrice.toFixed(2);
             }
 
             // Actualizar el precio inicialmente
             updatePrice();
 
             // Actualizar el precio ajustado si se selecciona una UMV diferente a la UMB
-            umvSelect.addEventListener('change', updatePrice);
+            umvSelect.addEventListener("change", updatePrice);
         })
-        .catch(error => {
-            console.error('Error al cargar las UMV:', error);
-            umvSelect.innerHTML = '<option>Error al cargar</option>';
+        .catch((error) => {
+            console.error("Error al cargar las UMV:", error);
+            umvSelect.innerHTML = "<option>Error al cargar</option>";
         });
 
     $("#printModalWithPrice").modal("show");
@@ -188,17 +242,18 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
     document.getElementById("modalPrecioBase").value = precioBase;
     document.getElementById("modalProductId").value = productId;
     document.getElementById("modalSkuInputWithPrice").value = sku;
-    document.getElementById("modalDescriptionInputWithPrice").value = description;
+    document.getElementById("modalDescriptionInputWithPrice").value =
+        description;
     document.getElementById("modalPrecioBaseInput").value = precioBase;
 
     let umvSelect = document.getElementById("umvSelect");
-    umvSelect.innerHTML = '<option>Cargando...</option>';
+    umvSelect.innerHTML = "<option>Cargando...</option>";
     umvSelect.disabled = true;
 
     fetch(`/get-umv/${productId}`)
-        .then(response => response.json())
-        .then(data => {
-            umvSelect.innerHTML = '';
+        .then((response) => response.json())
+        .then((data) => {
+            umvSelect.innerHTML = "";
             umvSelect.disabled = false;
 
             let option = document.createElement("option");
@@ -206,7 +261,7 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
             option.text = data.umBase;
             umvSelect.appendChild(option);
 
-            data.umvList.forEach(umv => {
+            data.umvList.forEach((umv) => {
                 let option = document.createElement("option");
                 option.value = umv;
                 option.text = umv;
@@ -229,19 +284,20 @@ function showPrintModalWithPrice(sku, description, precioBase, productId) {
                     adjustedPrice *= 1.16; // Aplicar IVA si corresponde
                 }
 
-                document.getElementById("modalPrecioBaseInput").value = (Math.floor(adjustedPrice * 100) / 100).toFixed(2);
+                document.getElementById("modalPrecioBaseInput").value = (
+                    Math.floor(adjustedPrice * 100) / 100
+                ).toFixed(2);
             }
 
             updatePrice();
-            umvSelect.addEventListener('change', updatePrice);
+            umvSelect.addEventListener("change", updatePrice);
         })
-        .catch(error => {
-            console.error('Error al cargar las UMV:', error);
-            umvSelect.innerHTML = '<option>Error al cargar</option>';
+        .catch((error) => {
+            console.error("Error al cargar las UMV:", error);
+            umvSelect.innerHTML = "<option>Error al cargar</option>";
         });
 
     $("#printModalWithPrice").modal("show");
-    
 }
 function submitPrintFormWithPrice() {
     var printForm = document.getElementById("printFormWithPrice");
@@ -252,8 +308,9 @@ function submitPrintFormWithPrice() {
     fetch(printLabelUrlWithPrice, {
         method: "POST",
         headers: {
-            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
-            "Accept": "application/json",
+            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]')
+                .value,
+            Accept: "application/json",
             "Content-Type": "application/json",
         },
         body: JSON.stringify(Object.fromEntries(formData.entries())),
@@ -281,10 +338,3 @@ function submitPrintFormWithPrice() {
             console.error("Error:", error);
         });
 }
-
-   
-
-
-
-
-

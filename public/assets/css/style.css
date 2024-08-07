@@ -390,15 +390,15 @@ body {
 /* Estilos para los encabezados de las columnas */
 .sortable-column {
     text-decoration: none;
-    color: inherit;
+    /*color: inherit;*/
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.sortable-column:hover {
-    color: inherit; /* Mantener el color original al pasar el cursor */
-}
+/*.sortable-column:hover {
+    color: inherit; /* Mantener el color original al pasar el cursor 
+}*/
 
 .sortable-column .sort-icon {
     margin-left: 5px;
@@ -420,4 +420,30 @@ body {
     margin-left: 10x;
 }
 
+/* Estilos para la animación de "Cargando" */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
 
+.loading-spinner {
+    border: 16px solid #f3f3f3;
+    border-top: 16px solid #3498db;
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
