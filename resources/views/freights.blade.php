@@ -85,13 +85,13 @@
                                                 'document_number' => 'NO.OL',
                                                 'document_number1' => 'NO.RCN',
                                                 'supplier_number' => 'NO.PROV',
-                                                'supplier_name' => 'PROVE',
-                                                'carrier_number' => 'NO.TRANS',
-                                                'carrier_name' => 'TRANS',
-                                                'reception_date' => 'FEC.RECEP',
-                                                'cost' => 'COSTO',
-                                                'freight' => 'FLETE',
-                                                'freight_percentage' => '% FLETE'
+                                                'supplier_name' => 'PROV',
+                                                'carrier_number' => 'NO.TRANSP',
+                                                'carrier_name' => 'TRANSP',
+                                                'reception_date' => 'FECHA',
+                                                'cost' => 'CTO.PROV',
+                                                'freight' => 'CTO.FLETE',
+                                                'freight_percentage' => '%FLETE'
                                                 ];
                                                 @endphp
                                                 @foreach ($columns as $field => $label)
@@ -124,7 +124,7 @@
                                                 <td class="col-1 text-center align-middle">{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
                                                 <td class="col-1 text-center align-middle">${{ number_format($freight->cost, 2) }}</td>
                                                 <td class="col-1 text-center align-middle">${{ number_format($freight->freight, 2) }}</td>
-                                                <td class="col-1 text-center align-middle">{{ number_format($freight->freight_percentage, 2) }}%</td>
+                                                <td class="col-1 text-center align-middle">{{ number_format(($freight->freight / $freight->cost) * 100, 2) }}%</td>
                                             </tr>
                                             @endforeach
                                             <tr>
