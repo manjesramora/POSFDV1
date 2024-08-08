@@ -32,7 +32,9 @@
         <div id="content-wrapper" class="d-flex flex-column dash" style="overflow-y: hidden;">
             <div id="content">
                 @include('navbar')
-                <div class="container-fluid mt-4">
+                <div class="container-fluid">
+                <h1 class="mt-5" style="text-align: center;">ETIQUETAS Y CATALOGO</h1>
+                <br>
                     <div class="input-container mb-3 filtro">
                         <div class="row justify-content-center">
                             <div class="col-md-1">
@@ -45,7 +47,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="name" class="form-label">DESCRIPCIÓN</label>
-                                <input type="text" name="name" id="name" class="form-control" value="{{ request('name') }}">
+                                <input type="text" name="name" id="name" class="form-control uper" value="{{ request('name') }}">
                             </div>
                             <div class="col-md-2">
                                 <label for="linea" class="form-label">LINEA</label>
