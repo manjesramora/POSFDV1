@@ -92,5 +92,4 @@ Route::post('/convert-price', [LabelcatalogController::class, 'convertPrice']);
 
 Route::get('/insdos', [InsdosController::class, 'index']);
 
-// Ruta para mostrar los datos de AVPREC
-Route::get('/avprec/show', [AVPRECController::class, 'show']);
+

@@ -25,11 +25,26 @@
                 <div class="container-fluid">
                     <h1 class="mt-5 text-center">Detalles de Recepción</h1>
                     <br>
+
+                    <!-- Mensajes de error y éxito -->
+                    @if (session('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                    @endif
+
+                    @if (session('success'))
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
+                    @endif
+
                     <div class="row g-3 align-items-end">
                         <br>
                         <form method="POST" action="{{ route('receiptOrder', $order->ACMVOIDOC) }}" id="receptionForm">
                             @csrf
                             <div class="row g-3 align-items-end">
+                                <!-- Formulario de recepción -->
                                 <div class="col-md-2">
                                     <label for="numero" class="form-label">Número:</label>
                                     <div class="input-group">
@@ -147,8 +162,9 @@
                                                                 <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateTotals(this)">
                                                             </td>
                                                             <td>
-                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)">
+                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)" required>
                                                             </td>
+
                                                             <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
                                                             <td class="subtotal">0.00</td>
                                                             <td class="total">0.00</td>
@@ -169,24 +185,27 @@
         </div>
     </div>
     <!-- Modal de Carga -->
-    <div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loadingModalLabel">Procesando Recepción</h5>
+   <!-- Modal de Carga -->
+<div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="loadingModalLabel">Procesando Recepción</h5>
+            </div>
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
                 </div>
-                <div class="modal-body text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Cargando...</span>
-                    </div>
-                    <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
-                </div>
-                <div class="modal-footer d-none" id="modalFooter">
-                    <button type="button" class="btn btn-secondary" id="closeModalButton">Cerrar</button>
-                </div>
+                <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
+            </div>
+            <div class="modal-footer d-none" id="modalFooter">
+                <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal">Salir</button>
+                <button type="button" class="btn btn-primary d-none" id="goToOrdersButton">Regresar a Órdenes</button>
             </div>
         </div>
     </div>
+</div>
+
 
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -196,37 +215,55 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('#receptionForm');
-            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-            const closeModalButton = document.getElementById('closeModalButton');
-            const modalFooter = document.getElementById('modalFooter');
+        document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#receptionForm');
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    const closeModalButton = document.getElementById('closeModalButton');
+    const goToOrdersButton = document.getElementById('goToOrdersButton');
+    const modalFooter = document.getElementById('modalFooter');
+    const spinner = document.querySelector('.spinner-border');
+    const modalBodyText = document.querySelector('.modal-body p');
 
-            form.addEventListener('submit', function (e) {
-                e.preventDefault();
-                loadingModal.show();
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        loadingModal.show();
 
-                const formData = new FormData(form);
+        const formData = new FormData(form);
 
-                axios.post(form.action, formData)
-                    .then(response => {
-                        if (response.data.success) {
-                            document.querySelector('.spinner-border').classList.add('d-none');
-                            modalFooter.classList.remove('d-none');
+        axios.post(form.action, formData)
+            .then(response => {
+                if (response.data.success) {
+                    spinner.classList.add('d-none');
+                    modalFooter.classList.remove('d-none');
+                    closeModalButton.classList.remove('d-none');
+                    goToOrdersButton.classList.remove('d-none');
+                    modalBodyText.innerText = response.data.message;
 
-                            closeModalButton.addEventListener('click', function () {
-                                window.location.href = "{{ route('orders') }}";
-                            });
-                        } else {
-                            throw new Error('Error en la recepción de la orden.');
-                        }
-                    })
-                    .catch(error => {
-                        loadingModal.hide();
-                        alert('Ocurrió un error al procesar la recepción. Inténtalo nuevamente.');
+                    goToOrdersButton.addEventListener('click', function() {
+                        window.location.href = "{{ route('orders') }}";
                     });
+                } else {
+                    throw new Error(response.data.message || 'Error en la recepción de la orden.');
+                }
+            })
+            .catch(error => {
+                spinner.classList.add('d-none');
+                modalFooter.classList.remove('d-none');
+                closeModalButton.classList.remove('d-none');
+                modalBodyText.innerText = error.message;
             });
-        });
+    });
+});
+
+        function toggleFleteInput() {
+            const fleteSelect = document.getElementById('flete_select');
+            const fleteInputDiv = document.getElementById('flete_input_div');
+            if (fleteSelect.value == '1') {
+                fleteInputDiv.style.display = 'block';
+            } else {
+                fleteInputDiv.style.display = 'none';
+            }
+        }
 
         function calculateTotals(input) {
             const row = input.closest('tr');
