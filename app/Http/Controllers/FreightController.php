@@ -7,9 +7,23 @@ use App\Models\Freight;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\Auth;
 
 class FreightController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware(function ($request, $next) {
+            $user = Auth::user();
+
+            if ($user) {
+                $userRoles = $user->roles;
+                view()->share('userRoles', $userRoles);
+            }
+
+            return $next($request);
+        });
+    }
     public function index(Request $request)
     {
         $query = Freight::query();

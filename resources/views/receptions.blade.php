@@ -27,7 +27,7 @@
                     <br>
                     <div class="row g-3 align-items-end">
                         <br>
-                        <form method="POST" action="{{ route('receiptOrder', $order->ACMVOIDOC) }}">
+                        <form method="POST" action="{{ route('receiptOrder', $order->ACMVOIDOC) }}" id="receptionForm">
                             @csrf
                             <div class="row g-3 align-items-end">
                                 <div class="col-md-2">
@@ -67,7 +67,7 @@
                                     <select id="referencia" name="reference_type" class="form-control" required>
                                         <option value="1">FACTURA</option>
                                         <option value="2">REMISION</option>
-                                        <option value="3">MISELANEO</option>
+                                        <option value="3">MISCELANEO</option>
                                     </select>
                                 </div>
                                 <div class="col-md-1">
@@ -79,7 +79,7 @@
                                     <input type="text" id="ACMROIREF" name="reference" class="form-control" required>
                                 </div>
                                 <div class="col-md-2">
-                                    <label for="fecha" class="form-label">Fecha Recepcion:</label>
+                                    <label for="fecha" class="form-label">Fecha Recepción:</label>
                                     <input type="date" id="fecha" name="reception_date" class="form-control" value="{{ $currentDate }}" readonly required>
                                 </div>
                                 <div class="col-md-1">
@@ -168,15 +168,66 @@
             </div>
         </div>
     </div>
+    <!-- Modal de Carga -->
+    <div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loadingModalLabel">Procesando Recepción</h5>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
+                </div>
+                <div class="modal-footer d-none" id="modalFooter">
+                    <button type="button" class="btn btn-secondary" id="closeModalButton">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.querySelector('#receptionForm');
+            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            const closeModalButton = document.getElementById('closeModalButton');
+            const modalFooter = document.getElementById('modalFooter');
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                loadingModal.show();
+
+                const formData = new FormData(form);
+
+                axios.post(form.action, formData)
+                    .then(response => {
+                        if (response.data.success) {
+                            document.querySelector('.spinner-border').classList.add('d-none');
+                            modalFooter.classList.remove('d-none');
+
+                            closeModalButton.addEventListener('click', function () {
+                                window.location.href = "{{ route('orders') }}";
+                            });
+                        } else {
+                            throw new Error('Error en la recepción de la orden.');
+                        }
+                    })
+                    .catch(error => {
+                        loadingModal.hide();
+                        alert('Ocurrió un error al procesar la recepción. Inténtalo nuevamente.');
+                    });
+            });
+        });
+
         function calculateTotals(input) {
             const row = input.closest('tr');
             const cantidadRecibida = parseFloat(row.querySelector('.cantidad-recibida').value) || 0;
