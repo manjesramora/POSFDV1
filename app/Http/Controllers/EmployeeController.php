@@ -105,12 +105,6 @@ class EmployeeController extends Controller
         // Guarda el empleado en la base de datos
         $employee->save();
 
-        // Crear usuario asociado con el mismo estado del empleado
-        $user = new User();
-        $user->employee_id = $employee->id;
-        $user->status = $employee->status;
-        $user->save();
-
         // Redirecciona a una ruta adecuada después de guardar el empleado
         return redirect()->route('employees')->with('success', 'Empleado y usuario creados correctamente.');
     }

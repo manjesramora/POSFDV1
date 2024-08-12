@@ -12,8 +12,7 @@ class Employee extends Model
     // Nombre de la tabla en la base de datos
     protected $table = 'employees';
 
-    // Los atributos que se pueden asignar de forma masiva (en el método store del controlador)
-    // Campos que pueden ser asignados masivamente
+    // Los atributos que se pueden asignar de forma masiva
     protected $fillable = [
         'first_name', 'last_name', 'middle_name', 'curp', 'rfc', 'colony',
         'street', 'external_number', 'internal_number', 'postal_code',
@@ -37,5 +36,8 @@ class Employee extends Model
         $this->attributes['birth'] = date('Y-m-d', strtotime($value));
     }
 
-    // Otros métodos, relaciones, accesores, mutadores, etc., pueden ir aquí
+    public function user()
+    {
+        return $this->hasOne(User::class, 'employee_id');
+    }
 }

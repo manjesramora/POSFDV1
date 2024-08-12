@@ -132,20 +132,6 @@
                                                     @endif
                                                 </a>
                                             </th>
-                                            <th class="col-1 sortable">
-                                                <a href="{{ route('users', ['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                    ESTADO
-                                                    @if(request('sort_by') == 'status')
-                                                    @if(request('sort_order') == 'asc')
-                                                    <i class="fas fa-sort-up"></i>
-                                                    @else
-                                                    <i class="fas fa-sort-down"></i>
-                                                    @endif
-                                                    @else
-                                                    <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
-                                                    @endif
-                                                </a>
-                                            </th>
                                             <th class="col-4 sortable">
                                                 <a href="{{ route('users', ['sort_by' => 'cost_center', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
                                                     CENTRO DE COSTO
@@ -160,7 +146,20 @@
                                                     @endif
                                                 </a>
                                             </th>
-
+                                            <th class="col-1 sortable">
+                                                <a href="{{ route('users', ['sort_by' => 'status', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                    ESTADO
+                                                    @if(request('sort_by') == 'status')
+                                                    @if(request('sort_order') == 'asc')
+                                                    <i class="fas fa-sort-up"></i>
+                                                    @else
+                                                    <i class="fas fa-sort-down"></i>
+                                                    @endif
+                                                    @else
+                                                    <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                    @endif
+                                                </a>
+                                            </th>
                                             <th class="col-1">ACCIONES</th>
                                         </tr>
                                     </thead>
@@ -181,94 +180,27 @@
                                                 @endforeach
                                             </td>
                                             <td>
-                                                @if ($user->status == 1)
-                                                <span class="badge bg-primary">ACTIVO</span>
-                                                @else
-                                                <span class="badge bg-danger">INACTIVO</span>
-                                                @endif
-                                            </td>
-                                            <td>
                                                 @foreach($user->costCenters as $center)
                                                 {{ $center->cost_center_id }}@if(!$loop->last), @endif
                                                 @endforeach
+                                            </td>
+                                            <td>
+                                                @if ($user->status == 1)
+                                                <span class="badge btn-success">ACTIVO</span>
+                                                @else
+                                                <span class="badge bg-danger">INACTIVO</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 <div class="d-inline-block">
                                                     <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editUserModal{{ $user->id }}">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
+
                                                     <button type="button" class="btn btn-danger btn-sm" onclick="resetPassword('{{ $user->id }}')">
                                                         <i class="fas fa-rotate-right"></i>
                                                     </button>
                                                 </div>
-                                                <!-- Modal de Edición de Usuario -->
-                                                <div class="modal fade text-left" id="editUserModal{{ $user->id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ $user->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Editar Usuario</h5>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <form id="editUserForm{{ $user->id }}" method="POST" action="{{ route('users.update', $user->id) }}">
-                                                                    @csrf
-                                                                    @method('PUT')
-
-                                                                    <!-- Campos del formulario -->
-                                                                    <div class="mb-3">
-                                                                        <label for="username" class="form-label">Usuario</label>
-                                                                        <input type="text" class="form-control uper" id="username" name="username" value="{{ $user->username }}" required>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label for="employee_name" class="form-label">Empleado</label>
-                                                                        <input type="text" class="form-control" id="employee_name" value="{{ $user->employee->first_name }} {{ $user->employee->last_name }} {{ $user->employee->middle_name }}" readonly>
-                                                                        <input type="hidden" name="employee_id" value="{{ $user->employee_id }}">
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label">Roles</label>
-                                                                        <div class="row">
-                                                                            @foreach($roles->chunk(4) as $chunk)
-                                                                            <div class="col-md-3">
-                                                                                @foreach($chunk as $role)
-                                                                                <div class="form-check">
-                                                                                    <input class="form-check-input" type="checkbox" value="{{ $role->id }}" id="role{{ $role->id }}" name="roles[]" {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
-                                                                                    <label class="form-check-label" for="role{{ $role->id }}">
-                                                                                        {{ $role->name }}
-                                                                                    </label>
-                                                                                </div>
-                                                                                @endforeach
-                                                                            </div>
-                                                                            @endforeach
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="mb-3">
-                                                                        <label class="form-label">Centro de Costo</label>
-                                                                        <div class="row">
-                                                                            @foreach($centers->chunk(4) as $chunk)
-                                                                            <div class="col-md-3">
-                                                                                @foreach($chunk as $center)
-                                                                                <div class="form-check">
-                                                                                    <input class="form-check-input" type="checkbox" value="{{ $center->id }}" id="center{{ $center->id }}" name="centers[]" {{ $user->costCenters->contains($center->id) ? 'checked' : '' }}>
-                                                                                    <label class="form-check-label" for="center{{ $center->id }}">
-                                                                                        {{ $center->cost_center_id }}
-                                                                                    </label>
-                                                                                </div>
-                                                                                @endforeach
-                                                                            </div>
-                                                                            @endforeach
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="modal-footer">
-                                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                                                                    </div>
-                                                                </form>
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <!-- Fin Modal de Edición de Usuario -->
                                             </td>
                                         </tr>
                                         @endforeach
@@ -292,7 +224,7 @@
 
         <!-- Modal para agregar usuario -->
         <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-md"> <!-- Modal de tamaño mediano -->
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="exampleModalLabel">Agregar Usuario</h5>
@@ -306,9 +238,11 @@
                                 <select class="form-select" id="employee_id_add" name="employee_id" required onchange="generateUsername()">
                                     <option value="" disabled selected>Selecciona un empleado</option>
                                     @foreach($employees as $employee)
+                                    @if(is_null($employee->user))
                                     <option value="{{ $employee->id }}" data-firstname="{{ $employee->first_name }}" data-lastname="{{ $employee->last_name }}">
-                                        {{ $employee->first_name }} @if($employee->last_name){{ $employee->last_name }}@endif {{ $employee->middle_name }}
+                                        {{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->last_name }}
                                     </option>
+                                    @endif
                                     @endforeach
                                 </select>
                             </div>
@@ -323,8 +257,8 @@
                             <div class="mb-3">
                                 <label for="roles_add" class="form-label">Roles</label>
                                 <div class="row">
-                                    @foreach($roles->chunk(4) as $chunk)
-                                    <div class="col-md-3">
+                                    @foreach($roles->chunk(ceil($roles->count() / 2)) as $chunk)
+                                    <div class="col-md-6"> <!-- Dos columnas -->
                                         @foreach($chunk as $role)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $role->id }}" id="role{{ $role->id }}_add" name="roles[]">
@@ -338,8 +272,8 @@
                             <div class="mb-3">
                                 <label for="center_add" class="form-label">Centro de Costo</label>
                                 <div class="row">
-                                    @foreach($centers->chunk(4) as $chunk)
-                                    <div class="col-md-3">
+                                    @foreach($centers->chunk(ceil($centers->count() / 2)) as $chunk)
+                                    <div class="col-md-6"> <!-- Dos columnas -->
                                         @foreach($chunk as $center)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $center->id }}" id="center{{ $center->id }}_add" name="center[]">
@@ -360,6 +294,76 @@
             </div>
         </div>
         <!-- Fin Modal para agregar usuario -->
+
+        <!-- Modal Editar Usuario -->
+        @foreach($users as $user)
+        <div class="modal fade text-left" id="editUserModal{{ $user->id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ $user->id }}" aria-hidden="true">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Editar Usuario</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editUserForm{{ $user->id }}" method="POST" action="{{ route('users.update', $user->id) }}">
+                            @csrf
+                            @method('PUT')
+
+                            <!-- Campos del formulario -->
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Usuario</label>
+                                <input type="text" class="form-control uper" id="username" name="username" value="{{ $user->username }}" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label for="employee_name" class="form-label">Empleado</label>
+                                <input type="text" class="form-control" id="employee_name" value="{{ $user->employee->first_name }} {{ $user->employee->last_name }} {{ $user->employee->middle_name }}" readonly>
+                                <input type="hidden" name="employee_id" value="{{ $user->employee_id }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Roles</label>
+                                <div class="row">
+                                    @foreach($roles->chunk(ceil($roles->count() / 2)) as $chunk)
+                                    <div class="col-md-6">
+                                        @foreach($chunk as $role)
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ $role->id }}" id="role{{ $role->id }}" name="roles[]" {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="role{{ $role->id }}">
+                                                {{ $role->name }}
+                                            </label>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Centro de Costo</label>
+                                <div class="row">
+                                    @foreach($centers->chunk(ceil($centers->count() / 2)) as $chunk)
+                                    <div class="col-md-6">
+                                        @foreach($chunk as $center)
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="{{ $center->id }}" id="center{{ $center->id }}" name="centers[]" {{ $user->costCenters->contains($center->id) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="center{{ $center->id }}">
+                                                {{ $center->cost_center_id }}
+                                            </label>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
+        <!-- Fin Modal de Edición de Usuario -->
 
         <!-- Modal de Éxito -->
         <div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
