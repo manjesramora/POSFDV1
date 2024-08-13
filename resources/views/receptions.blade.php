@@ -136,17 +136,17 @@
                                                 <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
                                                     <thead>
                                                         <tr>
-                                                            <th class="col-md-0">LIN</th>
-                                                            <th class="col-md-0">ID</th>
-                                                            <th class="col-md-6">DESCRIPCION</th>
-                                                            <th class="col-md-0">SKU</th>
-                                                            <th class="col-md-0">UM</th>
-                                                            <th class="col-md-0">Cantidad <br> Solicitada</th>
-                                                            <th class="col-md-1">Cantidad <br> Recibida</th>
-                                                            <th class="col-md-0">Precio Unitario</th>
-                                                            <th class="col-md-0">IVA</th>
-                                                            <th class="col-md-0">Subtotal</th>
-                                                            <th class="col-md-0">Total</th>
+                                                            <th>LIN</th>
+                                                            <th>ID</th>
+                                                            <th>DESCRIPCION</th>
+                                                            <th>SKU</th>
+                                                            <th>UM</th>
+                                                            <th>Cantidad Solicitada</th>
+                                                            <th>Cantidad Recibida</th>
+                                                            <th>Precio Unitario</th>
+                                                            <th>IVA</th>
+                                                            <th>Subtotal</th>
+                                                            <th>Total</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">

@@ -154,98 +154,99 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-    {
-        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+{
+    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
 
-        if (!$order || !$provider) {
-            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-        }
-
-        $validatedData = $request->validate([
-            'carrier_number' => 'required|string',
-            'carrier_name' => 'required|string',
-            'document_type' => 'required|string',
-            'document_number' => 'required|string',
-            'supplier_name' => 'required|string',
-            'reference_type' => 'required|string',
-            'store' => 'required|string',
-            'reference' => 'required|string',
-            'reception_date' => 'required|date',
-            'document_type1' => 'required|string',
-            'document_number1' => 'required|string',
-            'total_cost' => 'required|numeric',
-            'cantidad_recibida.*' => 'required|numeric|min:0',
-            'precio_unitario.*' => 'required|numeric|min:0',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $incrdxInserted = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
-
-            if (!$incrdxInserted) {
-                throw new \Exception('Error al insertar las partidas.');
-            }
-
-            if ($request->input('flete_select') == 1) {
-                $freightInserted = $this->insertFreight($validatedData, $provider);
-                if (!$freightInserted) {
-                    throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
-                }
-            }
-
-            DB::commit();
-
-            return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Error en la recepción de la orden: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
-        }
+    if (!$order || !$provider) {
+        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
     }
 
-    public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
-    {
-        $fechaActual = now();
-        $horaActual = now()->format('H:i:s');
-        $usuario = Auth::user()->name ?? 'Sistema';
+    $validatedData = $request->validate([
+        'carrier_number' => 'required|string',
+        'carrier_name' => 'required|string',
+        'document_type' => 'required|string',
+        'document_number' => 'required|string',
+        'supplier_name' => 'required|string',
+        'reference_type' => 'required|string',
+        'store' => 'required|string',
+        'reference' => 'required|string',
+        'reception_date' => 'required|date',
+        'document_type1' => 'required|string',
+        'document_number1' => 'required|string',
+        'total_cost' => 'required|numeric',
+        'cantidad_recibida.*' => 'nullable|numeric|min:0',
+        'precio_unitario.*' => 'nullable|numeric|min:0',
+    ]);
 
-        $partidas = DB::table('acmvor1')->where('ACMVOIDOC', $order->ACMVOIDOC)->get();
+    DB::beginTransaction();
 
-        try {
-            foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
-                if ($cantidadRecibida > 0 && isset($partidas[$index])) {
-                    $partida = $partidas[$index];
-                    $acmvoilin = $partida->ACMVOILIN;
-                    $acmvoiprid = $partida->ACMVOIPRID;
+    try {
+        $partidasProcesadas = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
 
-                    $costoUnitario = isset($preciosUnitarios[$index]) && $preciosUnitarios[$index] > 0 ? (float) $preciosUnitarios[$index] : null;
-
-                    if ($costoUnitario === null) {
-                        Log::error("Costo unitario no ingresado o inválido para la partida con ID {$acmvoiprid}, se omite la recepción.");
-                        continue;
-                    }
-
-                    $costoTotal = $cantidadRecibida * $costoUnitario;
-
-                    $inserted = $this->insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $partida->ACMVOIUMT);
-
-                    if (!$inserted) {
-                        throw new \Exception("Error al insertar o actualizar en incrdx para la partida con ID {$acmvoiprid}");
-                    }
-
-                    $this->updateInsdos($validatedData['store'], $acmvoiprid, $cantidadRecibida, $costoTotal);
-
-                    $this->insertAcmroi($validatedData, $partida, $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual);
-                }
-            }
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Error al procesar la recepción de la orden: " . $e->getMessage());
-            throw $e;
+        if (!$partidasProcesadas) {
+            throw new \Exception('Error al insertar las partidas.');
         }
+
+        if ($request->input('flete_select') == 1) {
+            $freightInserted = $this->insertFreight($validatedData, $provider);
+            if (!$freightInserted) {
+                throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
+            }
+        }
+
+        DB::commit();
+
+        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error("Error en la recepción de la orden: " . $e->getMessage());
+        return response()->json(['success' => false, 'message' => $e->getMessage()]);
     }
+}
+
+public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
+{
+    $fechaActual = now();
+    $horaActual = now()->format('H:i:s');
+    $usuario = Auth::user()->name ?? 'Sistema';
+
+    $partidas = DB::table('acmvor1')->where('ACMVOIDOC', $order->ACMVOIDOC)->get();
+
+    try {
+        foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
+            if ($cantidadRecibida > 0 && isset($partidas[$index])) {
+                $partida = $partidas[$index];
+                $acmvoilin = $partida->ACMVOILIN;
+                $acmvoiprid = $partida->ACMVOIPRID;
+
+                $costoUnitario = isset($preciosUnitarios[$index]) && $preciosUnitarios[$index] > 0 ? (float) $preciosUnitarios[$index] : null;
+
+                if ($costoUnitario === null) {
+                    Log::error("Costo unitario no ingresado o inválido para la partida con ID {$acmvoiprid}, se omite la recepción.");
+                    continue;
+                }
+
+                $costoTotal = $cantidadRecibida * $costoUnitario;
+
+                $inserted = $this->insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $partida->ACMVOIUMT);
+
+                if (!$inserted) {
+                    throw new \Exception("Error al insertar o actualizar en incrdx para la partida con ID {$acmvoiprid}");
+                }
+
+                $this->updateInsdos($validatedData['store'], $acmvoiprid, $cantidadRecibida, $costoTotal);
+
+                $this->insertAcmroi($validatedData, $partida, $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual);
+            }
+        }
+        return true;
+    } catch (\Exception $e) {
+        Log::error("Error al procesar la recepción de la orden: " . $e->getMessage());
+        throw $e;
+    }
+}
+
 
     public function insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $unidadMedida)
     {
@@ -434,6 +435,7 @@ class OrderController extends Controller
             throw $e;
         }
     }
+    
     public function updateInsdos($storeId, $productId, $cantidadRecibida, $costoTotal)
     {
         try {
@@ -472,10 +474,7 @@ class OrderController extends Controller
             throw $e;
         }
     }
-    
 
-
-    
     public function getNewCNTDOCNSIG()
     {
         $cntdoc = DB::table('cntdoc')
