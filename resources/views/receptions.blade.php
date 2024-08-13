@@ -150,27 +150,39 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">
-                                                        @foreach ($partidas as $partida)
-                                                        <tr>
-                                                            <td>{{ number_format($partida->ACMVOILIN) }}</td>
-                                                            <td>{{ $partida->ACMVOIPRID }}</td>
-                                                            <td>{{ $partida->ACMVOIPRDS }}</td>
-                                                            <td>{{ $partida->ACMVOINPAR }}</td>
-                                                            <td>{{ $partida->ACMVOIUMT }}</td>
-                                                            <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
-                                                            <td>
-                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateTotals(this)">
-                                                            </td>
-                                                            <td>
-                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)" required>
-                                                            </td>
+    @foreach ($partidas as $index => $partida)
+    <tr>
+        <td>{{ (int)$partida->ACMVOILIN }}</td>
+        <td>{{ (int)$partida->ACMVOIPRID }}</td>
+        <td>{{ $partida->ACMVOIPRDS }}</td>
+        <td>{{ $partida->ACMVOINPAR }}</td>
+        <td>{{ $partida->ACMVOIUMT }}</td>
+        <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
+        <td>
+            <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateTotals(this)">
+        </td>
+        <td>
+            <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)" required>
+        </td>
 
-                                                            <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
-                                                            <td class="subtotal">0.00</td>
-                                                            <td class="total">0.00</td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
+        <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
+        <td class="subtotal">0.00</td>
+        <td class="total">0.00</td>
+
+        <!-- Campos ocultos para mantener la relación con la partida original -->
+        <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$partida->ACMVOILIN }}">
+        <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$partida->ACMVOIPRID }}">
+        <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $partida->ACMVOIPRDS }}">
+        <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $partida->ACMVOIUMT }}">
+        <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($partida->ACMVOIIVA, 2) }}">
+    </tr>
+    @endforeach
+</tbody>
+
+
+
+
+
                                                 </table>
                                             </div>
                                         </div>
