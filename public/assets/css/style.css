@@ -453,3 +453,8 @@ body {
     background-color: #348b45; /* Cambia este valor al tono de verde que prefieras */
 }
 
+
+.custom-modal{
+    max-width: 35%; /* Ajusta el porcentaje según el tamaño que desees */
+}
+
