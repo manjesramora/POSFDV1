@@ -224,7 +224,7 @@
 
         <!-- Modal para agregar usuario -->
         <div class="modal fade" id="addUserModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-md"> <!-- Modal de tamaño mediano -->
+            <div class="modal-dialog custom-modal"> <!-- Modal con tamaño personalizado -->
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="exampleModalLabel">Agregar Usuario</h5>
@@ -233,32 +233,37 @@
                     <div class="modal-body">
                         <form id="addUserForm" method="POST" action="{{ route('users.store') }}" enctype="multipart/form-data">
                             @csrf
-                            <div class="mb-3">
-                                <label for="employee_id_add" class="form-label">Empleado</label>
-                                <select class="form-select" id="employee_id_add" name="employee_id" required onchange="generateUsername()">
-                                    <option value="" disabled selected>Selecciona un empleado</option>
-                                    @foreach($employees as $employee)
-                                    @if(is_null($employee->user))
-                                    <option value="{{ $employee->id }}" data-firstname="{{ $employee->first_name }}" data-lastname="{{ $employee->last_name }}">
-                                        {{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->last_name }}
-                                    </option>
-                                    @endif
-                                    @endforeach
-                                </select>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="employee_id_add" class="form-label">Empleado</label>
+                                    <select class="form-select" id="employee_id_add" name="employee_id" required onchange="generateUsername()">
+                                        <option value="" disabled selected>Selecciona un empleado</option>
+                                        @foreach($employees as $employee)
+                                        @if(is_null($employee->user))
+                                        <option value="{{ $employee->id }}" data-firstname="{{ $employee->first_name }}" data-lastname="{{ $employee->last_name }}">
+                                            {{ $employee->first_name }} {{ $employee->middle_name }} {{ $employee->last_name }}
+                                        </option>
+                                        @endif
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="username_add" class="form-label">Usuario</label>
+                                    <input type="text" class="form-control uper" id="username_add" name="username" readonly>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="username_add" class="form-label">Usuario</label>
-                                <input type="text" class="form-control uper" id="username_add" name="username" readonly>
-                            </div>
+
                             <div class="mb-3">
                                 <label for="password_add" class="form-label">Contraseña</label>
                                 <input type="text" class="form-control" id="password_add" name="password" value="Ferre01@" readonly>
                             </div>
+
+                            <!-- Roles en tres columnas -->
                             <div class="mb-3">
                                 <label for="roles_add" class="form-label">Roles</label>
                                 <div class="row">
-                                    @foreach($roles->chunk(ceil($roles->count() / 2)) as $chunk)
-                                    <div class="col-md-6"> <!-- Dos columnas -->
+                                    @foreach($roles->chunk(ceil($roles->count() / 3)) as $chunk) <!-- Dividir en 3 columnas -->
+                                    <div class="col-md-4"> <!-- Usar col-md-4 para 3 columnas -->
                                         @foreach($chunk as $role)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $role->id }}" id="role{{ $role->id }}_add" name="roles[]">
@@ -269,11 +274,13 @@
                                     @endforeach
                                 </div>
                             </div>
+
+                            <!-- Centros de Costo en tres columnas -->
                             <div class="mb-3">
                                 <label for="center_add" class="form-label">Centro de Costo</label>
                                 <div class="row">
-                                    @foreach($centers->chunk(ceil($centers->count() / 2)) as $chunk)
-                                    <div class="col-md-6"> <!-- Dos columnas -->
+                                    @foreach($centers->chunk(ceil($centers->count() / 3)) as $chunk) <!-- Dividir en 3 columnas -->
+                                    <div class="col-md-4"> <!-- Usar col-md-4 para 3 columnas -->
                                         @foreach($chunk as $center)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $center->id }}" id="center{{ $center->id }}_add" name="center[]">
@@ -284,6 +291,7 @@
                                     @endforeach
                                 </div>
                             </div>
+
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                                 <button type="submit" form="addUserForm" class="btn btn-primary" onclick="return validatePassword()">Guardar</button>
@@ -298,7 +306,7 @@
         <!-- Modal Editar Usuario -->
         @foreach($users as $user)
         <div class="modal fade text-left" id="editUserModal{{ $user->id }}" tabindex="-1" aria-labelledby="editUserModalLabel{{ $user->id }}" aria-hidden="true">
-            <div class="modal-dialog modal-md">
+            <div class="modal-dialog custom-modal">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="editUserModalLabel{{ $user->id }}">Editar Usuario</h5>
@@ -310,20 +318,24 @@
                             @method('PUT')
 
                             <!-- Campos del formulario -->
-                            <div class="mb-3">
-                                <label for="username" class="form-label">Usuario</label>
-                                <input type="text" class="form-control uper" id="username" name="username" value="{{ $user->username }}" readonly>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="username" class="form-label">Usuario</label>
+                                    <input type="text" class="form-control uper" id="username" name="username" value="{{ $user->username }}" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="employee_name" class="form-label">Empleado</label>
+                                    <input type="text" class="form-control" id="employee_name" value="{{ $user->employee->first_name }} {{ $user->employee->last_name }} {{ $user->employee->middle_name }}" readonly>
+                                    <input type="hidden" name="employee_id" value="{{ $user->employee_id }}">
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="employee_name" class="form-label">Empleado</label>
-                                <input type="text" class="form-control" id="employee_name" value="{{ $user->employee->first_name }} {{ $user->employee->last_name }} {{ $user->employee->middle_name }}" readonly>
-                                <input type="hidden" name="employee_id" value="{{ $user->employee_id }}">
-                            </div>
+
+                            <!-- Roles en tres columnas -->
                             <div class="mb-3">
                                 <label class="form-label">Roles</label>
                                 <div class="row">
-                                    @foreach($roles->chunk(ceil($roles->count() / 2)) as $chunk)
-                                    <div class="col-md-6">
+                                    @foreach($roles->chunk(ceil($roles->count() / 3)) as $chunk) <!-- Dividir en 3 columnas -->
+                                    <div class="col-md-4"> <!-- Usar col-md-4 para 3 columnas -->
                                         @foreach($chunk as $role)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $role->id }}" id="role{{ $role->id }}" name="roles[]" {{ $user->roles->contains($role->id) ? 'checked' : '' }}>
@@ -336,11 +348,13 @@
                                     @endforeach
                                 </div>
                             </div>
+
+                            <!-- Centros de Costo en tres columnas -->
                             <div class="mb-3">
                                 <label class="form-label">Centro de Costo</label>
                                 <div class="row">
-                                    @foreach($centers->chunk(ceil($centers->count() / 2)) as $chunk)
-                                    <div class="col-md-6">
+                                    @foreach($centers->chunk(ceil($centers->count() / 3)) as $chunk) <!-- Dividir en 3 columnas -->
+                                    <div class="col-md-4"> <!-- Usar col-md-4 para 3 columnas -->
                                         @foreach($chunk as $center)
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" value="{{ $center->id }}" id="center{{ $center->id }}" name="centers[]" {{ $user->costCenters->contains($center->id) ? 'checked' : '' }}>
@@ -353,6 +367,7 @@
                                     @endforeach
                                 </div>
                             </div>
+
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                                 <button type="submit" class="btn btn-primary">Guardar Cambios</button>
