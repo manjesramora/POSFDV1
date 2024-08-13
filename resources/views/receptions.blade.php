@@ -150,34 +150,40 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">
-    @foreach ($partidas as $index => $partida)
-    <tr>
-        <td>{{ (int)$partida->ACMVOILIN }}</td>
-        <td>{{ (int)$partida->ACMVOIPRID }}</td>
-        <td>{{ $partida->ACMVOIPRDS }}</td>
-        <td>{{ $partida->ACMVOINPAR }}</td>
-        <td>{{ $partida->ACMVOIUMT }}</td>
-        <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
-        <td>
-            <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]" value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}" oninput="calculateTotals(this)">
-        </td>
-        <td>
-            <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]" value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0" step="0.01" oninput="calculateTotals(this)" required>
-        </td>
+                                                        @foreach ($partidas as $index => $partida)
+                                                        <tr>
+                                                            <td>{{ (int)$partida->ACMVOILIN }}</td>
+                                                            <td>{{ (int)$partida->ACMVOIPRID }}</td>
+                                                            <td>{{ $partida->ACMVOIPRDS }}</td>
+                                                            <td>{{ $partida->ACMVOINPAR }}</td>
+                                                            <td>{{ $partida->ACMVOIUMT }}</td>
+                                                            <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
+                                                            <td>
+                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
+                                                                    value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}"
+                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)">
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+                                                                    value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0"
+                                                                    max="{{ number_format($partida->ACMVOINPO, 2) }}" step="0.01"
+                                                                    oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
+                                                            </td>
 
-        <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
-        <td class="subtotal">0.00</td>
-        <td class="total">0.00</td>
 
-        <!-- Campos ocultos para mantener la relación con la partida original -->
-        <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$partida->ACMVOILIN }}">
-        <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$partida->ACMVOIPRID }}">
-        <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $partida->ACMVOIPRDS }}">
-        <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $partida->ACMVOIUMT }}">
-        <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($partida->ACMVOIIVA, 2) }}">
-    </tr>
-    @endforeach
-</tbody>
+                                                            <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
+                                                            <td class="subtotal">0.00</td>
+                                                            <td class="total">0.00</td>
+
+                                                            <!-- Campos ocultos para mantener la relación con la partida original -->
+                                                            <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$partida->ACMVOILIN }}">
+                                                            <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$partida->ACMVOIPRID }}">
+                                                            <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $partida->ACMVOIPRDS }}">
+                                                            <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $partida->ACMVOIUMT }}">
+                                                            <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($partida->ACMVOIIVA, 2) }}">
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
 
 
 
@@ -196,9 +202,9 @@
             </div>
         </div>
     </div>
-    <!-- Modal de Carga -->
+
    <!-- Modal de Carga -->
-<div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true">
+<div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -211,13 +217,12 @@
                 <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
             </div>
             <div class="modal-footer d-none" id="modalFooter">
-                <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal">Salir</button>
+                <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal" disabled>Salir</button>
                 <button type="button" class="btn btn-primary d-none" id="goToOrdersButton">Regresar a Órdenes</button>
             </div>
         </div>
     </div>
 </div>
-
 
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -226,80 +231,6 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-    const form = document.querySelector('#receptionForm');
-    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-    const closeModalButton = document.getElementById('closeModalButton');
-    const goToOrdersButton = document.getElementById('goToOrdersButton');
-    const modalFooter = document.getElementById('modalFooter');
-    const spinner = document.querySelector('.spinner-border');
-    const modalBodyText = document.querySelector('.modal-body p');
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        loadingModal.show();
-
-        const formData = new FormData(form);
-
-        axios.post(form.action, formData)
-            .then(response => {
-                if (response.data.success) {
-                    spinner.classList.add('d-none');
-                    modalFooter.classList.remove('d-none');
-                    closeModalButton.classList.remove('d-none');
-                    goToOrdersButton.classList.remove('d-none');
-                    modalBodyText.innerText = response.data.message;
-
-                    goToOrdersButton.addEventListener('click', function() {
-                        window.location.href = "{{ route('orders') }}";
-                    });
-                } else {
-                    throw new Error(response.data.message || 'Error en la recepción de la orden.');
-                }
-            })
-            .catch(error => {
-                spinner.classList.add('d-none');
-                modalFooter.classList.remove('d-none');
-                closeModalButton.classList.remove('d-none');
-                modalBodyText.innerText = error.message;
-            });
-    });
-});
-
-        function toggleFleteInput() {
-            const fleteSelect = document.getElementById('flete_select');
-            const fleteInputDiv = document.getElementById('flete_input_div');
-            if (fleteSelect.value == '1') {
-                fleteInputDiv.style.display = 'block';
-            } else {
-                fleteInputDiv.style.display = 'none';
-            }
-        }
-
-        function calculateTotals(input) {
-            const row = input.closest('tr');
-            const cantidadRecibida = parseFloat(row.querySelector('.cantidad-recibida').value) || 0;
-            const precioUnitario = parseFloat(row.querySelector('.precio-unitario').value) || 0;
-            const iva = parseFloat(row.cells[8].innerText) || 0;
-
-            const subtotal = cantidadRecibida * precioUnitario;
-            const total = subtotal + (subtotal * (iva / 100));
-
-            row.querySelector('.subtotal').innerText = subtotal.toFixed(2);
-            row.querySelector('.total').innerText = total.toFixed(2);
-
-            updateTotalCost();
-        }
-
-        function updateTotalCost() {
-            let totalCost = 0;
-            document.querySelectorAll('.total').forEach(totalCell => {
-                totalCost += parseFloat(totalCell.innerText) || 0;
-            });
-            document.getElementById('totalCost').value = totalCost.toFixed(2);
-        }
-    </script>
 </body>
 
 </html>

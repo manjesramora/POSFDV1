@@ -154,64 +154,74 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-    {
-        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-    
-        if (!$order || !$provider) {
-            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-        }
-    
-        Log::info('Datos recibidos en receiptOrder:', $request->all());
-    
-        $validatedData = $request->validate([
-            'carrier_number' => 'required|string',
-            'carrier_name' => 'required|string',
-            'document_type' => 'required|string',
-            'document_number' => 'required|string',
-            'supplier_name' => 'required|string',
-            'reference_type' => 'required|string',
-            'store' => 'required|string',
-            'reference' => 'required|string',
-            'reception_date' => 'required|date',
-            'document_type1' => 'required|string',
-            'document_number1' => 'required|string',
-            'total_cost' => 'required|numeric',
-            'cantidad_recibida.*' => 'nullable|numeric|min:0',
-            'precio_unitario.*' => 'nullable|numeric|min:0',
-            'acmvoilin.*' => 'required|integer',
-            'acmvoiprid.*' => 'required|integer',
-            'acmvoiprds.*' => 'required|string',
-            'acmvoiumt.*' => 'required|string',
-            'acmvoiiva.*' => 'required|numeric',
-        ]);
-    
-        DB::beginTransaction();
-    
-        try {
-            $partidasProcesadas = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
-    
-            if (!$partidasProcesadas) {
-                throw new \Exception('Error al insertar las partidas.');
-            }
-    
-            if ($request->input('flete_select') == 1) {
-                $freightInserted = $this->insertFreight($validatedData, $provider);
-                if (!$freightInserted) {
-                    throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
-                }
-            }
-    
-            DB::commit();
-    
-            Log::info('Recepción registrada con éxito en la base de datos.');
-            return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Error en la recepción de la orden: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => $e->getMessage()]);
-        }
+{
+    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+    if (!$order || !$provider) {
+        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
     }
+
+    Log::info('Datos recibidos en receiptOrder:', $request->all());
+
+    // Validar y asignar el valor del flete
+    $freight = $request->input('freight', '0.0001');
+    if ($freight == '' || $freight === null) {
+        $freight = '0.0001';
+    }
+
+    $validatedData = $request->validate([
+        'carrier_number' => 'required|string',
+        'carrier_name' => 'required|string',
+        'document_type' => 'required|string',
+        'document_number' => 'required|string',
+        'supplier_name' => 'required|string',
+        'reference_type' => 'required|string',
+        'store' => 'required|string',
+        'reference' => 'required|string',
+        'reception_date' => 'required|date',
+        'document_type1' => 'required|string',
+        'document_number1' => 'required|string',
+        'total_cost' => 'required|numeric',
+        'freight' => 'nullable|numeric|min:0.0001', // Validar que el flete sea mayor o igual a 0.0001
+        'cantidad_recibida.*' => 'nullable|numeric|min:0',
+        'precio_unitario.*' => 'nullable|numeric|min:0',
+        'acmvoilin.*' => 'required|integer',
+        'acmvoiprid.*' => 'required|integer',
+        'acmvoiprds.*' => 'required|string',
+        'acmvoiumt.*' => 'required|string',
+        'acmvoiiva.*' => 'required|numeric',
+    ]);
+
+    $validatedData['freight'] = $freight; // Asignar el valor de freight validado
+
+    DB::beginTransaction();
+
+    try {
+        $partidasProcesadas = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+
+        if (!$partidasProcesadas) {
+            throw new \Exception('Error al insertar las partidas.');
+        }
+
+        if ($request->input('flete_select') == 1) {
+            $freightInserted = $this->insertFreight($validatedData, $provider);
+            if (!$freightInserted) {
+                throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
+            }
+        }
+
+        DB::commit();
+
+        Log::info('Recepción registrada con éxito en la base de datos.');
+        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error("Error en la recepción de la orden: " . $e->getMessage());
+        return response()->json(['success' => false, 'message' => $e->getMessage()]);
+    }
+}
+
     
     public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
     {
