@@ -108,7 +108,7 @@
                                                 'INPROD.INPR02ID' => 'DPTO',
                                                 'INSDOS.INSDOSQDS' => 'EXI',
                                                 'INPROD.INUMBAID' => 'UMB',
-                                                'INALPR.INAPR17ID' => 'TS',
+                                                
 
                                             ];
                                         
@@ -160,7 +160,7 @@
                                             <td>{{ $label->INPR02ID }}</td>
                                             <td>{{ number_format($label->Existencia, 2) }}</td>
                                             <td>{{ $label->INUMBAID }}</td>
-                                            <td>{{ $label->TipoStock }}</td>
+                                            
                                             
                                             <td>
                                             
@@ -229,6 +229,7 @@
                     <div class="form-group">
                         <label for="quantity">Cantidad de etiquetas</label>
                         <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1">
+                        <small id="quantityError" class="form-text text-danger" style="display: none;"></small>
                     </div>
                 </form>
             </div>

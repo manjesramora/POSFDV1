@@ -179,34 +179,61 @@ function showPrintModal(sku, description) {
     $("#printModal").modal("show");
 }
 
+const MAX_LABELS = 100; // Establece el límite máximo de etiquetas
+
 function submitPrintForm() {
+    // Obtén el valor de cantidad de etiquetas
+    const quantityInput = document.getElementById('quantity');
+    const quantityError = document.getElementById('quantityError');
+    const quantity = parseInt(quantityInput.value, 10);
+
+    // Restablece el mensaje de error
+    quantityError.style.display = 'none';
+    quantityError.textContent = '';
+
+    // Verifica si la cantidad es válida
+    if (isNaN(quantity) || quantity <= 0) {
+        quantityError.textContent = 'Por favor, ingrese una cantidad válida.';
+        quantityError.style.display = 'block';
+        return;
+    }
+
+    // Verifica si la cantidad excede el máximo permitido
+    if (quantity > MAX_LABELS) {
+        quantityError.textContent = `La cantidad máxima de etiquetas es ${MAX_LABELS}.`;
+        quantityError.style.display = 'block';
+        return;
+    }
+
+    // Si todo está bien, envía el formulario
     var printForm = document.getElementById("printForm");
     var formData = new FormData(printForm);
 
     fetch(printLabelUrl, {
         method: "POST",
         headers: {
-            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]')
-                .value,
+            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value,
         },
         body: formData,
     })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.url) {
-                var iframe = document.createElement("iframe");
-                iframe.style.display = "none";
-                iframe.src = data.url;
-                iframe.onload = function () {
-                    iframe.contentWindow.print();
-                };
-                document.body.appendChild(iframe);
-            } else {
-                console.error("Error al generar el PDF");
-            }
-        })
-        .catch((error) => console.error("Error:", error));
+    .then((response) => response.json())
+    .then((data) => {
+        if (data.url) {
+            var iframe = document.createElement("iframe");
+            iframe.style.display = "none";
+            iframe.src = data.url;
+            iframe.onload = function () {
+                iframe.contentWindow.print();
+            };
+            document.body.appendChild(iframe);
+        } else {
+            console.error("Error al generar el PDF");
+        }
+    })
+    .catch((error) => console.error("Error:", error));
 }
+
+
 
 function validateInput(input, maxLength) {
     if (!/^\d*$/.test(input.value)) {
