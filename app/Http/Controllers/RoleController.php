@@ -45,7 +45,6 @@ class RoleController extends Controller
         return view('roles', compact('roles', 'permissions'));
     }
 
-
     // Método para mostrar los detalles de un rol
     public function show($id)
     {
@@ -61,13 +60,19 @@ class RoleController extends Controller
 
     public function store(Request $request)
     {
-        // Validar los datos del formulario
+        // Mensajes de error personalizados
+        $messages = [
+            'name.unique' => 'El nombre del rol ya existe. Por favor, elige otro.'
+        ];
+
+        // Validar los datos del formulario con mensajes personalizados
         $validatedData = $request->validate([
             'name' => 'required|unique:roles|max:100',
-            'description' => 'required|unique:roles|max:200',
+            'description' => 'required|string|max:200',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
-        ]);
+        ], $messages);
+
 
         // Crear un nuevo rol
         $role = new Role();
@@ -82,39 +87,44 @@ class RoleController extends Controller
             $role->permissions()->sync($request->permissions);
         }
 
-        // Redirigir a la página de la lista de roles u otra página apropiada
-        return redirect()->route('roles')->with('success', 'Rol creado correctamente.');
+        // Redireccionar con mensaje de éxito
+        return redirect()->route('roles')->with('success', 'Rol creado con éxito.');
     }
 
     public function update(Request $request, $id)
     {
-        // Validar los campos del formulario
+        // Mensajes de error personalizados
+        $messages = [
+            'name.unique' => 'El nombre del rol ya existe. Por favor, elige otro.'
+        ];
+    
+        // Validar los campos del formulario con mensajes personalizados
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:roles,name,' . $id,
+            'description' => 'required|string|max:200',
             'permissions' => 'nullable|array',
             'permissions.*' => 'exists:permissions,id',
-        ]);
-
+        ], $messages);
+    
         // Encontrar el rol por su ID
         $role = Role::findOrFail($id);
-
+    
         // Actualizar los datos del rol
-        $role->update([
-            'name' => $request->name,
-            'description' => $request->description,
-        ]);
-
+        $role->name = strtoupper($request->name);
+        $role->description = $request->description;
+        $role->save();
+    
         // Actualizar los permisos seleccionados
         if ($request->has('permissions')) {
             $role->permissions()->sync($request->permissions);
         } else {
-            $role->permissions()->detach(); // Eliminar todos los permisos si no se seleccionaron ninguno
+            $role->permissions()->detach(); // Eliminar todos los permisos si no se seleccionó ninguno
         }
-
+    
         // Redirigir con un mensaje de éxito
         return redirect()->route('roles')->with('success', 'Rol actualizado correctamente.');
     }
+    
 
     public function __construct()
     {

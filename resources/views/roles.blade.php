@@ -124,77 +124,19 @@
                                                         </button>
                                                     </div>
 
-                                                    <!-- Modal de Edición de Rol -->
-                                                    <div class="modal fade text-left" id="editRoleModal{{ $role->id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ $role->id }}" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="editRoleModalLabel{{ $role->id }}">Editar
-                                                                        Rol</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <form id="editRoleForm{{ $role->id }}" method="POST" action="{{ route('roles.update', $role->id) }}">
-                                                                        @csrf
-                                                                        @method('PUT')
-
-                                                                        <!-- Campos del formulario -->
-                                                                        <div class="row mb-3">
-                                                                            <div class="col-12">
-                                                                                <label for="name" class="form-label">Rol</label>
-                                                                                <input type="text" class="form-control uper" id="name" name="name" value="{{ $role->name }}" required>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="row mb-3">
-                                                                            <div class="col-12">
-                                                                                <label for="description" class="form-label">Descripción</label>
-                                                                                <input type="text" class="form-control" id="description" name="description" value="{{ $role->description }}" required>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="row mb-3">
-                                                                            <div class="col-12">
-                                                                                <label class="form-label">Permisos</label>
-                                                                                <div class="row g-3">
-                                                                                    @foreach($permissions as $permission)
-                                                                                    <div class="col-md-3 col-sm-4 col-6">
-                                                                                        <div class="form-check">
-                                                                                            <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $permission->id }}" name="permissions[]" {{ $role->permissions->contains($permission->id) ? 'checked' : '' }}>
-                                                                                            <label class="form-check-label" for="permission{{ $permission->id }}">
-                                                                                                {{ $permission->name }}
-                                                                                            </label>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                    @endforeach
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-
-
-                                                                        <div class="modal-footer">
-                                                                            <button type="submit" class="btn btn-primary">Guardar
-                                                                                Cambios</button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- Fin Modal de Edición de Rol -->
-
-
-                                                    <form action="{{ route('roles.destroy', $role->id) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('¿Estás seguro de que quieres eliminar este rol?');">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
-
+                                                    <!-- Botón para abrir el Modal de Confirmación de Eliminación -->
+                                                    <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteConfirmationModal" data-role-id="{{ $role->id }}" data-role-name="{{ $role->name }}">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
                                                 </td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
+                                </div>
+                                <!-- Paginación -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    {{ $roles->appends(request()->all())->links() }}
                                 </div>
                             </div>
                         </div>
@@ -211,22 +153,36 @@
 
             <!-- Modal para agregar rol -->
             <div class="modal fade" id="addRoleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="exampleModalLabel">Agregar Rol</h5>
                             <button type="button" class="btn-close uper" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            <!-- Mostrar errores si existen -->
+                            <div class="alert alert-danger" role="alert" id="addRoleErrors" style="display: none;">
+                                <ul>
+                                    @if($errors->any())
+                                    @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                    @endforeach
+                                    @endif
+                                </ul>
+                            </div>
+
                             <form id="addRoleForm" method="POST" action="{{ route('roles.store') }}" enctype="multipart/form-data">
                                 @csrf
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Rol</label>
-                                    <input type="text" class="form-control uper" id="name" name="name" required>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="description" class="form-label">Descripción</label>
-                                    <input type="text" class="form-control" id="description" name="description" required>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="create-name" class="form-label">Rol</label>
+                                        <input type="text" class="form-control uper role-name" id="create-name" name="name" required maxlength="50" pattern="^[a-zA-Z]+$">
+                                        <span class="error mensaje" aria-live="polite"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="description" class="form-label">Descripción</label>
+                                        <input type="text" class="form-control" id="description" name="description" value="{{ old('description') }}" required>
+                                    </div>
                                 </div>
                                 <div class="mb-3">
                                     <label for="permissions" class="form-label">Permisos</label>
@@ -236,7 +192,7 @@
                                                 @foreach($permissions as $permission)
                                                 <div class="col-md-4 col-sm-6 col-12">
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $permission->id }}" name="permissions[]">
+                                                        <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $permission->id }}" name="permissions[]" {{ in_array($permission->id, old('permissions', [])) ? 'checked' : '' }}>
                                                         <label class="form-check-label" for="permission{{ $permission->id }}">
                                                             {{ $permission->name }}
                                                         </label>
@@ -247,19 +203,95 @@
                                         </div>
                                     </div>
                                 </div>
-
-
-
                                 <div class="modal-footer">
-
-                                    <button type="submit" form="addRoleForm" class="btn btn-primary" onclick="return validatePassword()">Guardar</button>
+                                    <button type="submit" form="addRoleForm" class="btn btn-primary">Guardar</button>
                                 </div>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- FIn Modal para agregar usuario -->
+            <!-- Fin Modal para agregar rol -->
+
+            <!-- Modal de Edición de Rol -->
+            @foreach($roles as $role)
+            <div class="modal fade text-left" id="editRoleModal{{ $role->id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ $role->id }}" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editRoleModalLabel{{ $role->id }}">Editar Rol</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="editRoleForm{{ $role->id }}" method="POST" action="{{ route('roles.update', $role->id) }}">
+                                @csrf
+                                @method('PUT')
+
+                                <!-- Campos del formulario -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="edit-name" class="form-label">Rol</label>
+                                        <input type="text" class="form-control uper role-name" id="edit-name" name="name" value="{{ $role->name }}" required maxlength="50" pattern="^[a-zA-Z]+$">
+                                        <span class="error mensaje" aria-live="polite"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="description" class="form-label">Descripción</label>
+                                        <input type="text" class="form-control" id="description" name="description" value="{{ $role->description }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Permisos</label>
+                                        <div class="row g-3">
+                                            @foreach($permissions as $permission)
+                                            <div class="col-md-3 col-sm-4 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $role->id }}_{{ $permission->id }}" name="permissions[]" {{ $role->permissions->contains($permission->id) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="permission{{ $role->id }}_{{ $permission->id }}">
+                                                        {{ $permission->name }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endforeach
+            <!-- Fin Modal de Edición de Rol -->
+
+            <!-- Modal de Confirmación de Eliminación -->
+            <div class="modal fade animate__animated" id="deleteConfirmationModal" tabindex="-1" aria-labelledby="deleteConfirmationModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title text-muted" id="deleteConfirmationModalLabel">Confirmación de Eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-start text-muted">
+                            <p>¿Estás seguro de que deseas eliminar el rol <strong id="roleName"></strong>? Esta acción no se puede deshacer.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <form id="deleteRoleForm" method="POST" action="">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-primary">Eliminar</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin Modal de Confirmación de Eliminación -->
 
             <!-- Scroll to Top Button-->
             <a class="scroll-to-top rounded" href="#page-top">
