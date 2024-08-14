@@ -203,7 +203,7 @@
         </div>
     </div>
 
-   <!-- Modal de Carga -->
+<!-- Modal de Carga -->
 <div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
@@ -223,6 +223,7 @@
         </div>
     </div>
 </div>
+
 
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

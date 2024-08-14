@@ -98,137 +98,142 @@ class OrderController extends Controller
     }
 
     public function showReceptions($ACMVOIDOC)
-    {
-        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)
-            ->with('provider')
-            ->first();
-
-        if (!$order) {
-            return redirect()->route('orders')->with('error', 'Orden no encontrada.');
-        }
-
-        $receptions = DB::table('ACMVOR1')->where('ACMVOIDOC', $ACMVOIDOC)->get();
-        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-        $cntdoc = DB::table('cntdoc')
-            ->where('cntdocid', 'RCN')
-            ->first();
-
-        if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
-            $num_rcn_letras = $cntdoc->CNTDOCNSIG;
-
-            if (is_numeric($num_rcn_letras)) {
-                $new_value = intval($num_rcn_letras) + 1;
-            } else {
-                $new_value = chr(ord($num_rcn_letras) + 1);
-            }
-
-            DB::table('cntdoc')
-                ->where('cntdocid', 'RCN')
-                ->update(['CNTDOCNSIG' => $new_value]);
-        } else {
-            $num_rcn_letras = 'NUMERO';
-        }
-
-        $currentDate = now()->toDateString();
-
-        $partidas = DB::table('acmvor1')
-            ->leftJoin('acmroi', function ($join) {
-                $join->on('acmvor1.ACMVOIDOC', '=', 'acmroi.ACMROIDOC')
-                    ->on('acmvor1.ACMVOIALM', '=', 'acmroi.INALMNID')
-                    ->on('acmvor1.ACMVOIPRID', '=', 'acmroi.INPRODID');
-            })
-            ->where('acmvor1.ACMVOIDOC', $ACMVOIDOC)
-            ->where(function ($query) {
-                $query->whereNull('acmroi.ACMROIDOC')
-                    ->orWhere('acmroi.ACACTLID', '!=', 'CANCELADO');
-            })
-            ->select('acmvor1.ACMVOILIN', 'acmvor1.ACMVOIPRID', 'acmvor1.ACMVOIPRDS', 'acmvor1.ACMVOINPAR', 'acmvor1.ACMVOIUMT', 'acmvor1.ACMVOIQTO', 'acmvor1.ACMVOINPO', 'acmvor1.ACMVOIIVA')
-            ->get();
-
-        if ($partidas->isEmpty()) {
-            return redirect()->route('orders')->with('error', 'No hay partidas válidas para esta recepción.');
-        }
-
-        return view('receptions', compact('receptions', 'order', 'provider', 'num_rcn_letras', 'currentDate', 'partidas'));
+{
+    // Verifica si $ACMVOIDOC es realmente un número
+    if (!is_numeric($ACMVOIDOC)) {
+        return redirect()->route('orders')->with('error', 'El número de orden no es válido.');
     }
 
-    public function receiptOrder(Request $request, $ACMVOIDOC)
-{
-    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)
+        ->with('provider')
+        ->first();
+
+    if (!$order) {
+        return redirect()->route('orders')->with('error', 'Orden no encontrada.');
+    }
+
+    $receptions = DB::table('ACMVOR1')->where('ACMVOIDOC', $ACMVOIDOC)->get();
     $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
 
-    if (!$order || !$provider) {
-        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-    }
+    $cntdoc = DB::table('cntdoc')
+        ->where('cntdocid', 'RCN')
+        ->first();
 
-    Log::info('Datos recibidos en receiptOrder:', $request->all());
+    if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
+        $num_rcn_letras = $cntdoc->CNTDOCNSIG;
 
-    // Validar y asignar el valor del flete
-    $freight = $request->input('freight', '0.0001');
-    if ($freight == '' || $freight === null) {
-        $freight = '0.0001';
-    }
-
-    $validatedData = $request->validate([
-        'carrier_number' => 'required|string',
-        'carrier_name' => 'required|string',
-        'document_type' => 'required|string',
-        'document_number' => 'required|string',
-        'supplier_name' => 'required|string',
-        'reference_type' => 'required|string',
-        'store' => 'required|string',
-        'reference' => 'required|string',
-        'reception_date' => 'required|date',
-        'document_type1' => 'required|string',
-        'document_number1' => 'required|string',
-        'total_cost' => 'required|numeric',
-        'freight' => 'nullable|numeric|min:0.0001', // Validar que el flete sea mayor o igual a 0.0001
-        'cantidad_recibida.*' => 'nullable|numeric|min:0',
-        'precio_unitario.*' => 'nullable|numeric|min:0',
-        'acmvoilin.*' => 'required|integer',
-        'acmvoiprid.*' => 'required|integer',
-        'acmvoiprds.*' => 'required|string',
-        'acmvoiumt.*' => 'required|string',
-        'acmvoiiva.*' => 'required|numeric',
-    ]);
-
-    $validatedData['freight'] = $freight; // Asignar el valor de freight validado
-
-    DB::beginTransaction();
-
-    try {
-        $partidasProcesadas = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
-
-        if (!$partidasProcesadas) {
-            throw new \Exception('Error al insertar las partidas.');
+        if (is_numeric($num_rcn_letras)) {
+            $new_value = intval($num_rcn_letras) + 1;
+        } else {
+            $new_value = chr(ord($num_rcn_letras) + 1);
         }
 
-        if ($request->input('flete_select') == 1) {
-            $freightInserted = $this->insertFreight($validatedData, $provider);
-            if (!$freightInserted) {
-                throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
-            }
-        }
-
-        DB::commit();
-
-        Log::info('Recepción registrada con éxito en la base de datos.');
-        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Error en la recepción de la orden: " . $e->getMessage());
-        return response()->json(['success' => false, 'message' => $e->getMessage()]);
+        DB::table('cntdoc')
+            ->where('cntdocid', 'RCN')
+            ->update(['CNTDOCNSIG' => $new_value]);
+    } else {
+        $num_rcn_letras = 'NUMERO';
     }
+
+    $currentDate = now()->toDateString();
+
+    $partidas = DB::table('acmvor1')
+        ->leftJoin('acmroi', function ($join) {
+            $join->on('acmvor1.ACMVOIDOC', '=', 'acmroi.ACMROIDOC')
+                ->on('acmvor1.ACMVOIALM', '=', 'acmroi.INALMNID')
+                ->on('acmvor1.ACMVOIPRID', '=', 'acmroi.INPRODID');
+        })
+        ->where('acmvor1.ACMVOIDOC', $ACMVOIDOC)
+        ->where(function ($query) {
+            $query->whereNull('acmroi.ACMROIDOC')
+                ->orWhere('acmroi.ACACTLID', '!=', 'CANCELADO');
+        })
+        ->select('acmvor1.ACMVOILIN', 'acmvor1.ACMVOIPRID', 'acmvor1.ACMVOIPRDS', 'acmvor1.ACMVOINPAR', 'acmvor1.ACMVOIUMT', 'acmvor1.ACMVOIQTO', 'acmvor1.ACMVOINPO', 'acmvor1.ACMVOIIVA')
+        ->get();
+
+    if ($partidas->isEmpty()) {
+        return redirect()->route('orders')->with('error', 'No hay partidas válidas para esta recepción.');
+    }
+
+    return view('receptions', compact('receptions', 'order', 'provider', 'num_rcn_letras', 'currentDate', 'partidas'));
 }
 
-    
+
+public function receiptOrder(Request $request, $ACMVOIDOC)
+    {
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+        if (!$order || !$provider) {
+            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
+        }
+
+        Log::info('Datos recibidos en receiptOrder:', $request->all());
+
+        $freight = $request->input('freight', '0.0001');
+        if ($freight == '' || $freight === null) {
+            $freight = '0.0001';
+        }
+
+        $validatedData = $request->validate([
+            'carrier_number' => 'required|string',
+            'carrier_name' => 'required|string',
+            'document_type' => 'required|string',
+            'document_number' => 'required|string',
+            'supplier_name' => 'required|string',
+            'reference_type' => 'required|string',
+            'store' => 'required|string',
+            'reference' => 'required|string',
+            'reception_date' => 'required|date',
+            'document_type1' => 'required|string',
+            'document_number1' => 'required|string',
+            'total_cost' => 'required|numeric',
+            'freight' => 'nullable|numeric|min:0.0001',
+            'cantidad_recibida.*' => 'nullable|numeric|min:0',
+            'precio_unitario.*' => 'nullable|numeric|min:0',
+            'acmvoilin.*' => 'required|integer',
+            'acmvoiprid.*' => 'required|integer',
+            'acmvoiprds.*' => 'required|string',
+            'acmvoiumt.*' => 'required|string',
+            'acmvoiiva.*' => 'required|numeric',
+        ]);
+
+        $validatedData['freight'] = $freight;
+
+        DB::beginTransaction();
+
+        try {
+            // Procesa las partidas
+            $partidasProcesadas = $this->insertPartidas($validatedData, $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+
+            if (!$partidasProcesadas) {
+                throw new \Exception('Error al insertar las partidas.');
+            }
+
+            // Insertar el flete si es necesario
+            if ($request->input('flete_select') == 1) {
+                $freightInserted = $this->insertFreight($validatedData, $provider);
+                if (!$freightInserted) {
+                    throw new \Exception('Error al insertar el flete. Inserciones revertidas.');
+                }
+            }
+
+            DB::commit(); // Confirmar la transacción si todo sale bien
+
+            Log::info('Recepción registrada con éxito en la base de datos.');
+            return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+        } catch (\Exception $e) {
+            DB::rollBack(); // Revertir la transacción si algo falla
+            Log::error("Error en la recepción de la orden: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+        }
+    }
     public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
     {
         $fechaActual = now();
         $horaActual = now()->format('H:i:s');
         $usuario = Auth::user()->name ?? 'Sistema';
-    
+
         try {
             foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
                 if ($cantidadRecibida > 0) {
@@ -240,32 +245,32 @@ class OrderController extends Controller
                         Log::error("Datos de partida no encontrados para el índice {$index}");
                         throw new \Exception("Datos de partida faltantes para el índice {$index}. Abortando operación.");
                     }
-    
+
                     $acmvoilin = $validatedData['acmvoilin'][$index];
                     $acmvoiprid = $validatedData['acmvoiprid'][$index];
                     $acmvoiprds = $validatedData['acmvoiprds'][$index];
                     $acmvoiumt = $validatedData['acmvoiumt'][$index];
                     $acmvoiiva = $validatedData['acmvoiiva'][$index];
-    
+
                     Log::info("Procesando partida", ['index' => $index, 'ACMVOILIN' => $acmvoilin, 'INPRODID' => $acmvoiprid, 'UMT' => $acmvoiumt, 'IVA' => $acmvoiiva]);
-    
+
                     $costoUnitario = isset($preciosUnitarios[$index]) && $preciosUnitarios[$index] > 0 ? (float) $preciosUnitarios[$index] : null;
-    
+
                     if ($costoUnitario === null) {
                         Log::error("Costo unitario no ingresado o inválido para la partida con ID {$acmvoiprid}, se omite la recepción.");
                         continue;
                     }
-    
+
                     $costoTotal = $cantidadRecibida * $costoUnitario;
-    
+
                     $inserted = $this->insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $acmvoiumt);
-    
+
                     if (!$inserted) {
                         throw new \Exception("Error al insertar o actualizar en incrdx para la partida con ID {$acmvoiprid}");
                     }
-    
+
                     $this->updateInsdos($validatedData['store'], $acmvoiprid, $cantidadRecibida, $costoTotal);
-    
+
                     $this->insertAcmroi($validatedData, [
                         'ACMVOILIN' => $acmvoilin,
                         'ACMVOIPRID' => $acmvoiprid,
@@ -282,7 +287,6 @@ class OrderController extends Controller
             throw $e;
         }
     }
-    
 
     public function insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $unidadMedida)
     {
@@ -294,7 +298,7 @@ class OrderController extends Controller
                 ->where('INCRDXDOC', (int) $validatedData['document_number1'])
                 ->where('INCRDXLIN', $acmvoilin)
                 ->exists();
-    
+
             if ($existsIncrdx) {
                 DB::table('incrdx')
                     ->where('INALMNID', $validatedData['store'])
@@ -351,93 +355,89 @@ class OrderController extends Controller
             throw $e;
         }
     }
-    
 
     public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual)
     {
         try {
-            $acmroilin = $partida['ACMVOILIN'];
-    
-            if ($acmroilin === null) {
-                throw new \Exception("El valor de ACMVOILIN es nulo para la partida con ID {$partida['ACMVOIPRID']}");
+            $acmroilin = isset($partida['ACMVOILIN']) ? (int) $partida['ACMVOILIN'] : 0;
+            if ($acmroilin === 0) {
+                throw new \Exception("El valor de ACMVOILIN es nulo o cero para la partida con ID {$partida['ACMVOIPRID']}");
             }
-    
+
             $producto = DB::table('inprod')
                 ->where('INPRODID', (int) $partida['ACMVOIPRID'])
                 ->first();
-    
+
+            if (!$producto) {
+                throw new \Exception("Producto con ID {$partida['ACMVOIPRID']} no encontrado.");
+            }
+
             if ($costoUnitario <= 0) {
                 Log::error("Costo unitario inválido para el producto ID {$partida['ACMVOIPRID']} en la línea {$acmroilin}");
                 throw new \Exception("Costo unitario inválido: {$costoUnitario} para el producto ID {$partida['ACMVOIPRID']}");
             }
-    
-            Log::info("Preparando inserción en acmroi para la orden {$order->ACMVOIDOC}", [
-                'ACMROIDOC' => $order->ACMVOIDOC,
-                'ACMROILIN' => $acmroilin,
-                'INPRODID' => $partida['ACMVOIPRID'],
-                'ACMROIDSC' => $partida['ACMVOIPRDS'],
-                'ACMROIQT' => $cantidadRecibida,
-                'ACMROINM' => $costoTotal,
-                'Costo Unitario' => $costoUnitario
-            ]);
-    
-            DB::table('acmroi')->insert([
+
+            $insertData = [
                 'CNCIASID' => 1,
                 'ACMROITDOC' => 'RCN',
-                'ACMROINDOC' => (int) $validatedData['document_number1'],
+                'ACMROINDOC' => isset($validatedData['document_number1']) ? (int) $validatedData['document_number1'] : 0,
                 'CNTDOCID' => 'OL1',
-                'ACMROIDOC' => (int) $order->ACMVOIDOC,
+                'ACMROIDOC' => isset($order->ACMVOIDOC) ? (int) $order->ACMVOIDOC : 0,
                 'ACMROILIN' => $acmroilin,
-                'ACMROIFREC' => $order->ACMVOIFREC,
-                'CNCDIRID' => (int) $provider->CNCDIRID,
-                'INALMNID' => substr($validatedData['store'], 0, 15),
-                'ACMVOIAOD' => substr($order->ACMVOIAOD, 0, 3),
-                'CNCMNMID' => substr($order->CNCMNMID, 0, 3),
-                'ACMROIFDOC' => $order->ACMROIFDOC,
+                'ACMROIFREC' => $order->ACMROIFREC ?? null,
+                'CNCDIRID' => isset($provider->CNCDIRID) ? (int) $provider->CNCDIRID : 0,
+                'INALMNID' => isset($validatedData['store']) ? substr($validatedData['store'], 0, 15) : '',
+                'ACMVOIAOD' => isset($order->ACMVOIAOD) ? substr($order->ACMVOIAOD, 0, 3) : '',
+                'CNCMNMID' => isset($order->CNCMNMID) ? substr($order->CNCMNMID, 0, 3) : '',
+                'ACMROIFDOC' => $order->ACMROIFDOC ?? null,
                 'ACMROIUSRC' => $usuario,
-                'ACMROIFCEP' => $order->ACMROIFCEP,
-                'ACMROIFREQ' => $order->ACMROIFREQ,
-                'ACMROIFTRN' => $order->ACMROIFTRN,
-                'ACMROIFCNT' => $order->ACMROIFCNT,
+                'ACMROIFCEP' => $order->ACMROIFCEP ?? null,
+                'ACMROIFREQ' => $order->ACMROIFREQ ?? null,
+                'ACMROIFTRN' => $order->ACMROIFTRN ?? null,
+                'ACMROIFCNT' => $order->ACMROIFCNT ?? null,
                 'ACMVOIPR' => $order->ACMVOIPR,
                 'INPRODID' => (int) $partida['ACMVOIPRID'],
-                'ACMROIDSC' => substr($partida['ACMVOIPRDS'], 0, 60),
-                'ACMROIUMT' => substr($partida['ACMVOIUMT'], 0, 3),
-                'ACMROIIVA' => $partida['ACMVOIIVA'],
-                'ACMROIQT' => $cantidadRecibida,
-                'ACMROIQTTR' => $cantidadRecibida,
-                'ACMROINP' => $costoUnitario,
-                'ACMROINM' => $costoTotal,
-                'ACMROINI' => $costoTotal * 1.16,
-                'ACMROING' => $costoTotal,
-                'ACMROIDOC2' => (int) $validatedData['document_number1'],
+                'ACMROIDSC' => isset($partida['ACMVOIPRDS']) ? substr($partida['ACMVOIPRDS'], 0, 60) : '',
+                'ACMROIUMT' => isset($partida['ACMVOIUMT']) ? substr($partida['ACMVOIUMT'], 0, 3) : '',
+                'ACMROIIVA' => isset($partida['ACMVOIIVA']) ? (float) $partida['ACMVOIIVA'] : 0.0,
+                'ACMROIQT' => (float) $cantidadRecibida,
+                'ACMROIQTTR' => (float) $cantidadRecibida,
+                'ACMROINP' => (float) $costoUnitario,
+                'ACMROINM' => (float) $costoTotal,
+                'ACMROINI' => (float) ($costoTotal * 1.16),
+                'ACMROING' => (float) $costoTotal,
+                'ACMROIDOC2' => isset($validatedData['document_number1']) ? (int) $validatedData['document_number1'] : 0,
                 'ACMROIDOI2' => 'RCN',
                 'ACMROITDOCCAN' => 1,
                 'ACMROINDOCCAN' => 1,
                 'ACMROIDOI3' => 'PC',
                 'ACMROIDOC3' => $this->getNewCNTDOCNSIG(),
-                'ACMROIREF' => substr($validatedData['reference'], 0, 60),
-                'ACMROITREF' => (int) $validatedData['reference_type'],
+                'ACMROIREF' => isset($validatedData['reference']) ? substr($validatedData['reference'], 0, 60) : '',
+                'ACMROITREF' => isset($validatedData['reference_type']) ? (int) $validatedData['reference_type'] : 0,
                 'ACRCOICD01ID' => 'REQ',
                 'ACMROICAN' => ' ',
-                'CGUNNGID' => substr($order->CGUNNGID, 0, 15),
+                'CGUNNGID' => isset($order->CGUNNGID) ? substr(trim($order->CGUNNGID), 0, 15) : '',
                 'ACMROIFGPT' => '1753-01-01 00:00:00.000',
                 'ACMROIFENT' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFSAL' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFECC' => '1753-01-01 00:00:00.000',
-                'ACMROIVOLU' => $producto->INPRODVOL * $cantidadRecibida,
-                'ACMROIPESOU' => $producto->INPRODPESO * $cantidadRecibida,
-                'ACMROIVOLT' => $producto->INPRODVOL * $cantidadRecibida,
-                'ACMROIPESOT' => $producto->INPRODPESO * $cantidadRecibida,
-            ]);
-    
+                'ACMROIVOLU' => (float) ($producto->INPRODVOL * $cantidadRecibida),
+                'ACMROIPESOU' => (float) ($producto->INPRODPESO * $cantidadRecibida),
+                'ACMROIVOLT' => (float) ($producto->INPRODVOL * $cantidadRecibida),
+                'ACMROIPESOT' => (float) ($producto->INPRODPESO * $cantidadRecibida),
+            ];
+
+            Log::info('Datos que se insertarán en acmroi:', $insertData);
+
+            DB::table('acmroi')->insert($insertData);
+
             Log::info("Nueva entrada en acmroi insertada correctamente.");
         } catch (\Exception $e) {
             Log::error("Error al insertar en acmroi: " . $e->getMessage());
             throw $e;
         }
     }
-    
+
     public function updateInsdos($storeId, $productId, $cantidadRecibida, $costoTotal)
     {
         try {
@@ -445,7 +445,7 @@ class OrderController extends Controller
                 ->where('INALMNID', $storeId)
                 ->where('INPRODID', $productId)
                 ->first();
-    
+
             if ($existingRecord) {
                 DB::table('insdos')
                     ->where('INALMNID', $storeId)
@@ -454,7 +454,7 @@ class OrderController extends Controller
                         'INSDOSQDS' => $existingRecord->INSDOSQDS + $cantidadRecibida,
                         'INSDOSVAL' => $existingRecord->INSDOSVAL + $costoTotal,
                     ]);
-    
+
                 Log::info("Inventario actualizado para el producto ID {$productId} en el almacén {$storeId}");
             } else {
                 DB::table('insdos')->insert([
@@ -463,17 +463,16 @@ class OrderController extends Controller
                     'INSDOSQDS' => $cantidadRecibida,
                     'INSDOSVAL' => $costoTotal,
                 ]);
-    
+
                 Log::info("Nuevo inventario insertado para el producto ID {$productId} en el almacén {$storeId}");
             }
-    
+
             return true;
         } catch (\Exception $e) {
             Log::error("Error al actualizar insdos: " . $e->getMessage());
             throw $e;
         }
     }
-    
 
     public function insertFreight($validatedData, $provider)
     {

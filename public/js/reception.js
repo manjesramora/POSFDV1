@@ -5,9 +5,6 @@ $("#receptionForm").on("submit", function (e) {
     const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
     loadingModal.show();
 
-    // Prevenir el cierre del modal
-    $('#loadingModal').modal({ backdrop: 'static', keyboard: false });
-
     // Enviar el formulario a través de AJAX
     const formData = new FormData(this);
 
@@ -17,46 +14,52 @@ $("#receptionForm").on("submit", function (e) {
 
             if (response.data.success) {
                 // Mostrar mensaje de éxito en el modal
-                document.querySelector('.modal-body p').innerText = response.data.message;
+                document.querySelector('.modal-body p').innerHTML = `
+                    ${response.data.message}
+                    <br><br>
+                    <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
+                `;
                 document.querySelector('.spinner-border').classList.add('d-none');
                 document.getElementById('goToOrdersButton').classList.remove('d-none');
-                document.getElementById('goToReceptionButton').classList.remove('d-none');
-                document.getElementById('closeModalButton').classList.remove('d-none');
+                document.getElementById('closeModalButton').classList.add('d-none');
             } else {
                 // Mostrar mensaje de error en el modal si success es false
-                document.querySelector('.modal-body p').innerText = response.data.message || "Ocurrió un error inesperado.";
+                document.querySelector('.modal-body p').innerHTML = `
+                    ${response.data.message || "Ocurrió un error inesperado."}
+                    <br><br>
+                    <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
+                `;
                 document.querySelector('.spinner-border').classList.add('d-none');
-                document.getElementById('closeModalButton').classList.remove('d-none');
+                document.getElementById('goToOrdersButton').classList.remove('d-none');
+                document.getElementById('closeModalButton').classList.add('d-none');
             }
+
+            // Agregar evento al botón de regreso
+            document.getElementById('goToOrdersButton').addEventListener('click', function() {
+                window.location.href = "{{ route('orders') }}";
+            });
         })
         .catch(error => {
             // Manejar errores en la solicitud AJAX
-            document.querySelector('.modal-body p').innerText = "Ocurrió un error durante la recepción.";
+            document.querySelector('.modal-body p').innerHTML = `
+                Ocurrió un error durante la recepción.
+                <br><br>
+                <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
+            `;
             document.querySelector('.spinner-border').classList.add('d-none');
-            document.getElementById('closeModalButton').classList.remove('d-none');
+            document.getElementById('goToOrdersButton').classList.remove('d-none');
+            document.getElementById('closeModalButton').classList.add('d-none');
+
+            // Agregar evento al botón de regreso
+            document.getElementById('goToOrdersButton').addEventListener('click', function() {
+                window.location.href = "{{ route('orders') }}";
+            });
 
             // Mostrar detalles del error en la consola
             console.error("Error durante la solicitud:", error.response ? error.response.data : error.message);
         });
 });
 
-// Evento para manejar la acción de regresar a órdenes
-$("#goToOrdersButton").on("click", function () {
-    window.location.href = "{{ route('orders') }}";
-});
-
-// Evento para manejar la acción de regresar a recepciones de compra
-$("#goToReceptionButton").on("click", function () {
-    window.location.href = "{{ route('receptions') }}";
-});
-
-// Evitar cerrar el modal accidentalmente y forzar la redirección a órdenes de compra
-$("#closeModalButton").on("click", function () {
-    // Bloquear el botón de cierre para impedir la salida sin regresar
-    $(this).prop("disabled", true);
-    alert("La orden ha sido procesada y no se puede editar. Será redirigido a las órdenes.");
-    window.location.href = "{{ route('orders') }}";
-});
 
 // Autocompletado para el campo Número
 $("#numero").on("input", function () {
