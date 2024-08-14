@@ -19,6 +19,12 @@ function buscarFiltros() {
     var linea = document.getElementById("linea").value;
     var sublinea = document.getElementById("sublinea").value;
     var departamento = document.getElementById("departamento").value;
+    var activo = document.getElementById("activo").value;
+    var activo = document.getElementById("activo").value;
+  ; // Elimina el parámetro anterior
+  
+    
+    var hasFilters = productId || sku || name || linea || sublinea || departamento || activo;
 
     // Incluir valores por defecto para Línea y Sublinea
     if (linea) {
@@ -37,6 +43,7 @@ function buscarFiltros() {
     url.searchParams.delete("linea");
     url.searchParams.delete("sublinea");
     url.searchParams.delete("departamento");
+    url.searchParams.delete("activo")
     url.searchParams.delete("page"); // Reiniciar el paginado a la página 1
 
     // Establecer los nuevos parámetros de búsqueda
@@ -46,6 +53,7 @@ function buscarFiltros() {
     if (linea) url.searchParams.set("linea", linea);
     if (sublinea) url.searchParams.set("sublinea", sublinea);
     if (departamento) url.searchParams.set("departamento", departamento);
+    if (activo) url.searchParams.set("activo", activo);
 
     // Actualizar la URL del navegador
     window.history.pushState({}, "", url);
@@ -58,8 +66,16 @@ function buscarFiltros() {
             var doc = parser.parseFromString(html, "text/html");
             var newContent = doc.getElementById("proveedorTable").innerHTML;
             var newPagination = doc.getElementById("pagination-links").innerHTML;
+
             document.getElementById("proveedorTable").innerHTML = newContent;
             document.getElementById("pagination-links").innerHTML = newPagination;
+
+            // Verificar si no hay resultados
+            if (hasFilters && !newContent.trim()) {
+                document.getElementById("no-results-message").style.display = "block";
+            } else {
+                document.getElementById("no-results-message").style.display = "none";
+            }
 
             // Reattach event listeners for pagination links
             reattachPaginationEventListeners();
@@ -67,6 +83,7 @@ function buscarFiltros() {
         .catch((error) => console.error('Error en la solicitud fetch:', error))
         .finally(() => hideLoading()); // Ocultar la animación de "Cargando" al finalizar
 }
+
 
 // Función para manejar el evento de tecla presionada en los campos de entrada
 function handleKeyPress(event) {
@@ -83,6 +100,30 @@ document.getElementById("linea").addEventListener("keypress", handleKeyPress);
 document.getElementById("sublinea").addEventListener("keypress", handleKeyPress);
 document.getElementById("departamento").addEventListener("keypress", handleKeyPress);
 document.getElementById("activo").addEventListener("keypress", handleKeyPress);
+
+
+function reattachPaginationEventListeners() {
+    document.querySelectorAll("#pagination-links a").forEach(function(link) {
+        link.addEventListener("click", function(event) {
+            event.preventDefault();
+            showLoading(); // Mostrar la animación de "Cargando" al hacer clic en un enlace de paginación
+            
+            fetch(event.target.href)
+                .then(response => response.text())
+                .then(html => {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, "text/html");
+                    document.getElementById("proveedorTable").innerHTML = doc.getElementById("proveedorTable").innerHTML;
+                    document.getElementById("pagination-links").innerHTML = doc.getElementById("pagination-links").innerHTML;
+
+                    // Volver a adjuntar los event listeners después de actualizar el contenido
+                    reattachPaginationEventListeners();
+                })
+                .catch(error => console.error('Error en la solicitud fetch:', error))
+                .finally(() => hideLoading()); // Ocultar la animación de "Cargando" al finalizar
+        });
+    });
+}
 
 
 
@@ -102,6 +143,26 @@ function limpiarFiltros() {
 
     buscarFiltros();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Selecciona el campo de entrada de cantidad
+    const quantityInput = document.getElementById('quantity');
+
+    // Verifica si el campo de entrada de cantidad está presente
+    if (quantityInput) {
+        // Agrega un evento de escucha para el evento 'keydown'
+        quantityInput.addEventListener('keydown', function(event) {
+            // Verifica si la tecla presionada es Enter
+            if (event.key === 'Enter') {
+                // Previene el comportamiento por defecto del Enter
+                event.preventDefault();
+                // Llama a la función para enviar el formulario de impresión
+                submitPrintForm();
+            }
+        });
+    }
+});
+
 
 function checkDefault(id, defaultValue) {
     var input = document.getElementById(id);

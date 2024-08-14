@@ -72,7 +72,7 @@
                                 <select name="activo" id="activo" class="form-control">
                                     <option value="todos" {{ request('activo') == 'todos' ? 'selected' : '' }}>Todos</option>
                                     <option value="activos" {{ request('activo') == 'activos' ? 'selected' : '' }}>Activos</option>
-                                </select>
+                                </select> 
                             </div>
                             <div class="col-md-1 d-flex align-items-end">
                                 <button type="button" class="btn btn-primary me-2" onclick="buscarFiltros()">
@@ -90,6 +90,10 @@
                     <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">                        
                         <div class="card-body">
                             <div class="table-responsive small-font">
+                                <div id="no-results-message" class="alert alert-warning text-center" style="display: none;">
+                                    Producto no Encontrado
+                                </div>
+                            <div class="table-responsive small-font">
                                 <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
@@ -104,6 +108,8 @@
                                                 'INPROD.INPR02ID' => 'DPTO',
                                                 'INSDOS.INSDOSQDS' => 'EXI',
                                                 'INPROD.INUMBAID' => 'UMB',
+                                                'INALPR.INAPR17ID' => 'TS',
+
                                             ];
                                         
                                                 /*'INPROD.INPRODID' => 'PRODUCTO',
@@ -154,13 +160,13 @@
                                             <td>{{ $label->INPR02ID }}</td>
                                             <td>{{ number_format($label->Existencia, 2) }}</td>
                                             <td>{{ $label->INUMBAID }}</td>
+                                            <td>{{ $label->TipoStock }}</td>
                                             
                                             <td>
                                             
                                             <!--<td>{{ $label->INPRODID }}</td>
                                             <td>{{ $label->INPRODDSC }}</td>
                                             <td>{{ $label->INPRODI2 }}</td>
-                                            <td>{{ number_format($label->Existencia, 2) }}</td>
                                             <td>{{ $label->INPR02ID }}</td>
                                             <td>{{ $label->INPRODCBR }}</td>
                                             <td>{{ $label->INPR03ID }}</td>

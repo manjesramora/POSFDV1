@@ -12,53 +12,46 @@
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
-            padding: 5px;
+            padding: 0.5cm; /* Ajusta según el .drs */
             box-sizing: border-box;
-            width: 6cm;
-            height: 3cm;
-            margin: 5px;
+            width: 5.9cm; /* Ajusta según el .drs */
+            height: 2.9cm; /* Ajusta según el .drs */
+            margin: 0.1cm; /* Ajusta según el .drs */
             page-break-after: always;
         }
 
         .description-barcode-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: flex-start; /* Alinea la descripción al inicio (izquierda) */
             width: 100%;
         }
 
         .description {
-            text-align: left;
-            font-size: 11px;
+            font-size: 10px; /* Ajusta según el .drs */
             font-weight: bold;
-            margin-bottom: 5px;
-            width: 100%;
-            margin-left: 24px; /* Ajusta este valor según sea necesario */
+            margin-bottom: 0.2cm; /* Ajusta según el .drs */
+            width: auto;
         }
 
         .barcode-sku-container {
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: center; /* Alinea el código de barras y el SKU al centro */
             justify-content: center;
             width: 100%;
+            margin-top: 0.2cm; /* Añade un poco de espacio superior si es necesario */
         }
 
         .barcode {
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin-bottom: 0.1cm; /* Ajusta el espacio entre el código de barras y el SKU */
+            text-align: center;
             width: 100%;
         }
 
-        .barcode img, .barcode div {
-            display: block;
-            margin: 0 auto;
-        }
-
         .sku {
-            font-size: 16px;
-            text-align: center;
+            font-size: 12px; /* Ajusta según el .drs */
+           
             font-weight: bold;
         }
     </style>
@@ -72,7 +65,7 @@
             </div>
             <div class="barcode-sku-container">
                 <div class="barcode">
-                    {!! $label['barcode'] !!}
+                    {!! $label['barcode'] !!}  <!-- Aquí permanece el código de barras real -->
                 </div>
                 <div class="sku">
                     {{ $label['sku'] }}
