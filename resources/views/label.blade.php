@@ -9,6 +9,7 @@
         }
 
         .label-container {
+            transform: rotate(90deg);
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
