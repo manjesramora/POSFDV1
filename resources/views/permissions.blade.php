@@ -102,106 +102,124 @@
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                     </div>
-                                                    <!-- Modal de Edición de Rol -->
-                                                    <div class="modal fade text-left" id="editPermissionModal{{ $permission->id }}" tabindex="-1" aria-labelledby="editPermissionModalLabel{{ $permission->id }}" aria-hidden="true">
-                                                        <div class="modal-dialog">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="editPermissionModalLabel{{ $permission->id }}">Editar Permiso</h5>
-                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <form id="editPermissionForm{{ $permission->id }}" method="POST" action="{{ route('permissions.update', $permission->id) }}">
-                                                                        @csrf
-                                                                        @method('PUT')
-
-                                                                        <!-- Campos del formulario -->
-                                                                        <div class="row mb-3">
-                                                                            <div class="col-12">
-                                                                                <label for="name" class="form-label">Permiso</label>
-                                                                                <input type="text" class="form-control uper" id="name" name="name" value="{{ $permission->name }}" required>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div class="row mb-3">
-                                                                            <div class="col-12">
-                                                                                <label for="description" class="form-label">Descripción</label>
-                                                                                <input type="text" class="form-control" id="description" name="description" value="{{ $permission->description }}" required>
-                                                                            </div>
-                                                                        </div>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                                                                </div>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                </td>
+                                            </tr>
+                                            @endforeach
+                                            @else
+                                            <tr>
+                                                <td colspan="4">@if($selectedDepartment) Ningún permiso registrado @else Seleccione un departamento para mostrar los permisos @endif</td>
+                                            </tr>
+                                            @endif
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <!-- Fin Modal de Edición de Rol -->
-
-                                </td>
-                                </tr>
-                                @endforeach
-                                @else
-                                <tr>
-                                    <td colspan="4">@if($selectedDepartment) Ningún permiso registrado @else Seleccione un departamento para mostrar los permisos @endif</td>
-                                </tr>
-                                @endif
-                                </tbody>
-                                </table>
+                                <!-- Paginación -->
+                                <div class="d-flex justify-content-center mt-3">
+                                    {{ $permissions->appends(request()->all())->links() }}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Modal para agregar permiso -->
-    <div class="modal fade" id="addPermissionModal" tabindex="-1" aria-labelledby="addPermissionModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addPermissionModalLabel">Agregar Permiso</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <!-- Modal para agregar permiso -->
+        <div class="modal fade" id="addPermissionModal" tabindex="-1" aria-labelledby="addPermissionModalLabel" aria-hidden="true" data-errors="{{ $errors->has('name') || $errors->has('description') ? 'true' : 'false' }}">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addPermissionModalLabel">Agregar Permiso</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addPermissionForm" method="POST" action="{{ route('permissions.store') }}">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nombre del Permiso</label>
+                                <input type="text" class="form-control uper permission-name" id="name" name="name" required value="{{ old('name') }}" pattern="^[a-zA-Z]+$">
+                                <span class="error mensaje" aria-live="polite"></span>
+                                @error('name')
+                                <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea class="form-control" id="description" name="description" rows="3" required>{{ old('description') }}</textarea>
+                                @error('description')
+                                <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary">Guardar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <form id="addPermissionForm" method="POST" action="{{ route('permissions.store') }}">
-                        @csrf
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nombre del Permiso</label>
-                            <input type="text" class="form-control uper" id="name" name="name" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            <button type="submit" class="btn btn-primary">Guardar</button>
-                        </div>
+            </div>
+        </div>
+        <!-- Fin Modal para agregar permiso -->
+
+        <!-- Modal de Edición de Permiso (en el foreach) -->
+        <div id="modalsData" data-errors="{{ $errors->any() ? 'true' : 'false' }}" data-permission-id="{{ old('id') }}"></div>
+
+        @foreach($permissions as $permission)
+        <div class="modal fade text-left" id="editPermissionModal{{ $permission->id }}" tabindex="-1" aria-labelledby="editPermissionModalLabel{{ $permission->id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editPermissionModalLabel{{ $permission->id }}">Editar Permiso</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editPermissionForm{{ $permission->id }}" method="POST" action="{{ route('permissions.update', $permission->id) }}">
+                            @csrf
+                            @method('PUT')
+                            <input type="hidden" name="id" value="{{ $permission->id }}">
+                            <!-- Campos del formulario -->
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="name" class="form-label">Permiso</label>
+                                    <input type="text" class="form-control uper permission-name" id="name{{ $permission->id }}" name="name" value="{{ $permission->name }}" pattern="^[a-zA-Z]+$">
+                                    <span class="error mensaje" aria-live="polite"></span>
+                                    @error('name')
+                                    <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <label for="description" class="form-label">Descripción</label>
+                                    <input type="text" class="form-control" id="description{{ $permission->id }}" name="description" value="{{ $permission->description }}" required>
+                                </div>
+                            </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Fin Modal para agregar permiso -->
+        @endforeach
+        <!-- Fin Modal de Edición de Permiso -->
 
-    <!-- Scroll to Top Button-->
-    <a class="scroll-to-top rounded" href="#page-top">
-        <i class="fas fa-angle-up"></i>
-    </a>
+        <!-- Scroll to Top Button-->
+        <a class="scroll-to-top rounded" href="#page-top">
+            <i class="fas fa-angle-up"></i>
+        </a>
 
-    <!-- Scripts -->
-    <script src="assets/vendor/jquery/jquery.min.js"></script>
-    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="assets/vendor/chart.js/Chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('js/permissions.js') }}"></script>
+        <!-- Scripts -->
+        <script src="assets/vendor/jquery/jquery.min.js"></script>
+        <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
+        <script src="assets/vendor/chart.js/Chart.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="{{ asset('js/permissions.js') }}"></script>
     </div>
 </body>
 

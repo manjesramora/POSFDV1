@@ -65,44 +65,54 @@ class PermissionController extends Controller
 
     public function store(Request $request)
     {
-        // Validar los datos del formulario
+        // Mensajes de error personalizados
+        $messages = [
+            'name.unique' => 'El nombre del permiso ya existe. Por favor, elige otro.'
+        ];
+    
+        // Validar los datos del formulario con mensajes personalizados
         $validatedData = $request->validate([
             'name' => 'required|unique:permissions|max:100',
             'description' => 'required|string|max:255',
-        ]);
-
+        ], $messages);
+    
         // Crear un nuevo permiso
         $permission = new Permission();
         $permission->name = strtoupper($request->name);
         $permission->description = $request->description;
-
+    
         // Guardar el permiso en la base de datos
         $permission->save();
-
-        // Redirigir a la página de la lista de permisos u otra página apropiada
+    
+        // Redireccionar con mensaje de éxito
         return redirect()->route('permissions')->with('success', 'Permiso creado correctamente.');
-    }
+    }    
 
     public function update(Request $request, $id)
     {
+        // Mensajes de error personalizados
+        $messages = [
+            'name.unique' => 'El nombre del permiso ya existe. Por favor, elige otro.'
+        ];
+    
         // Validar los campos del formulario
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:permissions,name,' . $id,
             'description' => 'required|string|max:255',
-        ]);
-
+        ], $messages);
+    
         // Encontrar el Permiso por su ID
         $permission = Permission::findOrFail($id);
-
-        // Actualizar los datos del usuario
+    
+        // Convertir el nombre a mayúsculas antes de actualizar
         $permission->update([
-            'name' => $request->name,
+            'name' => strtoupper($request->name),
             'description' => $request->description,
         ]);
-
+    
         // Redirigir con un mensaje de éxito
         return redirect()->route('permissions')->with('success', 'Permiso actualizado correctamente.');
-    }
+    }    
 
     public function destroy($id)
     {
