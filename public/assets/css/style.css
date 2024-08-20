@@ -144,9 +144,7 @@
     background-size: cover;
     position: relative;
 }
-.invertida {
-    filter: invert(60%);
-}
+
 .login-dark form {
     max-width: 320px;
     width: 90%;

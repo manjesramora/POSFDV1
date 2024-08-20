@@ -150,44 +150,40 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">
-                                                        @foreach ($partidas as $index => $partida)
-                                                        <tr>
-                                                            <td>{{ (int)$partida->ACMVOILIN }}</td>
-                                                            <td>{{ (int)$partida->ACMVOIPRID }}</td>
-                                                            <td>{{ $partida->ACMVOIPRDS }}</td>
-                                                            <td>{{ $partida->ACMVOINPAR }}</td>
-                                                            <td>{{ $partida->ACMVOIUMT }}</td>
-                                                            <td>{{ number_format($partida->ACMVOIQTO, 2) }}</td>
-                                                            <td>
-                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
-                                                                    value="" step="1" min="0" max="{{ $partida->ACMVOIQTO }}"
-                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)">
-                                                            </td>
-                                                            <td>
-                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
-                                                                    value="{{ number_format($partida->ACMVOINPO, 2) }}" min="0"
-                                                                    max="{{ number_format($partida->ACMVOINPO, 2) }}" step="0.01"
-                                                                    oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
-                                                            </td>
+                                                    @foreach ($receptions as $index => $reception)
+<tr>
+    <td>{{ (int)$reception->ACMVOILIN }}</td>
+    <td>{{ (int)$reception->ACMVOIPRID }}</td>
+    <td>{{ $reception->ACMVOIPRDS }}</td>
+    <td>{{ $reception->ACMVOINPAR }}</td>
+    <td>{{ $reception->ACMVOIUMT }}</td>
+    <td>{{ number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 2) }}</td>
+    <td>
+        <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
+            value="" step="1" min="0" max="{{ $reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO }}"
+            oninput="limitCantidad(this)" onchange="limitCantidad(this)">
+    </td>
+    <td>
+        <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+            value="{{ number_format($reception->ACMVOINPO, 2) }}" min="0"
+            max="{{ number_format($reception->ACMVOINPO, 2) }}" step="0.01"
+            oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
+    </td>
+    <td>{{ number_format($reception->ACMVOIIVA, 2) }}</td>
+    <td class="subtotal">0.00</td>
+    <td class="total">0.00</td>
 
+    <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$reception->ACMVOILIN }}">
+    <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$reception->ACMVOIPRID }}">
+    <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $reception->ACMVOIPRDS }}">
+    <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $reception->ACMVOIUMT }}">
+    <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($reception->ACMVOIIVA, 2) }}">
+    <input type="hidden" name="acmvoiqto[{{ $index }}]" value="{{ $reception->ACMVOIQTO }}">
+    <input type="hidden" name="acmvoiqtp[{{ $index }}]" value="{{ $reception->ACMVOIQTP }}">
+</tr>
+@endforeach
 
-                                                            <td>{{ number_format($partida->ACMVOIIVA, 2) }}</td>
-                                                            <td class="subtotal">0.00</td>
-                                                            <td class="total">0.00</td>
-
-                                                            <!-- Campos ocultos para mantener la relación con la partida original -->
-                                                            <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$partida->ACMVOILIN }}">
-                                                            <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$partida->ACMVOIPRID }}">
-                                                            <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $partida->ACMVOIPRDS }}">
-                                                            <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $partida->ACMVOIUMT }}">
-                                                            <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($partida->ACMVOIIVA, 2) }}">
-                                                        </tr>
-                                                        @endforeach
                                                     </tbody>
-
-
-
-
 
                                                 </table>
                                             </div>
@@ -203,27 +199,26 @@
         </div>
     </div>
 
-<!-- Modal de Carga -->
-<div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="loadingModalLabel">Procesando Recepción</h5>
-            </div>
-            <div class="modal-body text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Cargando...</span>
+    <!-- Modal de Carga -->
+    <div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loadingModalLabel">Procesando Recepción</h5>
                 </div>
-                <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
-            </div>
-            <div class="modal-footer d-none" id="modalFooter">
-                <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal" disabled>Salir</button>
-                <button type="button" class="btn btn-primary d-none" id="goToOrdersButton">Regresar a Órdenes</button>
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="mt-3">Por favor espera mientras procesamos la recepción.</p>
+                </div>
+                <div class="modal-footer d-none" id="modalFooter">
+                    <button type="button" class="btn btn-secondary" id="closeModalButton" data-bs-dismiss="modal" disabled>Salir</button>
+                    <button type="button" class="btn btn-primary d-none" id="goToOrdersButton">Regresar a Órdenes</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-
 
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
