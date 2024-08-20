@@ -15,22 +15,58 @@ function limpiarCampos() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Obtener los datos del contenedor
-    var modalsData = document.getElementById('modalsData');
-    var errorsExist = modalsData.getAttribute('data-errors') === 'true';
-    var permissionId = modalsData.getAttribute('data-permission-id');
+    // Manejar modal de agregar permiso
+    var addPermissionModalElement = document.getElementById('addPermissionModal');
+    var addErrorsExist = addPermissionModalElement.getAttribute('data-errors') === 'true';
 
-    // Mostrar el modal de agregar si hay errores y no hay permissionId
-    if (errorsExist && !permissionId) {
-        var addPermissionModal = new bootstrap.Modal(document.getElementById('addPermissionModal'));
+    if (addErrorsExist) {
+        var addPermissionModal = new bootstrap.Modal(addPermissionModalElement);
         addPermissionModal.show();
     }
 
-    // Mostrar el modal de editar si hay errores y un permissionId
-    if (errorsExist && permissionId) {
-        var editPermissionModal = new bootstrap.Modal(document.getElementById('editPermissionModal' + permissionId));
-        editPermissionModal.show();
-    }
+    // Limpiar mensajes de error y valores al cerrar modal de agregar
+    addPermissionModalElement.addEventListener('hidden.bs.modal', function () {
+        var form = addPermissionModalElement.querySelector('form');
+        
+        // Limpiar todos los campos de texto y textarea
+        form.querySelectorAll('input[type="text"], input[type="email"], textarea').forEach(function(input) {
+            input.value = '';
+        });
+
+        // Limpia los mensajes de error
+        form.querySelectorAll('.text-danger').forEach(function(errorSpan) {
+            errorSpan.textContent = '';
+        });
+    });
+
+    // Manejar modales de edición de permiso
+    document.querySelectorAll('[id^=editPermissionModal]').forEach(function (modalElement) {
+        var editErrorsExist = modalElement.getAttribute('data-errors') === 'true';
+
+        if (editErrorsExist) {
+            var editPermissionModal = new bootstrap.Modal(modalElement);
+            editPermissionModal.show();
+        }
+
+        // Limpiar solo mensajes de error al cerrar modal de edición
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            var form = modalElement.querySelector('form');
+            form.querySelectorAll('.text-danger').forEach(function(errorSpan) {
+                errorSpan.textContent = ''; // Limpia los mensajes de error
+            });
+        });
+
+        // Recargar datos al volver a abrir el modal
+        modalElement.addEventListener('show.bs.modal', function () {
+            var form = modalElement.querySelector('form');
+            var permissionName = modalElement.querySelector('.permission-name');
+            var description = modalElement.querySelector('input[name="description"]');
+            
+            // Recargar los datos originales desde los atributos de datos
+            permissionName.value = form.getAttribute('data-original-name');
+            description.value = form.getAttribute('data-original-description');
+        });
+    });
 });
 
 document.querySelectorAll('.permission-name').forEach(function (nameField) {

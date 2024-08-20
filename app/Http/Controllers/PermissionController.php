@@ -69,24 +69,24 @@ class PermissionController extends Controller
         $messages = [
             'name.unique' => 'El nombre del permiso ya existe. Por favor, elige otro.'
         ];
-    
+
         // Validar los datos del formulario con mensajes personalizados
         $validatedData = $request->validate([
             'name' => 'required|unique:permissions|max:100',
             'description' => 'required|string|max:255',
         ], $messages);
-    
+
         // Crear un nuevo permiso
         $permission = new Permission();
         $permission->name = strtoupper($request->name);
         $permission->description = $request->description;
-    
+
         // Guardar el permiso en la base de datos
         $permission->save();
-    
+
         // Redireccionar con mensaje de éxito
         return redirect()->route('permissions')->with('success', 'Permiso creado correctamente.');
-    }    
+    }
 
     public function update(Request $request, $id)
     {

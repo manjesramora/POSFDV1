@@ -214,71 +214,70 @@
 
             <!-- Modal de Edición de Rol -->
             @foreach($roles as $role)
-<div class="modal fade text-left" id="editRoleModal{{ $role->id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ $role->id }}" aria-hidden="true" data-errors="{{ session('errors') && session('role_edit') == $role->id ? 'true' : 'false' }}">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editRoleModalLabel{{ $role->id }}">Editar Rol</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editRoleForm{{ $role->id }}" method="POST" action="{{ route('roles.update', $role->id) }}"
-                      data-original-name="{{ $role->name }}"
-                      data-original-description="{{ $role->description }}"
-                      data-original-permissions="{{ implode(',', $role->permissions->pluck('id')->toArray()) }}">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="edit-name" class="form-label">Rol</label>
-                            <input type="text" class="form-control uper role-name" id="edit-name" name="name" value="{{ session('errors') && session('role_edit') == $role->id ? old('name') : $role->name }}" required maxlength="50" pattern="^[a-zA-Z]+$">
-                            <span class="error mensaje" aria-live="polite"></span>
-                            @if (session('errors') && session('role_edit') == $role->id)
-                                @error('name')
-                                <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            @endif
+            <div class="modal fade text-left" id="editRoleModal{{ $role->id }}" tabindex="-1" aria-labelledby="editRoleModalLabel{{ $role->id }}" aria-hidden="true" data-errors="{{ session('errors') && session('role_edit') == $role->id ? 'true' : 'false' }}">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editRoleModalLabel{{ $role->id }}">Editar Rol</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="col-md-6">
-                            <label for="description" class="form-label">Descripción</label>
-                            <input type="text" class="form-control" id="description" name="description" value="{{ session('errors') && session('role_edit') == $role->id ? old('description') : $role->description }}" required>
-                            @if (session('errors') && session('role_edit') == $role->id)
-                                @error('description')
-                                <span class="text-danger">{{ $message }}</span>
-                                @enderror
-                            @endif
-                        </div>
-                    </div>
+                        <div class="modal-body">
+                            <form id="editRoleForm{{ $role->id }}" method="POST" action="{{ route('roles.update', $role->id) }}"
+                                data-original-name="{{ $role->name }}"
+                                data-original-description="{{ $role->description }}"
+                                data-original-permissions="{{ implode(',', $role->permissions->pluck('id')->toArray()) }}">
+                                @csrf
+                                @method('PUT')
 
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <label class="form-label">Permisos</label>
-                            <div class="row g-3">
-                                @foreach($permissions as $permission)
-                                <div class="col-md-3 col-sm-4 col-6">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $role->id }}_{{ $permission->id }}" name="permissions[]" {{ session('errors') && session('role_edit') == $role->id && in_array($permission->id, old('permissions', $role->permissions->pluck('id')->toArray())) ? 'checked' : ($role->permissions->contains($permission->id) ? 'checked' : '') }}>
-                                        <label class="form-check-label" for="permission{{ $role->id }}_{{ $permission->id }}">
-                                            {{ $permission->name }}
-                                        </label>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="edit-name" class="form-label">Rol</label>
+                                        <input type="text" class="form-control uper role-name" id="edit-name" name="name" value="{{ session('errors') && session('role_edit') == $role->id ? old('name') : $role->name }}" required maxlength="50" pattern="^[a-zA-Z]+$">
+                                        <span class="error mensaje" aria-live="polite"></span>
+                                        @if (session('errors') && session('role_edit') == $role->id)
+                                        @error('name')
+                                        <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                        @endif
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="description" class="form-label">Descripción</label>
+                                        <input type="text" class="form-control" id="description" name="description" value="{{ session('errors') && session('role_edit') == $role->id ? old('description') : $role->description }}" required>
+                                        @if (session('errors') && session('role_edit') == $role->id)
+                                        @error('description')
+                                        <span class="text-danger">{{ $message }}</span>
+                                        @enderror
+                                        @endif
                                     </div>
                                 </div>
-                                @endforeach
-                            </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Permisos</label>
+                                        <div class="row g-3">
+                                            @foreach($permissions as $permission)
+                                            <div class="col-md-3 col-sm-4 col-6">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" value="{{ $permission->id }}" id="permission{{ $role->id }}_{{ $permission->id }}" name="permissions[]" {{ session('errors') && session('role_edit') == $role->id && in_array($permission->id, old('permissions', $role->permissions->pluck('id')->toArray())) ? 'checked' : ($role->permissions->contains($permission->id) ? 'checked' : '') }}>
+                                                    <label class="form-check-label" for="permission{{ $role->id }}_{{ $permission->id }}">
+                                                        {{ $permission->name }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
-
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
-    </div>
-</div>
-@endforeach
-
+            @endforeach
             <!-- Fin Modal de Edición de Rol -->
 
             <!-- Modal de Confirmación de Eliminación -->

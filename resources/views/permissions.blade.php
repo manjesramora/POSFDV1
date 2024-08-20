@@ -139,16 +139,16 @@
                                 <label for="name" class="form-label">Nombre del Permiso</label>
                                 <input type="text" class="form-control uper permission-name" id="name" name="name" required value="{{ old('name') }}" pattern="^[a-zA-Z]+$">
                                 <span class="error mensaje" aria-live="polite"></span>
-                                @error('name')
-                                <span class="text-danger">{{ $message }}</span>
-                                @enderror
+                                @if ($errors->has('name'))
+                                <span class="text-danger">{{ $errors->first('name') }}</span>
+                                @endif
                             </div>
                             <div class="mb-3">
                                 <label for="description" class="form-label">Descripción</label>
                                 <textarea class="form-control" id="description" name="description" rows="3" required>{{ old('description') }}</textarea>
-                                @error('description')
-                                <span class="text-danger">{{ $message }}</span>
-                                @enderror
+                                @if ($errors->has('description'))
+                                <span class="text-danger">{{ $errors->first('description') }}</span>
+                                @endif
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
@@ -163,9 +163,8 @@
 
         <!-- Modal de Edición de Permiso (en el foreach) -->
         <div id="modalsData" data-errors="{{ $errors->any() ? 'true' : 'false' }}" data-permission-id="{{ old('id') }}"></div>
-
         @foreach($permissions as $permission)
-        <div class="modal fade text-left" id="editPermissionModal{{ $permission->id }}" tabindex="-1" aria-labelledby="editPermissionModalLabel{{ $permission->id }}" aria-hidden="true">
+        <div class="modal fade text-left" id="editPermissionModal{{ $permission->id }}" tabindex="-1" aria-labelledby="editPermissionModalLabel{{ $permission->id }}" aria-hidden="true" data-errors="{{ session('errors') && session('permission_edit') == $permission->id ? 'true' : 'false' }}">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -173,33 +172,37 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <form id="editPermissionForm{{ $permission->id }}" method="POST" action="{{ route('permissions.update', $permission->id) }}">
+                        <form id="editPermissionForm{{ $permission->id }}" method="POST" action="{{ route('permissions.update', $permission->id) }}"
+                            data-original-name="{{ $permission->name }}"
+                            data-original-description="{{ $permission->description }}">
                             @csrf
                             @method('PUT')
                             <input type="hidden" name="id" value="{{ $permission->id }}">
                             <!-- Campos del formulario -->
                             <div class="row mb-3">
                                 <div class="col-12">
-                                    <label for="name" class="form-label">Permiso</label>
-                                    <input type="text" class="form-control uper permission-name" id="name{{ $permission->id }}" name="name" value="{{ $permission->name }}" pattern="^[a-zA-Z]+$">
+                                    <label for="name{{ $permission->id }}" class="form-label">Permiso</label>
+                                    <input type="text" class="form-control uper permission-name" id="name{{ $permission->id }}" name="name" value="{{ session('errors') && session('permission_edit') == $permission->id ? old('name') : $permission->name }}" pattern="^[a-zA-Z]+$">
                                     <span class="error mensaje" aria-live="polite"></span>
+                                    @if (session('errors') && session('permission_edit') == $permission->id)
                                     @error('name')
                                     <span class="text-danger">{{ $message }}</span>
                                     @enderror
+                                    @endif
                                 </div>
                             </div>
                             <div class="row mb-3">
                                 <div class="col-12">
-                                    <label for="description" class="form-label">Descripción</label>
-                                    <input type="text" class="form-control" id="description{{ $permission->id }}" name="description" value="{{ $permission->description }}" required>
+                                    <label for="description{{ $permission->id }}" class="form-label">Descripción</label>
+                                    <input type="text" class="form-control" id="description{{ $permission->id }}" name="description" value="{{ session('errors') && session('permission_edit') == $permission->id ? old('description') : $permission->description }}" required>
                                 </div>
                             </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </div>
-                    </form>
                 </div>
             </div>
         </div>

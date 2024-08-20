@@ -116,8 +116,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-
-
 document.querySelectorAll('.role-name').forEach(function (nameField) {
     nameField.addEventListener('input', function () {
         const errorSpan = nameField.nextElementSibling;
