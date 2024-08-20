@@ -51,14 +51,71 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+    // Manejar modal de agregar
+    var addRoleModalElement = document.getElementById('addRoleModal');
+    var addErrorsExist = addRoleModalElement.getAttribute('data-errors') === 'true';
 
-
-$(document).ready(function() {
-    if ($('#addRoleErrors ul').children().length > 0) {
-        $('#addRoleModal').modal('show');
-        $('#addRoleErrors').show();
+    if (addErrorsExist) {
+        var addRoleModal = new bootstrap.Modal(addRoleModalElement);
+        addRoleModal.show();
     }
+
+    // Limpiar mensajes de error, valores de inputs y checkboxes al cerrar modal de agregar
+    addRoleModalElement.addEventListener('hidden.bs.modal', function () {
+        var form = addRoleModalElement.querySelector('form');
+        
+        // Limpiar todos los campos de texto y textarea
+        form.querySelectorAll('input[type="text"], input[type="email"], textarea').forEach(function(input) {
+            input.value = '';
+        });
+
+        // Deseleccionar todos los checkboxes
+        form.querySelectorAll('.form-check-input').forEach(function(input) {
+            input.checked = false;
+        });
+
+        // Limpia los mensajes de error
+        form.querySelectorAll('.text-danger').forEach(function(errorSpan) {
+            errorSpan.textContent = '';
+        });
+    });
+
+    // Manejar modales de edición
+    document.querySelectorAll('[id^=editRoleModal]').forEach(function (modalElement) {
+        var editErrorsExist = modalElement.getAttribute('data-errors') === 'true';
+
+        if (editErrorsExist) {
+            var editRoleModal = new bootstrap.Modal(modalElement);
+            editRoleModal.show();
+        }
+
+        // Limpiar solo mensajes de error al cerrar modal de edición
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            var form = modalElement.querySelector('form');
+            form.querySelectorAll('.text-danger').forEach(function(errorSpan) {
+                errorSpan.textContent = ''; // Limpia los mensajes de error
+            });
+        });
+
+        // Recargar datos al volver a abrir el modal
+        modalElement.addEventListener('show.bs.modal', function () {
+            var form = modalElement.querySelector('form');
+            var roleName = modalElement.querySelector('.role-name');
+            var description = modalElement.querySelector('#description');
+            
+            // Recargar los datos desde el backend (opcionalmente, podrías hacer una llamada AJAX aquí)
+            roleName.value = form.getAttribute('data-original-name');
+            description.value = form.getAttribute('data-original-description');
+            
+            // Marcar los permisos correctamente
+            form.querySelectorAll('.form-check-input').forEach(function(input) {
+                input.checked = form.getAttribute('data-original-permissions').split(',').includes(input.value);
+            });
+        });
+    });
 });
+
 
 
 document.querySelectorAll('.role-name').forEach(function (nameField) {
