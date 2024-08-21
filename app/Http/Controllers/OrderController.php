@@ -25,162 +25,171 @@ class OrderController extends Controller
             return $next($request);
         });
     }
+
     public function index(Request $request)
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    if (!$user) {
-        return redirect()->route('login');
-    }
-
-    $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
-
-    $query = Order::query();
-
-    if (!empty($centrosCostosIds)) {
-        $query->whereIn('ACMVOIALID', $centrosCostosIds);
-    }
-
-    // Definir el rango de fechas predeterminado (últimas 2 semanas)
-    $defaultStartDate = Carbon::now()->subWeeks(2)->startOfDay()->toDateString();
-    $defaultEndDate = Carbon::now()->endOfDay()->toDateString();
-
-    // Obtener fechas del request o usar las predeterminadas
-    $startDate = $request->input('start_date', $defaultStartDate);
-    $endDate = $request->input('end_date', $defaultEndDate);
-
-    // Aplicar el filtro de fechas
-    $query->whereBetween('ACMVOIFDOC', [$startDate, $endDate]);
-
-    if ($request->filled('ACMVOIDOC')) {
-        $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
-    }
-
-    if ($request->filled('CNCDIRID')) {
-        $query->where('CNCDIRID', $request->input('CNCDIRID'));
-    }
-
-    if ($request->filled('CNCDIRNOM')) {
-        $query->whereHas('provider', function ($q) use ($request) {
-            $q->where('CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
-        });
-    }
-
-    $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'ACMVOIFDOC', 'ACMVOIALID'];
-    $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
-    $sortDirection = $request->input('sortDirection', 'desc');
-
-    if (in_array($sortColumn, $sortableColumns)) {
-        $query->orderBy($sortColumn, $sortDirection);
-    } else {
-        $query->orderBy('ACMVOIDOC', 'desc');
-    }
-
-    // Subconsulta para verificar si hay alguna partida no completamente recepcionada
-    $query->whereExists(function ($subquery) {
-        $subquery->select(DB::raw(1))
-            ->from('ACMVOR1')
-            ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
-            ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
-    });
-
-    $orders = $query->paginate(30);
-
-    if ($request->ajax()) {
-        return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
-    }
-
-    return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
-}
-
-
-public function showReceptions($ACMVOIDOC)
-{
-    if (!is_numeric($ACMVOIDOC)) {
-        return redirect()->route('orders')->with('error', 'El número de orden no es válido.');
-    }
-
-    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)
-        ->with('provider')
-        ->first();
-
-    if (!$order) {
-        return redirect()->route('orders')->with('error', 'Orden no encontrada.');
-    }
-
-    $receptions = DB::table('ACMVOR1')
-        ->where('ACMVOIDOC', $ACMVOIDOC)
-        ->whereRaw('ACMVOIQTO > ACMVOIQTR') // Filtrar partidas no completamente recepcionadas
-        ->select('ACMVOILIN', 'ACMVOIPRID', 'ACMVOIPRDS', 'ACMVOINPAR', 'ACMVOIUMT', 'ACMVOIQTO', 'ACMVOINPO', 'ACMVOIIVA', 'ACMVOIQTP')
-        ->get();
-
-    if ($receptions->isEmpty()) {
-        return redirect()->route('orders')->with('error', 'No hay partidas válidas para esta recepción.');
-    }
-
-    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-    $cntdoc = DB::table('cntdoc')
-        ->where('cntdocid', 'RCN')
-        ->first();
-
-    if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
-        $num_rcn_letras = $cntdoc->CNTDOCNSIG;
-        $new_value = is_numeric($num_rcn_letras) ? intval($num_rcn_letras) + 1 : chr(ord($num_rcn_letras) + 1);
-
-        DB::table('cntdoc')
-            ->where('cntdocid', 'RCN')
-            ->update(['CNTDOCNSIG' => $new_value]);
-    } else {
-        $num_rcn_letras = 'NUMERO'; // Ajusta esto según tu lógica
-    }
-
-    $currentDate = now()->toDateString();
-
-    return view('receptions', compact('receptions', 'order', 'provider', 'num_rcn_letras', 'currentDate'));
-}
-
-
-    
-public function receiptOrder(Request $request, $ACMVOIDOC)
-{
-    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-    if (!$order || !$provider) {
-        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-    }
-
-    Log::info('Datos recibidos en receiptOrder:', $request->all());
-
-    DB::beginTransaction();
-
-    try {
-        foreach ($request->input('cantidad_recibida') as $index => $cantidadRecibida) {
-            $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
-
-            // Actualizar ACMVOR1 con las cantidades recibidas y pendientes
-            DB::table('ACMVOR1')
-                ->where('ACMVOIDOC', $ACMVOIDOC)
-                ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
-                ->update([
-                    'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
-                    'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
-                ]);
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        DB::commit();
+        $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
 
-        Log::info('Recepción registrada con éxito en la base de datos.');
-        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Error en la recepción de la orden: " . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+        $query = Order::query();
+
+        if (!empty($centrosCostosIds)) {
+            $query->whereIn('ACMVOIALID', $centrosCostosIds);
+        }
+
+        // Definir el rango de fechas predeterminado (últimas 2 semanas)
+        $defaultStartDate = Carbon::now()->subWeeks(2)->startOfDay()->toDateString();
+        $defaultEndDate = Carbon::now()->endOfDay()->toDateString();
+
+        // Obtener fechas del request o usar las predeterminadas
+        $startDate = $request->input('start_date', $defaultStartDate);
+        $endDate = $request->input('end_date', $defaultEndDate);
+
+        // Aplicar el filtro de fechas
+        $query->whereBetween('ACMVOIFDOC', [$startDate, $endDate]);
+
+        if ($request->filled('ACMVOIDOC')) {
+            $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
+        }
+
+        if ($request->filled('CNCDIRID')) {
+            $query->where('CNCDIRID', $request->input('CNCDIRID'));
+        }
+
+        if ($request->filled('CNCDIRNOM')) {
+            $query->whereHas('provider', function ($q) use ($request) {
+                $q->where('CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
+            });
+        }
+
+        $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'ACMVOIFDOC', 'ACMVOIALID'];
+        $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
+        $sortDirection = $request->input('sortDirection', 'desc');
+
+        if (in_array($sortColumn, $sortableColumns)) {
+            $query->orderBy($sortColumn, $sortDirection);
+        } else {
+            $query->orderBy('ACMVOIDOC', 'desc');
+        }
+
+        // Subconsulta para verificar si hay alguna partida no completamente recepcionada
+        $query->whereExists(function ($subquery) {
+            $subquery->select(DB::raw(1))
+                ->from('ACMVOR1')
+                ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
+                ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
+        });
+
+        $orders = $query->paginate(30);
+
+        if ($request->ajax()) {
+            return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
+        }
+
+        return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
     }
-}
 
+    public function showReceptions($ACMVOIDOC)
+    {
+        if (!is_numeric($ACMVOIDOC)) {
+            return redirect()->route('orders')->with('error', 'El número de orden no es válido.');
+        }
 
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)
+            ->with('provider')
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('orders')->with('error', 'Orden no encontrada.');
+        }
+
+        $receptions = DB::table('ACMVOR1')
+            ->where('ACMVOIDOC', $ACMVOIDOC)
+            ->whereRaw('ACMVOIQTO > ACMVOIQTR') // Filtrar partidas no completamente recepcionadas
+            ->select('ACMVOILIN', 'ACMVOIPRID', 'ACMVOIPRDS', 'ACMVOINPAR', 'ACMVOIUMT', 'ACMVOIQTO', 'ACMVOINPO', 'ACMVOIIVA', 'ACMVOIQTP')
+            ->get();
+
+        if ($receptions->isEmpty()) {
+            return redirect()->route('orders')->with('error', 'No hay partidas válidas para esta recepción.');
+        }
+
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+        $cntdoc = DB::table('cntdoc')
+            ->where('cntdocid', 'RCN')
+            ->first();
+
+        if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
+            $num_rcn_letras = $cntdoc->CNTDOCNSIG;
+            $new_value = is_numeric($num_rcn_letras) ? intval($num_rcn_letras) + 1 : chr(ord($num_rcn_letras) + 1);
+
+            DB::table('cntdoc')
+                ->where('cntdocid', 'RCN')
+                ->update(['CNTDOCNSIG' => $new_value]);
+        } else {
+            $num_rcn_letras = 'NUMERO'; // Ajusta esto según tu lógica
+        }
+
+        $currentDate = now()->toDateString();
+
+        return view('receptions', compact('receptions', 'order', 'provider', 'num_rcn_letras', 'currentDate'));
+    }
+
+    public function receiptOrder(Request $request, $ACMVOIDOC)
+    {
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+        if (!$order || !$provider) {
+            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
+        }
+
+        Log::info('Datos recibidos en receiptOrder:', $request->all());
+
+        DB::beginTransaction();
+
+        try {
+            // Validar los datos de cantidad_recibida
+            if (empty($request->input('cantidad_recibida')) || empty($request->input('precio_unitario'))) {
+                return response()->json(['success' => false, 'message' => 'Datos de cantidad recibida o precio unitario faltantes.']);
+            }
+
+            // Actualizar ACMVOR1 con las cantidades recibidas y pendientes
+            foreach ($request->input('cantidad_recibida') as $index => $cantidadRecibida) {
+                if ($cantidadRecibida === null || !is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                    Log::warning("Valor de `cantidad_recibida` nulo o no válido para el índice {$index}. Se omite la actualización.");
+                    continue;
+                }
+
+                $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+
+                DB::table('ACMVOR1')
+                    ->where('ACMVOIDOC', $ACMVOIDOC)
+                    ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
+                    ->update([
+                        'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
+                        'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
+                    ]);
+            }
+
+            // Llamar a insertPartidas para afectar acmroi, incrdx, y insdos
+            $this->insertPartidas($request->all(), $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+
+            DB::commit();
+
+            Log::info('Recepción registrada con éxito en la base de datos.');
+            return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en la recepción de la orden: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+        }
+    }
 
     public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
     {
@@ -232,6 +241,8 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                         'ACMVOIUMT' => $acmvoiumt,
                         'ACMVOIIVA' => $acmvoiiva
                     ], $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual);
+                } else {
+                    Log::warning("Cantidad recibida es 0 o menor para la partida con índice {$index}");
                 }
             }
             Log::info('Partidas procesadas con éxito.');
@@ -254,20 +265,25 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                 ->exists();
 
             if ($existsIncrdx) {
-                DB::table('incrdx')
+                $affected = DB::table('incrdx')
                     ->where('INALMNID', $validatedData['store'])
                     ->where('INPRODID', (int) $acmvoiprid)
                     ->where('CNTDOCID', 'RCN')
                     ->where('INCRDXDOC', (int) $validatedData['document_number1'])
                     ->where('INCRDXLIN', $acmvoilin)
                     ->update([
-                        'INCRDXQTY' => (float) $cantidadRecibida,
-                        'INCRDXVAL' => (float) $costoTotal,
-                        'INCRDXVANT' => (float) $costoTotal,
+                        'INCRDXQTY' => DB::raw('INCRDXQTY + ' . (float) $cantidadRecibida),
+                        'INCRDXVAL' => DB::raw('INCRDXVAL + ' . (float) $costoTotal),
+                        'INCRDXVANT' => DB::raw('INCRDXVANT + ' . (float) $costoTotal),
                     ]);
-                Log::info("Actualización en incrdx realizada con éxito para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+
+                if ($affected) {
+                    Log::info("Actualización en incrdx realizada con éxito para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+                } else {
+                    Log::error("Fallo al actualizar incrdx para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+                }
             } else {
-                DB::table('incrdx')->insert([
+                $inserted = DB::table('incrdx')->insert([
                     'INALMNID' => substr($validatedData['store'], 0, 15),
                     'INPRODID' => (int) $acmvoiprid,
                     'INLOTEID' => ' ',
@@ -301,7 +317,12 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                     'INCRDXFUF' => '1753-01-01 00:00:00.000',
                     'ACRCOICD01ID' => 'REQ',
                 ]);
-                Log::info("Inserción en incrdx realizada con éxito para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+
+                if ($inserted) {
+                    Log::info("Inserción en incrdx realizada con éxito para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+                } else {
+                    Log::error("Fallo al insertar en incrdx para INPRODID {$acmvoiprid} y ACMVOILIN {$acmvoilin}");
+                }
             }
             return true;
         } catch (\Exception $e) {
@@ -357,13 +378,14 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                 'ACMROIQT' => (float) $cantidadRecibida,
                 'ACMROIQTTR' => (float) $cantidadRecibida,
                 'ACMROINP' => (float) $costoUnitario,
-                'ACMROINM' => (float) $costoTotal,
-                'ACMROINI' => (float) ($costoTotal * 1.16),
+                'ACMROINM' => (float) $costoTotal * 1.16,
+                'ACMROINI' => (float) ($costoTotal * 0.16),
                 'ACMROING' => (float) $costoTotal,
+                'ACMROINP2'=> (float) $costoUnitario,
                 'ACMROIDOC2' => isset($validatedData['document_number1']) ? (int) $validatedData['document_number1'] : 0,
                 'ACMROIDOI2' => 'RCN',
-                'ACMROITDOCCAN' => 1,
-                'ACMROINDOCCAN' => 1,
+                'ACMROITDOCCAN' => ' ',
+                'ACMROINDOCCAN' => 0,
                 'ACMROIDOI3' => 'PC',
                 'ACMROIDOC3' => $this->getNewCNTDOCNSIG(),
                 'ACMROIREF' => isset($validatedData['reference']) ? substr($validatedData['reference'], 0, 60) : '',
@@ -375,6 +397,14 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                 'ACMROIFENT' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFSAL' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFECC' => '1753-01-01 00:00:00.000',
+                'ACMROIACCT' => 1,
+                'ACMROIFOC'=>'1753-01-01 00:00:00.000',
+                'ACMROICXP'=>'N',
+                'ACMROIFDC'=>$order->ACMROIFCEP ?? null,
+                'ACMROIFVN'=>'1753-01-01 00:00:00.000',
+                'ACMROING2'=>(float) $costoTotal,
+                'ACMROINI2'=>(float) ($costoTotal * 0.16),
+                'ACMROINM2'=>(float) $costoTotal * 1.16,
                 'ACMROIVOLU' => (float) ($producto->INPRODVOL * $cantidadRecibida),
                 'ACMROIPESOU' => (float) ($producto->INPRODPESO * $cantidadRecibida),
                 'ACMROIVOLT' => (float) ($producto->INPRODVOL * $cantidadRecibida),
@@ -383,9 +413,13 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
 
             Log::info('Datos que se insertarán en acmroi:', $insertData);
 
-            DB::table('acmroi')->insert($insertData);
+            $inserted = DB::table('acmroi')->insert($insertData);
 
-            Log::info("Nueva entrada en acmroi insertada correctamente.");
+            if ($inserted) {
+                Log::info("Nueva entrada en acmroi insertada correctamente.");
+            } else {
+                Log::error("Fallo al insertar en acmroi para INPRODID {$partida['ACMVOIPRID']} y ACMVOILIN {$acmroilin}");
+            }
         } catch (\Exception $e) {
             Log::error("Error al insertar en acmroi: " . $e->getMessage());
             throw $e;
@@ -401,24 +435,32 @@ public function receiptOrder(Request $request, $ACMVOIDOC)
                 ->first();
 
             if ($existingRecord) {
-                DB::table('insdos')
+                $updated = DB::table('insdos')
                     ->where('INALMNID', $storeId)
                     ->where('INPRODID', $productId)
                     ->update([
-                        'INSDOSQDS' => $existingRecord->INSDOSQDS + $cantidadRecibida,
-                        'INSDOSVAL' => $existingRecord->INSDOSVAL + $costoTotal,
+                        'INSDOSQDS' => DB::raw('INSDOSQDS + ' . (float) $cantidadRecibida),
+                        'INSDOSVAL' => DB::raw('INSDOSVAL + ' . (float) $costoTotal),
                     ]);
 
-                Log::info("Inventario actualizado para el producto ID {$productId} en el almacén {$storeId}");
+                if ($updated) {
+                    Log::info("Inventario actualizado para el producto ID {$productId} en el almacén {$storeId}");
+                } else {
+                    Log::error("Fallo al actualizar inventario para el producto ID {$productId} en el almacén {$storeId}");
+                }
             } else {
-                DB::table('insdos')->insert([
+                $inserted = DB::table('insdos')->insert([
                     'INALMNID' => $storeId,
                     'INPRODID' => $productId,
                     'INSDOSQDS' => $cantidadRecibida,
                     'INSDOSVAL' => $costoTotal,
                 ]);
 
-                Log::info("Nuevo inventario insertado para el producto ID {$productId} en el almacén {$storeId}");
+                if ($inserted) {
+                    Log::info("Nuevo inventario insertado para el producto ID {$productId} en el almacén {$storeId}");
+                } else {
+                    Log::error("Fallo al insertar nuevo inventario para el producto ID {$productId} en el almacén {$storeId}");
+                }
             }
 
             return true;
