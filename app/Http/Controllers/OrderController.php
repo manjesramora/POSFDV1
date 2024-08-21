@@ -141,55 +141,63 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-    {
-        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+{
+    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
 
-        if (!$order || !$provider) {
-            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-        }
-
-        Log::info('Datos recibidos en receiptOrder:', $request->all());
-
-        DB::beginTransaction();
-
-        try {
-            // Validar los datos de cantidad_recibida
-            if (empty($request->input('cantidad_recibida')) || empty($request->input('precio_unitario'))) {
-                return response()->json(['success' => false, 'message' => 'Datos de cantidad recibida o precio unitario faltantes.']);
-            }
-
-            // Actualizar ACMVOR1 con las cantidades recibidas y pendientes
-            foreach ($request->input('cantidad_recibida') as $index => $cantidadRecibida) {
-                if ($cantidadRecibida === null || !is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
-                    Log::warning("Valor de `cantidad_recibida` nulo o no válido para el índice {$index}. Se omite la actualización.");
-                    continue;
-                }
-
-                $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
-
-                DB::table('ACMVOR1')
-                    ->where('ACMVOIDOC', $ACMVOIDOC)
-                    ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
-                    ->update([
-                        'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
-                        'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
-                    ]);
-            }
-
-            // Llamar a insertPartidas para afectar acmroi, incrdx, y insdos
-            $this->insertPartidas($request->all(), $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
-
-            DB::commit();
-
-            Log::info('Recepción registrada con éxito en la base de datos.');
-            return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Error en la recepción de la orden: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
-        }
+    if (!$order || !$provider) {
+        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
     }
+
+    Log::info('Datos recibidos en receiptOrder:', $request->all());
+
+    DB::beginTransaction();
+
+    try {
+        // Validar los datos de cantidad_recibida
+        if (empty($request->input('cantidad_recibida')) || empty($request->input('precio_unitario'))) {
+            return response()->json(['success' => false, 'message' => 'Datos de cantidad recibida o precio unitario faltantes.']);
+        }
+
+        foreach ($request->input('cantidad_recibida') as $index => $cantidadRecibida) {
+            if ($cantidadRecibida === null || !is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                Log::warning("Valor de `cantidad_recibida` nulo o no válido para el índice {$index}. Se omite la actualización.");
+                continue;
+            }
+
+            $precioUnitario = $request->input('precio_unitario')[$index] ?? 0;
+            if (!is_numeric($precioUnitario) || $precioUnitario <= 0) {
+                return response()->json(['success' => false, 'message' => "Precio unitario no válido en la línea {$index}. No se puede recepcionar."]);
+            }
+
+            $cantidadRecibida = round($cantidadRecibida, 4);
+            $precioUnitario = round($precioUnitario, 4);
+
+            $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+
+            DB::table('ACMVOR1')
+                ->where('ACMVOIDOC', $ACMVOIDOC)
+                ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
+                ->update([
+                    'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
+                    'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
+                ]);
+        }
+
+        // Llamar a insertPartidas para afectar acmroi, incrdx, y insdos
+        $this->insertPartidas($request->all(), $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+
+        DB::commit();
+
+        Log::info('Recepción registrada con éxito en la base de datos.');
+        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error("Error en la recepción de la orden: " . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+    }
+}
+
 
     public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
     {

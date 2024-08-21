@@ -150,38 +150,40 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody id="receptionTableBody">
-                                                    @foreach ($receptions as $index => $reception)
-<tr>
-    <td>{{ (int)$reception->ACMVOILIN }}</td>
-    <td>{{ (int)$reception->ACMVOIPRID }}</td>
-    <td>{{ $reception->ACMVOIPRDS }}</td>
-    <td>{{ $reception->ACMVOINPAR }}</td>
-    <td>{{ $reception->ACMVOIUMT }}</td>
-    <td>{{ number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 2) }}</td>
-    <td>
-        <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
-            value="" step="1" min="0" max="{{ $reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO }}"
-            oninput="limitCantidad(this)" onchange="limitCantidad(this)">
-    </td>
-    <td>
-        <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
-            value="{{ number_format($reception->ACMVOINPO, 2) }}" min="0"
-            max="{{ number_format($reception->ACMVOINPO, 2) }}" step="0.01"
-            oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
-    </td>
-    <td>{{ number_format($reception->ACMVOIIVA, 2) }}</td>
-    <td class="subtotal">0.00</td>
-    <td class="total">0.00</td>
+                                                        @foreach ($receptions as $index => $reception)
+                                                        <tr>
+                                                            <td>{{ (int)$reception->ACMVOILIN }}</td>
+                                                            <td>{{ (int)$reception->ACMVOIPRID }}</td>
+                                                            <td>{{ $reception->ACMVOIPRDS }}</td>
+                                                            <td>{{ $reception->ACMVOINPAR }}</td>
+                                                            <td>{{ $reception->ACMVOIUMT }}</td>
+                                                            <td>{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}</td>
+                                                            <td>
+                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
+                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
+                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)">
+                                                            </td>
+                                                            <td>
+                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" min="0"
+                                                                    step="0.0001"
+                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
+                                                                    oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
+                                                            </td>
 
-    <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$reception->ACMVOILIN }}">
-    <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$reception->ACMVOIPRID }}">
-    <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $reception->ACMVOIPRDS }}">
-    <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $reception->ACMVOIUMT }}">
-    <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ number_format($reception->ACMVOIIVA, 2) }}">
-    <input type="hidden" name="acmvoiqto[{{ $index }}]" value="{{ $reception->ACMVOIQTO }}">
-    <input type="hidden" name="acmvoiqtp[{{ $index }}]" value="{{ $reception->ACMVOIQTP }}">
-</tr>
-@endforeach
+                                                            <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
+                                                            <td class="subtotal">0.0000</td>
+                                                            <td class="total">0.0000</td>
+
+                                                            <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$reception->ACMVOILIN }}">
+                                                            <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$reception->ACMVOIPRID }}">
+                                                            <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $reception->ACMVOIPRDS }}">
+                                                            <input type="hidden" name="acmvoiumt[{{ $index }}]" value="{{ $reception->ACMVOIUMT }}">
+                                                            <input type="hidden" name="acmvoiiva[{{ $index }}]" value="{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}">
+                                                            <input type="hidden" name="acmvoiqto[{{ $index }}]" value="{{ $reception->ACMVOIQTO }}">
+                                                            <input type="hidden" name="acmvoiqtp[{{ $index }}]" value="{{ $reception->ACMVOIQTP }}">
+                                                        </tr>
+                                                        @endforeach
 
                                                     </tbody>
 
