@@ -19,7 +19,6 @@ $(document).ready(function() {
         let value = parseFloat(cleanNumber(input.value));
         const originalValue = parseFloat(input.getAttribute('data-original-value'));
 
-        // Solo permitir reducir el precio, no aumentarlo
         if (value > originalValue) {
             input.value = originalValue.toFixed(4).replace(/\.?0+$/, '');
         } else if (value < 0) {
@@ -70,7 +69,6 @@ $(document).ready(function() {
         limitPrecio(this);
     });
 
-    // Enviar el formulario a través de AJAX
     $("#receptionForm").on("submit", function (e) {
         e.preventDefault(); 
 
@@ -125,6 +123,7 @@ $(document).ready(function() {
             });
     });
 
+    // Configurar autocompletado para "Número" y "Fletero"
     function setupAutocomplete(inputId, listId, field) {
         $(`#${inputId}`).on("input", function () {
             let query = $(this).val();
@@ -164,29 +163,38 @@ $(document).ready(function() {
                 e.preventDefault();
                 index = (index + 1) % items.length;
                 items.removeClass('active').eq(index).addClass('active');
+                dropdown.scrollTop(dropdown.scrollTop() + items.eq(index).position().top);
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 index = (index - 1 + items.length) % items.length;
                 items.removeClass('active').eq(index).addClass('active');
+                dropdown.scrollTop(dropdown.scrollTop() + items.eq(index).position().top);
             } else if (e.key === "Enter" && activeItem.length) {
                 e.preventDefault();
-                $(`#${inputId}`).val(activeItem.data('id'));
-                $('#fletero').val(activeItem.data('name'));
+                const id = activeItem.data('id');
+                const name = activeItem.data('name');
+                $(`#${inputId}`).val(id);
+                $('#fletero').val(name);
+                $('#numero').val(id);  // Autocompletar el número al presionar Enter
                 dropdown.hide();
             }
         });
 
+        // Selección por mouse
         $(document).on("click", `#${listId} li`, function () {
             let id = $(this).data("id");
             let name = $(this).data("name");
             $(`#${inputId}`).val(id);
             $('#fletero').val(name);
+            $('#numero').val(id);  // Autocompletar el número al hacer clic
             $(`#${listId}`).hide();
         });
 
+        // Limpiar campo
         $(`#clear${inputId.charAt(0).toUpperCase() + inputId.slice(1)}`).on("click", function () {
             $(`#${inputId}`).val("");
             $('#fletero').val("");
+            $('#numero').val("");
             $(`#${listId}`).hide();
         });
     }
