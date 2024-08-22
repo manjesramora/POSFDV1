@@ -74,11 +74,22 @@
         </li>
         @endif
 
+        <!-- Boton Fletes -->
         @if(auth()->user()->hasPermission('FLETES'))
         <li class="nav-item">
             <a class="nav-link" href="{{ route('freights') }}">
                 <i class="fa-solid fa-money-check-dollar"></i>
                 <span>Fletes</span>
+            </a>
+        </li>
+        @endif
+
+        <!-- Boton RCN -->
+        @if(auth()->user()->hasPermission('RCN'))
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('rcn') }}">
+                <i class="fa-solid fa-file-invoice"></i>
+                <span>RCN</span>
             </a>
         </li>
         @endif

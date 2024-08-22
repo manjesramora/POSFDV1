@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Freight;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
-use Dompdf\Dompdf;
-use Dompdf\Options;
 use Illuminate\Support\Facades\Auth;
 
 class FreightController extends Controller
@@ -24,6 +22,7 @@ class FreightController extends Controller
             return $next($request);
         });
     }
+    
     public function index(Request $request)
     {
         $query = Freight::query();

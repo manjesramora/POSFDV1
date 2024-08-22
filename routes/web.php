@@ -11,7 +11,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\InsdosController;
 use App\Http\Controllers\FreightController;
 use App\Http\Controllers\ProviderController;
-use App\Http\Controllers\AVPRECController;
+use App\Http\Controllers\RcnController;
 
 Route::get('/', function () {
     return view('login');
@@ -71,6 +71,10 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/check-username', [UserController::class, 'checkUsername'])->name('check-username');
     Route::get('/labelscatalog', [LabelcatalogController::class, 'labelscatalog'])->name('labelscatalog')->middleware('permission:ETIQUETAS');
+
+    // Rutas relacionadas con rcn
+    Route::get('/rcn', [RcnController::class, 'index'])->name('rcn')->middleware('permission:RCN');
+    Route::get('/rcn/pdf/{ACMROINDOC}', [RcnController::class, 'generatePdf'])->name('rcn.pdf');
 });
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
@@ -91,5 +95,3 @@ Route::get('/get-umv/{productId}', [LabelcatalogController::class, 'getUMV']);
 Route::post('/convert-price', [LabelcatalogController::class, 'convertPrice']);
 
 Route::get('/insdos', [InsdosController::class, 'index']);
-
-
