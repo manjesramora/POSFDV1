@@ -226,7 +226,7 @@
                                         <tbody>
                                             @foreach($employees as $employee)
                                             <tr>
-                                            <td class="text-center align-middle">{{ $employee->first_name . ' ' . $employee->middle_name . ' ' . $employee->last_name }}</td>
+                                            <td class="text-center align-middle">{{ $employee->first_name . ' ' . $employee->last_name . ' ' . $employee->middle_name }}</td>
 
                                                 <td class="text-center align-middle">{{ $employee->curp }}</td>
                                                 <td class="text-center align-middle">{{ $employee->rfc }}</td>

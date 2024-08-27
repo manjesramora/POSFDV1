@@ -145,8 +145,15 @@ class LabelcatalogController extends Controller
         if ($activoFilter === 'activos') {
             $query->where('INALPR.INAPR17ID', '<>', 'X');
         }
+        // Verificar si hay algún filtro activo
+        if (empty($productIdFilter) && empty($skuFilter) && empty($nameFilter) && 
+        empty($lineaFilter) && empty($sublineaFilter) && empty($departamentoFilter)) {
+        // No hay filtros activos, no ejecutar la consulta
+        $labels = collect([]); // Retornar una colección vacía
+        return view('etiquetascatalogo', compact('labels'));
+        }
 
-        $labels = $query->paginate(20)->appends($request->query());
+       $labels = $query->paginate(20)->appends($request->query());
 
         return view('etiquetascatalogo', compact('labels'));
     }

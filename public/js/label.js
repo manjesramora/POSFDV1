@@ -136,13 +136,18 @@ function limpiarFiltros() {
         "sublinea",
         "departamento",
     ];
+
     inputs.forEach((input) => {
         document.getElementById(input).value = "";
     });
     document.getElementById("activo").value = "todos";
 
-    buscarFiltros();
+    // Evitar que se ejecute la búsqueda al limpiar los filtros
+    // Puedes decidir si quieres hacer algo más aquí o simplemente no hacer nada.
+    // Por ejemplo, podrías redirigir a una vista sin resultados o a una página de inicio.
+    // window.location.href = window.location.pathname; // Redirige a la misma página sin parámetros
 }
+
 
 document.addEventListener('DOMContentLoaded', function () {
     // Selecciona el campo de entrada de cantidad
