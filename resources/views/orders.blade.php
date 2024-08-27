@@ -29,18 +29,18 @@
                         <div class="row g-3 align-items-end">
                             <div class="col-md-2">
                                 <label for="ACMROIDOC" class="form-label">NO DE DOC:</label>
-                                <input type="text" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric">
+                                <input type="text" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric" autocomplete="off">
                             </div>
 
                             <div class="col-md-2">
                                 <label for="CNCDIRID" class="form-label">Proveedor ID:</label>
-                                <input type="text" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric">
+                                <input type="text" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric" autocomplete="off">
                                 <div id="idDropdown" class="dropdown-menu"></div>
                             </div>
                             <div class="col-md-3">
                                 <label for="CNCDIRNOM" class="form-label">Proveedor Nombre:</label>
                                 <div class="input-group">
-                                    <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}">
+                                    <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
                                     <div id="nameDropdown" class="dropdown-menu"></div>
                                     <button class="btn btn-danger" type="button" onclick="limpiarCampos()">
                                         <i class="fas fa-times"></i>
