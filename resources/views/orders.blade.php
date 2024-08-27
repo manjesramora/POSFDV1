@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/sb-admin-2.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
 </head>
+
 <body id="page-top">
     <div id="wrapper">
         @include('slidebar') <!-- Asegúrate de tener un archivo sidebar.blade.php en resources/views -->
@@ -24,13 +25,13 @@
                 <div class="container-fluid">
                     <h1 class="mt-5" style="text-align: center;">ORDENES DE COMPRA</h1>
                     <br>
-                    <!-- Formulario de filtro -->
                     <form method="GET" action="{{ route('orders') }}" class="mb-3" id="filterForm">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-2">
                                 <label for="ACMROIDOC" class="form-label">NO DE DOC:</label>
-                                <input type="text" name="ACMROIDOC" id="ACMROIDOC" class="form-control" value="{{ request('ACMROIDOC') }}" inputmode="numeric">
+                                <input type="text" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric">
                             </div>
+
                             <div class="col-md-2">
                                 <label for="CNCDIRID" class="form-label">Proveedor ID:</label>
                                 <input type="text" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric">
@@ -177,4 +178,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/order.js') }}"></script>
 </body>
+
 </html>

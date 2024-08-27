@@ -25,74 +25,75 @@ class OrderController extends Controller
             return $next($request);
         });
     }
-
     public function index(Request $request)
-    {
-        $user = Auth::user();
+{
+    $user = Auth::user();
 
-        if (!$user) {
-            return redirect()->route('login');
-        }
-
-        $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
-
-        $query = Order::query();
-
-        if (!empty($centrosCostosIds)) {
-            $query->whereIn('ACMVOIALID', $centrosCostosIds);
-        }
-
-        // Definir el rango de fechas predeterminado (últimas 2 semanas)
-        $defaultStartDate = Carbon::now()->subWeeks(2)->startOfDay()->toDateString();
-        $defaultEndDate = Carbon::now()->endOfDay()->toDateString();
-
-        // Obtener fechas del request o usar las predeterminadas
-        $startDate = $request->input('start_date', $defaultStartDate);
-        $endDate = $request->input('end_date', $defaultEndDate);
-
-        // Aplicar el filtro de fechas
-        $query->whereBetween('ACMVOIFDOC', [$startDate, $endDate]);
-
-        if ($request->filled('ACMVOIDOC')) {
-            $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
-        }
-
-        if ($request->filled('CNCDIRID')) {
-            $query->where('CNCDIRID', $request->input('CNCDIRID'));
-        }
-
-        if ($request->filled('CNCDIRNOM')) {
-            $query->whereHas('provider', function ($q) use ($request) {
-                $q->where('CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
-            });
-        }
-
-        $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'ACMVOIFDOC', 'ACMVOIALID'];
-        $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
-        $sortDirection = $request->input('sortDirection', 'desc');
-
-        if (in_array($sortColumn, $sortableColumns)) {
-            $query->orderBy($sortColumn, $sortDirection);
-        } else {
-            $query->orderBy('ACMVOIDOC', 'desc');
-        }
-
-        // Subconsulta para verificar si hay alguna partida no completamente recepcionada
-        $query->whereExists(function ($subquery) {
-            $subquery->select(DB::raw(1))
-                ->from('ACMVOR1')
-                ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
-                ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
-        });
-
-        $orders = $query->paginate(30);
-
-        if ($request->ajax()) {
-            return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
-        }
-
-        return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
+    if (!$user) {
+        return redirect()->route('login');
     }
+
+    $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
+
+    $query = Order::query();
+
+    if (!empty($centrosCostosIds)) {
+        $query->whereIn('ACMVOIALID', $centrosCostosIds);
+    }
+
+    // Remove the default date range
+    // Only filter by date if the user specifies them
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+
+    if ($startDate && $endDate) {
+        $query->whereBetween('ACMVOIFDOC', [$startDate, $endDate]);
+    }
+
+    // Check for exact match on ACMVOIDOC if input is filled
+    if ($request->filled('ACMVOIDOC')) {
+        $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
+    }
+
+    if ($request->filled('CNCDIRID')) {
+        $query->where('CNCDIRID', $request->input('CNCDIRID'));
+    }
+
+    if ($request->filled('CNCDIRNOM')) {
+        $query->whereHas('provider', function ($q) use ($request) {
+            $q->where('CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
+        });
+    }
+
+    // Sorting logic
+    $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'CNCDIRNOM', 'ACMVOIFDOC', 'ACMVOIALID'];
+    $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
+    $sortDirection = $request->input('sortDirection', 'desc');
+
+    if (in_array($sortColumn, $sortableColumns)) {
+        $query->orderBy($sortColumn, $sortDirection);
+    } else {
+        $query->orderBy('ACMVOIDOC', 'desc');
+    }
+
+    // Modify the subquery to filter all items by default
+    $query->whereExists(function ($subquery) {
+        $subquery->select(DB::raw(1))
+            ->from('ACMVOR1')
+            ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
+            ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
+    });
+
+    $orders = $query->paginate(30);
+
+    if ($request->ajax()) {
+        return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
+    }
+
+    return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
+}
+
+    
 
     public function showReceptions($ACMVOIDOC)
     {

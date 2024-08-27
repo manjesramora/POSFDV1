@@ -48,6 +48,7 @@ function limpiarCampos() {
     document.getElementById("CNCDIRNOM").value = "";
     document.getElementById("start_date").value = "";
     document.getElementById("end_date").value = "";
+    $("#idDropdown, #nameDropdown").hide();
 }
 
 function sortTable(column) {
