@@ -4,7 +4,7 @@
 
         <!-- Sidebar - Brand -->
         <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{ route('index') }}" style="margin-top: 30px;" border-radius: 10px; overflow: hidden;">
-            <img src="/assets/img/LP.png" style="max-width: 90px; height: auto;" margin>
+            <img src="/assets/img/logos.png" style="max-width: 90px; height: auto;" margin>
         </a>
 
         <br>

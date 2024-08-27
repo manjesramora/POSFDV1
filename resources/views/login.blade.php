@@ -15,7 +15,7 @@
         <form id="loginForm" method="POST" action="{{ route('login') }}">
             @csrf
             <div class="center">
-                <img src="assets/img/LP.png" alt="Descripción de la imagen" width="100" height="100" class="invertida rounded-circle">
+                <img src="assets/img/logos.png" alt="Descripción de la imagen" width="100" height="100" class="invertida rounded-circle">
             </div>
             <br>
             @if(session('error'))
