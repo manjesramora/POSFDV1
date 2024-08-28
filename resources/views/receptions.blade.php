@@ -159,17 +159,19 @@
                                                             <td>{{ $reception->ACMVOIUMT }}</td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}</td>
                                                             <td>
-                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
-                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
-                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)">
-                                                            </td>
-                                                            <td>
-                                                                <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
-                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" min="0"
-                                                                    step="0.0001"
-                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
-                                                                    oninput="limitPrecio(this)" onchange="limitPrecio(this)" required>
-                                                            </td>
+    <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
+        value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
+        oninput="limitCantidad(this)" onchange="limitCantidad(this)"
+        onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">
+</td>
+<td>
+    <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+        value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" min="0"
+        step="0.0001" data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
+        oninput="limitPrecio(this)" onchange="limitPrecio(this)"
+        onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();" required>
+</td>
+
 
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
                                                             <td class="subtotal">0.0000</td>
