@@ -30,15 +30,26 @@ class RcnController extends Controller
         // Obtener los parámetros de filtro y ordenación
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-        $sortBy = $request->input('sort_by', 'ACMROINDOC'); // Campo por defecto para ordenación
-        $sortOrder = $request->input('sort_order', 'asc');
-
+        $sortBy = $request->input('sort_by', 'ACMROIDOC'); // Campo por defecto para ordenación
+        $sortOrder = $request->input('sort_order', 'desc'); // Orden descendente por defecto
+    
         // Construir la consulta base para la tabla ACMROI
         $query = DB::table('ACMROI')
-            ->select('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC', DB::raw('COUNT(*) as numero_de_partidas'))
-            ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC')
-            ->orderBy($sortBy, $sortOrder);
-
+            ->select(
+                'ACMROITDOC',
+                'ACMROINDOC',
+                'CNTDOCID',
+                'ACMROIDOC',
+                'ACMROIFREC',
+                'ACACTLID',  // Asegúrate de seleccionar estos campos
+                'ACACSGID',  // Asegúrate de seleccionar estos campos
+                'ACACANID',  // Asegúrate de seleccionar estos campos
+                DB::raw('COUNT(*) as numero_de_partidas'),
+                DB::raw('(SELECT COUNT(DISTINCT sub.ACMROINDOC) FROM ACMROI AS sub WHERE sub.ACMROIDOC = ACMROI.ACMROIDOC) as numero_de_rcns') // Contar número de RCNs distintas
+            )
+            ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC', 'ACACTLID', 'ACACSGID', 'ACACANID') // Agrega estos campos en el groupBy
+            ->orderBy($sortBy, $sortOrder); // Ordenar por el campo seleccionado en orden descendente
+    
         // Aplicar filtros de fechas si están presentes
         if ($startDate) {
             $query->whereDate('ACMROIFREC', '>=', Carbon::parse($startDate));
@@ -46,13 +57,13 @@ class RcnController extends Controller
         if ($endDate) {
             $query->whereDate('ACMROIFREC', '<=', Carbon::parse($endDate));
         }
-
+    
         // Obtener los resultados paginados
         $rcns = $query->paginate(10);
-
+    
         // Retornar la vista con los datos necesarios
         return view('rcn', compact('rcns', 'startDate', 'endDate', 'sortBy', 'sortOrder'));
-    }
+    }    
 
     public function generatePdf($ACMROINDOC)
     {

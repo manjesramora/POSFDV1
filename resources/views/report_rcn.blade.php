@@ -110,23 +110,27 @@
     <table>
         <thead>
             <tr>
-                <th>Tipo Documento</th>
-                <th>Número de RCN</th>
-                <th>Tipo Documento 2</th>
-                <th>Número de OL</th>
-                <th>Fecha Recepción</th>
-                <th>Número de Partidas</th>
+                <th>LIN</th>
+                <th>DESCRIPCIÓN DEL ARTICULO / CODIGO DE BARRAS</th>
+                <th>U.M</th>
+                <th>PESO (KG)</th>
+                <th>VOL (MT3)</th>
+                <th>CANTIDAD</th>
+                <th>PRECIO UNI.</th>
+                <th>IMPORTE</th>
             </tr>
         </thead>
         <tbody>
             @foreach($rcns as $rcn)
             <tr>
-                <td>{{ $rcn->ACMROITDOC }}</td>
-                <td>{{ $rcn->ACMROINDOC }}</td>
-                <td>{{ $rcn->CNTDOCID }}</td>
-                <td>{{ $rcn->ACMROIDOC }}</td>
-                <td>{{ \Carbon\Carbon::parse($rcn->ACMROIFREC)->format('d/m/Y') }}</td>
-                <td>{{ $rcn->numero_de_partidas }}</td>
+                <td>{{ $rcn->ACMROILIN }}</td>
+                <td>{{ $rcn->ACMROIDSC }}</td>
+                <td>{{ $rcn->ACMROIUMT }}</td>
+                <td>{{ $rcn->ACMROIPESOU }}</td>
+                <td>{{ $rcn->ACMROIVOLU }}</td>
+                <td>{{ $rcn->ACMROIQT }}</td>
+                <td>{{ $rcn->ACMROINP }}</td>
+                <td>{{ $rcn->ACMROING }}</td>
             </tr>
             @endforeach
         </tbody>

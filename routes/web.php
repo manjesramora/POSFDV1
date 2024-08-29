@@ -74,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas relacionadas con rcn
     Route::get('/rcn', [RcnController::class, 'index'])->name('rcn')->middleware('permission:RCN');
-    Route::get('/rcn/pdf/{ACMROINDOC}', [RcnController::class, 'generatePdf'])->name('rcn.pdf');
+    route::get('/rcn/generate-pdf/{ACMROINDOC}', [RcnController::class, 'generatePdf'])->name('rcn.generatePdf');
 });
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
