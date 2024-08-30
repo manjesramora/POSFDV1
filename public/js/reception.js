@@ -104,8 +104,25 @@ $(document).ready(function () {
                     document.getElementById('printReportButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
 
+                    // Modifica el comportamiento para abrir o descargar el PDF
                     document.getElementById('printReportButton').addEventListener('click', function () {
-                        window.open(`/print-report?ACMROINDOC=${response.data.ACMROINDOC}&ACMROIDOC=${response.data.ACMROIDOC}`, '_blank');
+                        axios.get(`/print-report?ACMROINDOC=${response.data.ACMROINDOC}&ACMROIDOC=${response.data.ACMROIDOC}`, {
+                            responseType: 'blob' // Importante para el PDF
+                        }).then(pdfResponse => {
+                            const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
+                            
+                            // Abre el PDF en una nueva pestaña
+                            window.open(fileURL, '_blank');
+
+                            // Alternativamente, forzar descarga del PDF
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = fileURL;
+                            downloadLink.download = `order_report_${response.data.ACMROINDOC}.pdf`;
+                            downloadLink.click();
+
+                        }).catch(error => {
+                            console.error("Error loading the PDF:", error);
+                        });
                     });
 
                 } else {
@@ -220,11 +237,7 @@ $(document).ready(function () {
     function toggleFleteInput() {
         const fleteSelect = document.getElementById('flete_select');
         const fleteInputDiv = document.getElementById('flete_input_div');
-        if (fleteSelect.value == '1') {
-            fleteInputDiv.style.display = 'block';
-        } else {
-            fleteInputDiv.style.display = 'none';
-        }
+        fleteInputDiv.style.display = fleteSelect.value == '1' ? 'block' : 'none';
     }
 
     $('#flete_select').on('change', toggleFleteInput);
