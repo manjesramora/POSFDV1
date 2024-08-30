@@ -8,6 +8,8 @@ use App\Models\Providers;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
+
 use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
@@ -144,16 +146,18 @@ class OrderController extends Controller
     public function receiptOrder(Request $request, $ACMVOIDOC)
 {
     try {
-        // Validar los datos entrantes; se permite que los campos sean nulos o vacíos
+        // Validate incoming data; allow nullable or empty fields
         $validatedData = $request->validate([
-            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimales, puede ser null
-            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimales, puede ser null
+            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
+            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
+            'document_number1' => 'required',  // Ensure document_number1 is included and required
         ], [
             'numeric' => 'El campo :attribute debe ser un número.',
             'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
+            'document_number1.required' => 'El número de documento es obligatorio.',
         ]);
     } catch (\Illuminate\Validation\ValidationException $e) {
-        // Registrar errores de validación en los logs
+        // Log validation errors
         Log::error('Errores de validación:', $e->errors());
         return response()->json([
             'success' => false,
@@ -175,8 +179,7 @@ class OrderController extends Controller
     try {
         foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
             if ($cantidadRecibida === null || $cantidadRecibida === '') {
-                // Si la cantidad recibida está vacía o nula, continuar con la siguiente iteración
-                continue;
+                continue;  // Skip empty or null received quantities
             }
 
             if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
@@ -190,7 +193,7 @@ class OrderController extends Controller
                 continue;
             }
 
-            // Redondear valores a 4 decimales y formatear como string para evitar notación científica
+            // Round values to 4 decimals and format as string to avoid scientific notation
             $cantidadRecibida = number_format((float) round($cantidadRecibida, 4), 4, '.', '');
             $precioUnitario = number_format((float) round($precioUnitario, 4), 4, '.', '');
 
@@ -206,19 +209,77 @@ class OrderController extends Controller
                 ]);
         }
 
-        // Llamar a insertPartidas solo si hay datos válidos para procesar
+        // Call insertPartidas only if there are valid data to process
         $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
 
         DB::commit();
 
         Log::info('Recepción registrada con éxito en la base de datos.');
-        return response()->json(['success' => true, 'message' => 'Recepción registrada con éxito.']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Recepción registrada con éxito.',
+            'ACMROINDOC' => $validatedData['document_number1'],  // Correctly get the value now
+            'ACMROIDOC' => $order->ACMVOIDOC
+        ]);
     } catch (\Exception $e) {
         DB::rollBack();
         Log::error("Error en la recepción de la orden: " . $e->getMessage());
         return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
     }
 }
+
+public function generatePdf(Request $request)
+{
+    $ACMROINDOC = $request->input('ACMROINDOC');
+
+    if (!$ACMROINDOC) {
+        return redirect()->route('rcn.index')->with('error', 'Parámetro de reporte inválido.');
+    }
+
+    // Buscar los registros utilizando ACMROINDOC
+    $records = DB::table('ACMROI')
+        ->select('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC', DB::raw('COUNT(*) as numero_de_partidas'))
+        ->where('ACMROINDOC', $ACMROINDOC)
+        ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC')
+        ->get();
+
+    if ($records->isEmpty()) {
+        return redirect()->route('rcn.index')->with('error', 'No se encontraron registros para el reporte.');
+    }
+
+    // Agrupar los datos por CNTDOCID o cualquier otro campo relevante
+    $groupedRcns = $records->groupBy('CNTDOCID');
+
+    $startDate = $records->min('ACMROIFREC'); // Usar la fecha más temprana del grupo
+    $endDate = $records->max('ACMROIFREC'); // Usar la fecha más reciente del grupo
+
+    // Generar el PDF utilizando la vista `report_rcn`
+    $pdf = PDF::loadView('report_rcn', [
+        'groupedRcns' => $groupedRcns,
+        'startDate' => $startDate,
+        'endDate' => $endDate
+    ]);
+
+    // Agregar numeración de páginas
+    $pdf->output();
+    $canvas = $pdf->getDomPDF()->getCanvas();
+    $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
+        $text = "Página $pageNumber de $pageCount";
+        $font = $fontMetrics->get_font('Arial', 'normal');
+        $size = 8;
+        $width = $canvas->get_width();
+        $height = $canvas->get_height();
+        $textWidth = $fontMetrics->getTextWidth($text, $font, $size);
+        $canvas->text($width - $textWidth - 20, $height - 20, $text, $font, $size);
+    });
+
+    return $pdf->download('rcn_report_' . $ACMROINDOC . '.pdf');
+}
+
+
+
+
 
 public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
 {

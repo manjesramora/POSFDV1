@@ -1,6 +1,17 @@
-$(document).ready(function() {
+$(document).ready(function () {
     function cleanNumber(value) {
-        return value.replace(/,/g, '');
+        return value.replace(/,/g, '').replace('$', '');
+    }
+
+    function formatCurrency(value) {
+        return '$' + parseFloat(value).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function formatPrecio(input) {
+        const value = cleanNumber(input.value);
+        if (!isNaN(value) && value.trim() !== "") {
+            input.value = formatCurrency(value);
+        }
     }
 
     function limitCantidad(input) {
@@ -26,7 +37,8 @@ $(document).ready(function() {
         } else {
             input.value = value.toFixed(4).replace(/\.?0+$/, '');
         }
-        
+
+        input.value = formatCurrency(input.value);
         calculateTotals(input);
     }
 
@@ -39,8 +51,8 @@ $(document).ready(function() {
         const subtotal = cantidadRecibida * precioUnitario;
         const total = subtotal + (subtotal * (iva / 100));
 
-        row.querySelector('.subtotal').innerText = subtotal.toFixed(4).replace(/\.?0+$/, '');
-        row.querySelector('.total').innerText = total.toFixed(4).replace(/\.?0+$/, '');
+        row.querySelector('.subtotal').innerText = formatCurrency(subtotal);
+        row.querySelector('.total').innerText = formatCurrency(total);
 
         updateTotalCost();
     }
@@ -53,24 +65,24 @@ $(document).ready(function() {
         document.getElementById('totalCost').value = totalCost.toFixed(4).replace(/\.?0+$/, '');
     }
 
-    $(document).on("input", ".cantidad-recibida", function() {
+    $(document).on("input", ".cantidad-recibida", function () {
         limitCantidad(this);
     });
 
-    $(document).on("input", ".precio-unitario", function() {
-        limitPrecio(this);
+    $(document).on("input", ".precio-unitario", function () {
+        formatPrecio(this);
     });
 
-    $(document).on("change", ".cantidad-recibida", function() {
+    $(document).on("change", ".cantidad-recibida", function () {
         limitCantidad(this);
     });
 
-    $(document).on("change", ".precio-unitario", function() {
+    $(document).on("change", ".precio-unitario", function () {
         limitPrecio(this);
     });
 
     $("#receptionForm").on("submit", function (e) {
-        e.preventDefault(); 
+        e.preventDefault();
 
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         loadingModal.show();
@@ -79,17 +91,23 @@ $(document).ready(function() {
 
         axios.post(this.action, formData)
             .then(response => {
-                console.log(response); 
+                console.log(response);
 
                 if (response.data.success) {
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message}
                         <br><br>
+                        <button id="printReportButton" class="btn btn-success">Imprimir Reporte</button>
                         <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
                     `;
                     document.querySelector('.spinner-border').classList.add('d-none');
-                    document.getElementById('goToOrdersButton').classList.remove('d-none');
+                    document.getElementById('printReportButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
+
+                    document.getElementById('printReportButton').addEventListener('click', function () {
+                        window.open(`/print-report?ACMROINDOC=${response.data.ACMROINDOC}&ACMROIDOC=${response.data.ACMROIDOC}`, '_blank');
+                    });
+
                 } else {
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message || "Ocurrió un error inesperado."}
@@ -101,7 +119,7 @@ $(document).ready(function() {
                     document.getElementById('closeModalButton').classList.add('d-none');
                 }
 
-                document.getElementById('goToOrdersButton').addEventListener('click', function() {
+                document.getElementById('goToOrdersButton').addEventListener('click', function () {
                     window.location.href = "{{ route('orders') }}";
                 });
             })
@@ -115,7 +133,7 @@ $(document).ready(function() {
                 document.getElementById('goToOrdersButton').classList.remove('d-none');
                 document.getElementById('closeModalButton').classList.add('d-none');
 
-                document.getElementById('goToOrdersButton').addEventListener('click', function() {
+                document.getElementById('goToOrdersButton').addEventListener('click', function () {
                     window.location.href = "{{ route('orders') }}";
                 });
 
@@ -123,7 +141,6 @@ $(document).ready(function() {
             });
     });
 
-    // Configurar autocompletado para "Número" y "Fletero"
     function setupAutocomplete(inputId, listId, field) {
         $(`#${inputId}`).on("input", function () {
             let query = $(this).val();
@@ -175,22 +192,20 @@ $(document).ready(function() {
                 const name = activeItem.data('name');
                 $(`#${inputId}`).val(id);
                 $('#fletero').val(name);
-                $('#numero').val(id);  // Autocompletar el número al presionar Enter
+                $('#numero').val(id);
                 dropdown.hide();
             }
         });
 
-        // Selección por mouse
         $(document).on("click", `#${listId} li`, function () {
             let id = $(this).data("id");
             let name = $(this).data("name");
             $(`#${inputId}`).val(id);
             $('#fletero').val(name);
-            $('#numero').val(id);  // Autocompletar el número al hacer clic
+            $('#numero').val(id);
             $(`#${listId}`).hide();
         });
 
-        // Limpiar campo
         $(`#clear${inputId.charAt(0).toUpperCase() + inputId.slice(1)}`).on("click", function () {
             $(`#${inputId}`).val("");
             $('#fletero').val("");

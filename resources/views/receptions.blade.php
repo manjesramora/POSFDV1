@@ -86,13 +86,14 @@
                                     </select>
                                 </div>
                                 <div class="col-md-1">
-                                    <label for="almacen" class="form-label">Almacén:</label>
-                                    <input type="text" id="almacen" name="store" class="form-control" value="{{ $order->ACMVOIALID }}" readonly required>
-                                </div>
-                                <div class="col-md-1">
                                     <label for="ACMROIREF" class="form-label">Referencia:</label>
                                     <input type="text" id="ACMROIREF" name="reference" class="form-control" required>
                                 </div>
+                                <div class="col-md-1">
+                                    <label for="almacen" class="form-label">Almacén:</label>
+                                    <input type="text" id="almacen" name="store" class="form-control" value="{{ $order->ACMVOIALID }}" readonly required>
+                                </div>
+
                                 <div class="col-md-2">
                                     <label for="fecha" class="form-label">Fecha Recepción:</label>
                                     <input type="date" id="fecha" name="reception_date" class="form-control" value="{{ $currentDate }}" readonly required>
@@ -105,6 +106,7 @@
                                     <label for="num_rcn_letras" class="form-label">NO DE DOC:</label>
                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
                                 </div>
+
                                 <div class="col-md-1">
                                     <label for="flete_select" class="form-label">Flete:</label>
                                     <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
@@ -117,11 +119,9 @@
                                     <input type="text" id="flete" name="freight" class="form-control" placeholder="Monto">
                                 </div>
 
-                                <div class="col-md-1">
-                                    <a href="{{ route('orders') }}" class="btn btn-secondary">Regresar</a>
-                                </div>
-                                <div class="col-md-1">
-                                    <button type="submit" class="btn btn-warning">Recepcionar</button>
+                                <div class="col-md-2 d-flex">
+                                    <a href="{{ route('orders') }}" class="btn btn-secondary me-2">Regresar</a>
+                                    <button type="submit" class="btn btn-info">Recepcionar</button>
                                 </div>
                             </div>
                             <br>
@@ -159,19 +159,18 @@
                                                             <td>{{ $reception->ACMVOIUMT }}</td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}</td>
                                                             <td>
-    <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
-        value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
-        oninput="limitCantidad(this)" onchange="limitCantidad(this)"
-        onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">
-</td>
-<td>
-    <input type="number" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
-        value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" min="0"
-        step="0.0001" data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
-        oninput="limitPrecio(this)" onchange="limitPrecio(this)"
-        onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();" required>
-</td>
-
+                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
+                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
+                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)"
+                                                                    onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">
+                                                            </td>
+                                                            <td>
+                                                                <input type="text" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" 
+                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
+                                                                    oninput="formatPrecio(this)" onchange="limitPrecio(this)"
+                                                                    onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();" required>
+                                                            </td>
 
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
                                                             <td class="subtotal">0.0000</td>
