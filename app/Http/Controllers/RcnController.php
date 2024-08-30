@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\Rcn;
+use Illuminate\Support\Facades\Log;
 
 class RcnController extends Controller
 {
@@ -67,36 +68,71 @@ class RcnController extends Controller
 
     public function generatePdf($ACMROINDOC)
     {
-        // Buscar el registro utilizando ACMROINDOC
-        $rcn = Rcn::where('ACMROINDOC', $ACMROINDOC)->first();
-
-        if (!$rcn) {
-            return redirect()->route('rcn')->with('error', 'RCN no encontrado.');
+        try {
+            // Buscar el registro utilizando ACMROINDOC
+            $rcn = DB::table('acmroi')->where('ACMROINDOC', $ACMROINDOC)->first();
+    
+            if (!$rcn) {
+                return redirect()->route('rcn')->with('error', 'RCN no encontrado.');
+            }
+    
+            // Obtener los registros desde la tabla acmroi utilizando ACMROINDOC
+            $rcns = DB::table('acmroi')
+                ->where('ACMROINDOC', $ACMROINDOC)
+                ->get();
+    
+            if ($rcns->isEmpty()) {
+                return redirect()->route('rcn')->with('error', 'Orden no encontrada.');
+            }
+    
+            // Obtener información adicional de 'inprod' para cada registro en 'rcns'
+            $rcns = $rcns->map(function ($rcn) {
+                $product = DB::table('inprod')
+                    ->where('INPRODID', $rcn->INPRODID)
+                    ->select('INPRODI2', 'INPRODI3')
+                    ->first();
+    
+                if ($product) {
+                    $rcn->INPRODI2 = $product->INPRODI2;
+                    $rcn->INPRODI3 = $product->INPRODI3;
+                } else {
+                    $rcn->INPRODI2 = null;
+                    $rcn->INPRODI3 = null;
+                }
+    
+                return $rcn;
+            });
+    
+            // Agrupar los datos por CNTDOCID o cualquier otro campo relevante
+            $groupedRcns = $rcns->groupBy('CNTDOCID');
+    
+            // Generar el PDF utilizando la vista `report_rcn`
+            $pdf = PDF::loadView('report_rcn', [
+                'groupedRcns' => $groupedRcns,
+                'startDate' => $rcns->first()->ACMROIFREC,
+                'endDate' => $rcns->first()->ACMROIFREC
+            ]);
+    
+            // Agregar numeración de páginas
+            $pdf->output();
+            $canvas = $pdf->getDomPDF()->getCanvas();
+            $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
+                $text = "Página $pageNumber de $pageCount";
+                $font = $fontMetrics->get_font('Arial', 'normal');
+                $size = 8;
+                $width = $canvas->get_width();
+                $height = $canvas->get_height();
+                $textWidth = $fontMetrics->getTextWidth($text, $font, $size);
+                $canvas->text($width - $textWidth - 20, $height - 20, $text, $font, $size);
+            });
+    
+            return $pdf->download('rcn_report_' . $ACMROINDOC . '.pdf'); // Descargar el PDF
+    
+        } catch (\Exception $e) {
+            // Registrar el error para depuración
+            Log::error("Error generating PDF: " . $e->getMessage());
+            return redirect()->route('rcn')->with('error', 'Error al generar el PDF: ' . $e->getMessage());
         }
-
-        // Agrupar los datos por CNTDOCID o cualquier otro campo relevante
-        $groupedRcns = collect([$rcn])->groupBy('CNTDOCID');
-
-        // Generar el PDF utilizando la vista `report_rcn`
-        $pdf = PDF::loadView('report_rcn', [
-            'groupedRcns' => $groupedRcns,
-            'startDate' => $rcn->ACMROIFREC,
-            'endDate' => $rcn->ACMROIFREC
-        ]);
-
-        // Agregar numeración de páginas
-        $pdf->output();
-        $canvas = $pdf->getDomPDF()->getCanvas();
-        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
-            $text = "Página $pageNumber de $pageCount";
-            $font = $fontMetrics->get_font('Arial', 'normal');
-            $size = 8;
-            $width = $canvas->get_width();
-            $height = $canvas->get_height();
-            $textWidth = $fontMetrics->getTextWidth($text, $font, $size);
-            $canvas->text($width - $textWidth - 20, $height - 20, $text, $font, $size);
-        });
-
-        return $pdf->download('rcn_report_' . $ACMROINDOC . '.pdf');
     }
+    
 }

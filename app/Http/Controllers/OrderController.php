@@ -48,8 +48,26 @@ class OrderController extends Controller
             return response()->json(['error' => 'Orden no encontrada.'], 404);
         }
 
+        // Get additional data from 'inprod' table and merge with existing 'rcns' data
+        $rcns = $rcns->map(function ($rcn) {
+            $product = DB::table('inprod')
+                ->where('INPRODID', $rcn->INPRODID)
+                ->select('INPRODI2', 'INPRODI3')
+                ->first();
+
+            if ($product) {
+                $rcn->INPRODI2 = $product->INPRODI2;
+                $rcn->INPRODI3 = $product->INPRODI3;
+            } else {
+                $rcn->INPRODI2 = null;
+                $rcn->INPRODI3 = null;
+            }
+
+            return $rcn;
+        });
+
         // Agrupar los RCNs por una clave relevante, como 'CNTDOCID'
-        $groupedRcns = $rcns->groupBy('CNTDOCID'); // Asegúrate de usar la clave de agrupación correcta
+        $groupedRcns = $rcns->groupBy('CNTDOCID');
 
         // Verificar si la vista existe
         if (!view()->exists('report_rcn')) {
@@ -85,8 +103,6 @@ class OrderController extends Controller
     }
 }
 
-    
-    
     
     public function index(Request $request)
 {

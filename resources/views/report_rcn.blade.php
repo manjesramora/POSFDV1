@@ -111,26 +111,34 @@
         <thead>
             <tr>
                 <th>LIN</th>
+                <th>SKU</th> <!-- New Column -->
                 <th>DESCRIPCIÓN DEL ARTICULO / CODIGO DE BARRAS</th>
+                <th></th> <!-- New Column -->
                 <th>U.M</th>
                 <th>PESO (KG)</th>
                 <th>VOL (MT3)</th>
                 <th>CANTIDAD</th>
                 <th>PRECIO UNI.</th>
                 <th>IMPORTE</th>
+                
+                
             </tr>
         </thead>
         <tbody>
             @foreach($rcns as $rcn)
             <tr>
                 <td>{{ $rcn->ACMROILIN }}</td>
+                <td>{{ $rcn->INPRODI2 }}</td> <!-- New Data -->
                 <td>{{ $rcn->ACMROIDSC }}</td>
+                <td>{{ $rcn->INPRODI3 }}</td> <!-- New Data -->
                 <td>{{ $rcn->ACMROIUMT }}</td>
                 <td>{{ $rcn->ACMROIPESOU }}</td>
                 <td>{{ $rcn->ACMROIVOLU }}</td>
                 <td>{{ $rcn->ACMROIQT }}</td>
                 <td>{{ $rcn->ACMROINP }}</td>
                 <td>{{ $rcn->ACMROING }}</td>
+                
+                
             </tr>
             @endforeach
         </tbody>
