@@ -143,6 +143,24 @@ class OrderController extends Controller
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
 {
+    try {
+        // Validar los datos entrantes; se permite que los campos sean nulos o vacíos
+        $validatedData = $request->validate([
+            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimales, puede ser null
+            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimales, puede ser null
+        ], [
+            'numeric' => 'El campo :attribute debe ser un número.',
+            'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
+        ]);
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // Registrar errores de validación en los logs
+        Log::error('Errores de validación:', $e->errors());
+        return response()->json([
+            'success' => false,
+            'errors' => $e->errors()
+        ], 422);
+    }
+
     $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
     $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
 
@@ -155,26 +173,29 @@ class OrderController extends Controller
     DB::beginTransaction();
 
     try {
-        // Validar los datos de cantidad_recibida
-        if (empty($request->input('cantidad_recibida')) || empty($request->input('precio_unitario'))) {
-            return response()->json(['success' => false, 'message' => 'Datos de cantidad recibida o precio unitario faltantes.']);
-        }
-
-        foreach ($request->input('cantidad_recibida') as $index => $cantidadRecibida) {
-            if ($cantidadRecibida === null || !is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
-                Log::warning("Valor de `cantidad_recibida` nulo o no válido para el índice {$index}. Se omite la actualización.");
+        foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
+            if ($cantidadRecibida === null || $cantidadRecibida === '') {
+                // Si la cantidad recibida está vacía o nula, continuar con la siguiente iteración
                 continue;
             }
 
-            $precioUnitario = $request->input('precio_unitario')[$index] ?? 0;
-            if (!is_numeric($precioUnitario) || $precioUnitario <= 0) {
-                return response()->json(['success' => false, 'message' => "Precio unitario no válido en la línea {$index}. No se puede recepcionar."]);
+            if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                Log::warning("Valor de `cantidad_recibida` no válido para el índice {$index}. Se omite la actualización.");
+                continue;
             }
 
-            $cantidadRecibida = round($cantidadRecibida, 4);
-            $precioUnitario = round($precioUnitario, 4);
+            $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
+            if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
+                Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
+                continue;
+            }
+
+            // Redondear valores a 4 decimales y formatear como string para evitar notación científica
+            $cantidadRecibida = number_format((float) round($cantidadRecibida, 4), 4, '.', '');
+            $precioUnitario = number_format((float) round($precioUnitario, 4), 4, '.', '');
 
             $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+            $cantidadSolicitada = number_format((float) round($cantidadSolicitada, 4), 4, '.', '');
 
             DB::table('ACMVOR1')
                 ->where('ACMVOIDOC', $ACMVOIDOC)
@@ -185,8 +206,8 @@ class OrderController extends Controller
                 ]);
         }
 
-        // Llamar a insertPartidas para afectar acmroi, incrdx, y insdos
-        $this->insertPartidas($request->all(), $request->input('cantidad_recibida'), $request->input('precio_unitario'), $order, $provider);
+        // Llamar a insertPartidas solo si hay datos válidos para procesar
+        $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
 
         DB::commit();
 
@@ -199,68 +220,67 @@ class OrderController extends Controller
     }
 }
 
+public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
+{
+    $fechaActual = now();
+    $horaActual = now()->format('H:i:s');
+    $usuario = Auth::user()->name ?? 'Sistema';
 
-    public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
-    {
-        $fechaActual = now();
-        $horaActual = now()->format('H:i:s');
-        $usuario = Auth::user()->name ?? 'Sistema';
-
-        try {
-            foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
-                if ($cantidadRecibida > 0) {
-                    if (!isset($validatedData['acmvoilin'][$index]) || 
-                        !isset($validatedData['acmvoiprid'][$index]) || 
-                        !isset($validatedData['acmvoiprds'][$index]) || 
-                        !isset($validatedData['acmvoiumt'][$index]) || 
-                        !isset($validatedData['acmvoiiva'][$index])) {
-                        Log::error("Datos de partida no encontrados para el índice {$index}");
-                        throw new \Exception("Datos de partida faltantes para el índice {$index}. Abortando operación.");
-                    }
-
-                    $acmvoilin = $validatedData['acmvoilin'][$index];
-                    $acmvoiprid = $validatedData['acmvoiprid'][$index];
-                    $acmvoiprds = $validatedData['acmvoiprds'][$index];
-                    $acmvoiumt = $validatedData['acmvoiumt'][$index];
-                    $acmvoiiva = $validatedData['acmvoiiva'][$index];
-
-                    Log::info("Procesando partida", ['index' => $index, 'ACMVOILIN' => $acmvoilin, 'INPRODID' => $acmvoiprid, 'UMT' => $acmvoiumt, 'IVA' => $acmvoiiva]);
-
-                    $costoUnitario = isset($preciosUnitarios[$index]) && $preciosUnitarios[$index] > 0 ? (float) $preciosUnitarios[$index] : null;
-
-                    if ($costoUnitario === null) {
-                        Log::error("Costo unitario no ingresado o inválido para la partida con ID {$acmvoiprid}, se omite la recepción.");
-                        continue;
-                    }
-
-                    $costoTotal = $cantidadRecibida * $costoUnitario;
-
-                    $inserted = $this->insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $acmvoiumt);
-
-                    if (!$inserted) {
-                        throw new \Exception("Error al insertar o actualizar en incrdx para la partida con ID {$acmvoiprid}");
-                    }
-
-                    $this->updateInsdos($validatedData['store'], $acmvoiprid, $cantidadRecibida, $costoTotal);
-
-                    $this->insertAcmroi($validatedData, [
-                        'ACMVOILIN' => $acmvoilin,
-                        'ACMVOIPRID' => $acmvoiprid,
-                        'ACMVOIPRDS' => $acmvoiprds,
-                        'ACMVOIUMT' => $acmvoiumt,
-                        'ACMVOIIVA' => $acmvoiiva
-                    ], $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual);
-                } else {
-                    Log::warning("Cantidad recibida es 0 o menor para la partida con índice {$index}");
+    try {
+        foreach ($cantidadesRecibidas as $index => $cantidadRecibida) {
+            if ($cantidadRecibida > 0) {
+                if (!isset($validatedData['acmvoilin'][$index]) || 
+                    !isset($validatedData['acmvoiprid'][$index]) || 
+                    !isset($validatedData['acmvoiprds'][$index]) || 
+                    !isset($validatedData['acmvoiumt'][$index]) || 
+                    !isset($validatedData['acmvoiiva'][$index])) {
+                    Log::error("Datos de partida no encontrados para el índice {$index}");
+                    throw new \Exception("Datos de partida faltantes para el índice {$index}. Abortando operación.");
                 }
+
+                $acmvoilin = $validatedData['acmvoilin'][$index];
+                $acmvoiprid = $validatedData['acmvoiprid'][$index];
+                $acmvoiprds = $validatedData['acmvoiprds'][$index];
+                $acmvoiumt = $validatedData['acmvoiumt'][$index];
+                $acmvoiiva = $validatedData['acmvoiiva'][$index];
+
+                Log::info("Procesando partida", ['index' => $index, 'ACMVOILIN' => $acmvoilin, 'INPRODID' => $acmvoiprid, 'UMT' => $acmvoiumt, 'IVA' => $acmvoiiva]);
+
+                $costoUnitario = isset($preciosUnitarios[$index]) && $preciosUnitarios[$index] > 0 ? (float) $preciosUnitarios[$index] : null;
+
+                if ($costoUnitario === null) {
+                    Log::error("Costo unitario no ingresado o inválido para la partida con ID {$acmvoiprid}, se omite la recepción.");
+                    continue;
+                }
+
+                $costoTotal = number_format((float) round($cantidadRecibida * $costoUnitario, 4), 4, '.', '');
+
+                $inserted = $this->insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $acmvoiumt);
+
+                if (!$inserted) {
+                    throw new \Exception("Error al insertar o actualizar en incrdx para la partida con ID {$acmvoiprid}");
+                }
+
+                $this->updateInsdos($validatedData['store'], $acmvoiprid, $cantidadRecibida, $costoTotal);
+
+                $this->insertAcmroi($validatedData, [
+                    'ACMVOILIN' => $acmvoilin,
+                    'ACMVOIPRID' => $acmvoiprid,
+                    'ACMVOIPRDS' => $acmvoiprds,
+                    'ACMVOIUMT' => $acmvoiumt,
+                    'ACMVOIIVA' => $acmvoiiva
+                ], $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual);
+            } else {
+                Log::warning("Cantidad recibida es 0 o menor para la partida con índice {$index}");
             }
-            Log::info('Partidas procesadas con éxito.');
-            return true;
-        } catch (\Exception $e) {
-            Log::error("Error al procesar la recepción de la orden: " . $e->getMessage());
-            throw $e;
         }
+        Log::info('Partidas procesadas con éxito.');
+        return true;
+    } catch (\Exception $e) {
+        Log::error("Error al procesar la recepción de la orden: " . $e->getMessage());
+        throw $e;
     }
+}
 
     public function insertOrUpdateIncrdx($validatedData, $acmvoilin, $acmvoiprid, $cantidadRecibida, $costoTotal, $costoUnitario, $provider, $order, $unidadMedida)
     {
@@ -347,20 +367,28 @@ class OrderController extends Controller
             if ($acmroilin === 0) {
                 throw new \Exception("El valor de ACMVOILIN es nulo o cero para la partida con ID {$partida['ACMVOIPRID']}");
             }
-
+    
             $producto = DB::table('inprod')
                 ->where('INPRODID', (int) $partida['ACMVOIPRID'])
                 ->first();
-
+    
             if (!$producto) {
                 throw new \Exception("Producto con ID {$partida['ACMVOIPRID']} no encontrado.");
             }
-
+    
             if ($costoUnitario <= 0) {
                 Log::error("Costo unitario inválido para el producto ID {$partida['ACMVOIPRID']} en la línea {$acmroilin}");
                 throw new \Exception("Costo unitario inválido: {$costoUnitario} para el producto ID {$partida['ACMVOIPRID']}");
             }
-
+    
+            // Asegurar que los valores numéricos estén formateados correctamente como decimales
+            $costoTotal = number_format((float) $costoTotal, 6, '.', '');
+            $costoUnitario = number_format((float) $costoUnitario, 6, '.', '');
+            $acmroiVolu = number_format((float) ($producto->INPRODVOL * $cantidadRecibida), 6, '.', '');
+            $acmroiPesou = number_format((float) ($producto->INPRODPESO * $cantidadRecibida), 6, '.', '');
+            $acmroiVolt = number_format((float) ($producto->INPRODVOL * $cantidadRecibida), 6, '.', '');
+            $acmroiPesot = number_format((float) ($producto->INPRODPESO * $cantidadRecibida), 6, '.', '');
+    
             $insertData = [
                 'CNCIASID' => 1,
                 'ACMROITDOC' => 'RCN',
@@ -384,13 +412,13 @@ class OrderController extends Controller
                 'ACMROIDSC' => isset($partida['ACMVOIPRDS']) ? substr($partida['ACMVOIPRDS'], 0, 60) : '',
                 'ACMROIUMT' => isset($partida['ACMVOIUMT']) ? substr($partida['ACMVOIUMT'], 0, 3) : '',
                 'ACMROIIVA' => isset($partida['ACMVOIIVA']) ? (float) $partida['ACMVOIIVA'] : 0.0,
-                'ACMROIQT' => (float) $cantidadRecibida,
-                'ACMROIQTTR' => (float) $cantidadRecibida,
-                'ACMROINP' => (float) $costoUnitario,
-                'ACMROINM' => (float) $costoTotal * 1.16,
-                'ACMROINI' => (float) ($costoTotal * 0.16),
-                'ACMROING' => (float) $costoTotal,
-                'ACMROINP2'=> (float) $costoUnitario,
+                'ACMROIQT' => number_format((float) $cantidadRecibida, 4, '.', ''),
+                'ACMROIQTTR' => number_format((float) $cantidadRecibida, 6, '.', ''),
+                'ACMROINP' => $costoUnitario,
+                'ACMROINM' => $costoTotal * 1.16,
+                'ACMROINI' => $costoTotal * 0.16,
+                'ACMROING' => $costoTotal,
+                'ACMROINP2' => $costoUnitario,
                 'ACMROIDOC2' => isset($validatedData['document_number1']) ? (int) $validatedData['document_number1'] : 0,
                 'ACMROIDOI2' => 'RCN',
                 'ACMROITDOCCAN' => ' ',
@@ -407,23 +435,23 @@ class OrderController extends Controller
                 'ACMROIFSAL' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFECC' => '1753-01-01 00:00:00.000',
                 'ACMROIACCT' => 1,
-                'ACMROIFOC'=>'1753-01-01 00:00:00.000',
-                'ACMROICXP'=>'N',
-                'ACMROIFDC'=>$order->ACMROIFCEP ?? null,
-                'ACMROIFVN'=>'1753-01-01 00:00:00.000',
-                'ACMROING2'=>(float) $costoTotal,
-                'ACMROINI2'=>(float) ($costoTotal * 0.16),
-                'ACMROINM2'=>(float) $costoTotal * 1.16,
-                'ACMROIVOLU' => (float) ($producto->INPRODVOL * $cantidadRecibida),
-                'ACMROIPESOU' => (float) ($producto->INPRODPESO * $cantidadRecibida),
-                'ACMROIVOLT' => (float) ($producto->INPRODVOL * $cantidadRecibida),
-                'ACMROIPESOT' => (float) ($producto->INPRODPESO * $cantidadRecibida),
+                'ACMROIFOC' => '1753-01-01 00:00:00.000',
+                'ACMROICXP' => 'N',
+                'ACMROIFDC' => $order->ACMROIFCEP ?? null,
+                'ACMROIFVN' => '1753-01-01 00:00:00.000',
+                'ACMROING2' => $costoTotal,
+                'ACMROINI2' => $costoTotal * 0.16,
+                'ACMROINM2' => $costoTotal * 1.16,
+                'ACMROIVOLU' => $acmroiVolu,
+                'ACMROIPESOU' => $acmroiPesou,
+                'ACMROIVOLT' => $acmroiVolt,
+                'ACMROIPESOT' => $acmroiPesot,
             ];
-
+    
             Log::info('Datos que se insertarán en acmroi:', $insertData);
-
+    
             $inserted = DB::table('acmroi')->insert($insertData);
-
+    
             if ($inserted) {
                 Log::info("Nueva entrada en acmroi insertada correctamente.");
             } else {
@@ -434,6 +462,7 @@ class OrderController extends Controller
             throw $e;
         }
     }
+    
 
     public function updateInsdos($storeId, $productId, $cantidadRecibida, $costoTotal)
     {
