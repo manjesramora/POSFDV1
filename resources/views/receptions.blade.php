@@ -72,7 +72,7 @@
                                 <div class="col-md-2" id="fletero_fields" style="display: none;">
                                     <label for="numero" class="form-label"># Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner">
+                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner" placeholder="Opcional">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -82,7 +82,7 @@
                                 <div class="col-md-4" id="fletero_fields_name" style="display: none;">
                                     <label for="fletero" class="form-label">Nombre Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner">
+                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner" placeholder="Opcional">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -230,5 +230,4 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script> <!-- Asegúrate de que el archivo reception.js esté cargado correctamente -->
 </body>
-
 </html>

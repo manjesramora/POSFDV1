@@ -221,90 +221,112 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-{
-    try {
-        // Validate incoming data; allow nullable or empty fields
-        $validatedData = $request->validate([
-            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
-            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
-            'document_number1' => 'required',  // Ensure document_number1 is included and required
-        ], [
-            'numeric' => 'El campo :attribute debe ser un número.',
-            'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
-            'document_number1.required' => 'El número de documento es obligatorio.',
-        ]);
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        // Log validation errors
-        Log::error('Errores de validación:', $e->errors());
-        return response()->json([
-            'success' => false,
-            'errors' => $e->errors()
-        ], 422);
-    }
-
-    $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-    $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-    if (!$order || !$provider) {
-        return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-    }
-
-    Log::info('Datos recibidos en receiptOrder:', $request->all());
-
-    DB::beginTransaction();
-
-    try {
-        foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
-            if ($cantidadRecibida === null || $cantidadRecibida === '') {
-                continue;  // Skip empty or null received quantities
+    {
+        try {
+            // Limpiar los datos de entrada: eliminar símbolos de moneda y comas
+            $input = $request->all();
+    
+            // Limpiar los precios unitarios y las cantidades recibidas
+            if (isset($input['precio_unitario'])) {
+                foreach ($input['precio_unitario'] as $key => $precio) {
+                    // Eliminar símbolos de moneda y comas
+                    $input['precio_unitario'][$key] = preg_replace('/[\$,]/', '', $precio);
+                }
             }
-
-            if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
-                Log::warning("Valor de `cantidad_recibida` no válido para el índice {$index}. Se omite la actualización.");
-                continue;
+    
+            if (isset($input['cantidad_recibida'])) {
+                foreach ($input['cantidad_recibida'] as $key => $cantidad) {
+                    // Eliminar símbolos de moneda y comas
+                    $input['cantidad_recibida'][$key] = preg_replace('/[\$,]/', '', $cantidad);
+                }
             }
-
-            $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
-            if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
-                Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
-                continue;
-            }
-
-            // Round values to 4 decimals and format as string to avoid scientific notation
-            $cantidadRecibida = number_format((float) round($cantidadRecibida, 4), 4, '.', '');
-            $precioUnitario = number_format((float) round($precioUnitario, 4), 4, '.', '');
-
-            $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
-            $cantidadSolicitada = number_format((float) round($cantidadSolicitada, 4), 4, '.', '');
-
-            DB::table('ACMVOR1')
-                ->where('ACMVOIDOC', $ACMVOIDOC)
-                ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
-                ->update([
-                    'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
-                    'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
-                ]);
+    
+            // Validar los datos limpios
+            $validatedData = $request->merge($input)->validate([
+                'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
+                'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
+                'document_number1' => 'required',  // Ensure document_number1 is included and required
+                'carrier_number' => 'nullable|string|max:255', // Optional field
+                'carrier_name' => 'nullable|string|max:255',   // Optional field
+            ], [
+                'numeric' => 'El campo :attribute debe ser un número.',
+                'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
+                'document_number1.required' => 'El número de documento es obligatorio.',
+            ]);
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Registrar errores de validación
+            Log::error('Errores de validación:', $e->errors());
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
         }
-
-        // Call insertPartidas only if there are valid data to process
-        $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
-
-        DB::commit();
-
-        Log::info('Recepción registrada con éxito en la base de datos.');
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Recepción registrada con éxito.',
-            'ACMROINDOC' => $validatedData['document_number1'],  // Correctly get the value now
-            'ACMROIDOC' => $order->ACMVOIDOC
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Log::error("Error en la recepción de la orden: " . $e->getMessage());
-        return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+    
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+    
+        if (!$order || !$provider) {
+            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
+        }
+    
+        Log::info('Datos recibidos en receiptOrder:', $input);
+    
+        DB::beginTransaction();
+    
+        try {
+            foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
+                if ($cantidadRecibida === null || $cantidadRecibida === '') {
+                    continue;  // Omitir cantidades recibidas vacías o nulas
+                }
+    
+                if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                    Log::warning("Valor de `cantidad_recibida` no válido para el índice {$index}. Se omite la actualización.");
+                    continue;
+                }
+    
+                $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
+                if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
+                    Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
+                    continue;
+                }
+    
+                // Truncar los valores a 4 decimales sin redondear
+                $cantidadRecibida = number_format((float) bcdiv($cantidadRecibida, '1', 4), 4, '.', '');
+                $precioUnitario = number_format((float) bcdiv($precioUnitario, '1', 4), 4, '.', '');
+    
+                $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+                $cantidadSolicitada = number_format((float) bcdiv($cantidadSolicitada, '1', 4), 4, '.', '');
+    
+                DB::table('ACMVOR1')
+                    ->where('ACMVOIDOC', $ACMVOIDOC)
+                    ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
+                    ->update([
+                        'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
+                        'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
+                    ]);
+            }
+    
+            // Llamar a insertPartidas solo si hay datos válidos para procesar
+            $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
+    
+            DB::commit();
+    
+            Log::info('Recepción registrada con éxito en la base de datos.');
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Recepción registrada con éxito.',
+                'ACMROINDOC' => $validatedData['document_number1'],
+                'ACMROIDOC' => $order->ACMVOIDOC
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en la recepción de la orden: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+        }
     }
-}
+    
 
 public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
 {

@@ -29,19 +29,19 @@ $(document).ready(function () {
 
     function limitCantidad(input) {
         const max = parseFloat(input.getAttribute("max"));
-        let value = parseFloat(cleanNumber(input.value));
+        let value = cleanNumber(input.value);
 
-        // Validar límite máximo
-        if (!isNaN(value) && value > max) {
-            value = max;
+        // Permitir ingreso de decimales con ceros al final
+        let numericValue = parseFloat(value);
+        
+        // Validar valor máximo y mínimo
+        if (!isNaN(numericValue) && numericValue > max) {
+            numericValue = max;
+        } else if (numericValue < 0 || isNaN(numericValue)) {
+            numericValue = 0;
         }
 
-        // Validar valor mínimo
-        if (value < 0 || isNaN(value)) {
-            value = 0;
-        }
-
-        input.value = value.toFixed(4).replace(/\.?0+$/, ''); // Limitar a cuatro decimales
+        input.value = numericValue.toString();
 
         calculateTotals(input);
     }
@@ -66,6 +66,7 @@ $(document).ready(function () {
         const precioUnitario = parseFloat(cleanNumber(row.querySelector('.precio-unitario').value)) || 0;
         const iva = parseFloat(row.cells[8].innerText) || 0;
 
+        // Calcular subtotal y total con cantidad recibida incluyendo 0
         const subtotal = cantidadRecibida * precioUnitario;
         const total = subtotal + (subtotal * (iva / 100));
 
@@ -87,15 +88,10 @@ $(document).ready(function () {
         let cleanValue = cleanNumber(this.value);
         const max = parseFloat(this.getAttribute('max'));
 
-        // Permitir la entrada de decimales
+        // Permitir la entrada de decimales con ceros al final
         const parts = cleanValue.split('.');
         if (parts.length > 2) {
             cleanValue = parts[0] + '.' + parts[1]; // Eliminar puntos adicionales
-        }
-
-        // Limitar a cuatro decimales solo si hay parte decimal
-        if (parts.length === 2 && parts[1].length > 4) {
-            cleanValue = parts[0] + '.' + parts[1].substring(0, 4);
         }
 
         // Validar el límite máximo solo si el valor no es NaN y es mayor al máximo
@@ -103,8 +99,8 @@ $(document).ready(function () {
             cleanValue = max.toFixed(4); // Limitar al valor máximo permitido
         }
 
-        // Asignar el valor limpio al campo
-        this.value = cleanValue !== '' ? cleanValue.replace(/\.?0+$/, '') : '';
+        // Asegurar que el valor 0 sea mostrado correctamente, incluyendo decimales como 10.0, 10.00, etc.
+        this.value = cleanValue !== '' ? cleanValue : '0';
 
         calculateTotals(this);
     });
@@ -117,8 +113,6 @@ $(document).ready(function () {
         if (cleanValue === '' || cleanValue.endsWith('.') || (!isNaN(cleanValue) && cleanValue.split('.').length <= 2)) {
             this.value = cleanValue; // Permitir decimales y el punto al final
         }
-
-        // No limitar inmediatamente el valor al original para permitir edición, solo aplicar al perder el foco
     });
 
     $(document).on("blur", ".precio-unitario", function () {
