@@ -4,6 +4,21 @@
     text-align: center;
     vertical-align: middle;
 }
+.input-no-spinner {
+    -moz-appearance: textfield;
+}
+
+.input-no-spinner::-webkit-outer-spin-button,
+.input-no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.filter-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 
 #scrollToTopBtn {
     display: none; /* Oculta el botón por defecto */
@@ -19,7 +34,21 @@
     padding: 15px; /* Espacio interno */
     border-radius: 50%; /* Borde redondeado */
 }
+.input-no-spinner {
+    -moz-appearance: textfield;
+}
 
+.input-no-spinner::-webkit-outer-spin-button,
+.input-no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.filter-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 #scrollToTopBtn:hover {
     background-color: #0056b3; /* Cambia el color de fondo al pasar por encima */
 }

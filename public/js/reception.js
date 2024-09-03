@@ -1,28 +1,48 @@
 $(document).ready(function () {
     function cleanNumber(value) {
-        return value.replace(/,/g, '').replace('$', '');
+        // Permitir solo números y puntos decimales
+        return value.replace(/[^0-9.]/g, '').trim();
     }
 
     function formatCurrency(value) {
-        return '$' + parseFloat(value).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // Formatear el valor como moneda con hasta cuatro decimales
+        if (!isNaN(value) && value !== "") {
+            return '$' + parseFloat(value).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+        }
+        return '$0';
     }
 
     function formatPrecio(input) {
-        const value = cleanNumber(input.value);
-        if (!isNaN(value) && value.trim() !== "") {
-            input.value = formatCurrency(value);
+        let cleanValue = cleanNumber(input.value);
+
+        if (cleanValue === '') {
+            input.value = '';
+        } else if (!isNaN(cleanValue)) {
+            input.value = formatCurrency(cleanValue);
         }
     }
 
+    // Inicializa los campos con formato de moneda
+    $(".precio-unitario, #flete").each(function () {
+        formatPrecio(this);
+    });
+
     function limitCantidad(input) {
-        const max = parseFloat(cleanNumber(input.getAttribute("max")));
+        const max = parseFloat(input.getAttribute("max"));
         let value = parseFloat(cleanNumber(input.value));
-        if (value > max) {
-            input.value = max.toFixed(4).replace(/\.?0+$/, '');
+
+        // Validar límite máximo
+        if (!isNaN(value) && value > max) {
+            value = max;
         }
-        if (value < 0) {
-            input.value = 0;
+
+        // Validar valor mínimo
+        if (value < 0 || isNaN(value)) {
+            value = 0;
         }
+
+        input.value = value.toFixed(4).replace(/\.?0+$/, ''); // Limitar a cuatro decimales
+
         calculateTotals(input);
     }
 
@@ -30,15 +50,13 @@ $(document).ready(function () {
         let value = parseFloat(cleanNumber(input.value));
         const originalValue = parseFloat(input.getAttribute('data-original-value'));
 
-        if (value > originalValue) {
-            input.value = originalValue.toFixed(4).replace(/\.?0+$/, '');
-        } else if (value < 0) {
-            input.value = 0;
-        } else {
-            input.value = value.toFixed(4).replace(/\.?0+$/, '');
+        // Limitar el precio al valor original si es mayor o NaN o negativo
+        if (isNaN(value) || value < 0 || value > originalValue) {
+            value = originalValue;
         }
 
-        input.value = formatCurrency(input.value);
+        input.value = value;
+
         calculateTotals(input);
     }
 
@@ -46,7 +64,7 @@ $(document).ready(function () {
         const row = input.closest('tr');
         const cantidadRecibida = parseFloat(cleanNumber(row.querySelector('.cantidad-recibida').value)) || 0;
         const precioUnitario = parseFloat(cleanNumber(row.querySelector('.precio-unitario').value)) || 0;
-        const iva = parseFloat(cleanNumber(row.cells[8].innerText)) || 0;
+        const iva = parseFloat(row.cells[8].innerText) || 0;
 
         const subtotal = cantidadRecibida * precioUnitario;
         const total = subtotal + (subtotal * (iva / 100));
@@ -66,19 +84,55 @@ $(document).ready(function () {
     }
 
     $(document).on("input", ".cantidad-recibida", function () {
-        limitCantidad(this);
+        let cleanValue = cleanNumber(this.value);
+        const max = parseFloat(this.getAttribute('max'));
+
+        // Permitir la entrada de decimales
+        const parts = cleanValue.split('.');
+        if (parts.length > 2) {
+            cleanValue = parts[0] + '.' + parts[1]; // Eliminar puntos adicionales
+        }
+
+        // Limitar a cuatro decimales solo si hay parte decimal
+        if (parts.length === 2 && parts[1].length > 4) {
+            cleanValue = parts[0] + '.' + parts[1].substring(0, 4);
+        }
+
+        // Validar el límite máximo solo si el valor no es NaN y es mayor al máximo
+        if (!isNaN(cleanValue) && parseFloat(cleanValue) > max) {
+            cleanValue = max.toFixed(4); // Limitar al valor máximo permitido
+        }
+
+        // Asignar el valor limpio al campo
+        this.value = cleanValue !== '' ? cleanValue.replace(/\.?0+$/, '') : '';
+
+        calculateTotals(this);
     });
 
-    $(document).on("input", ".precio-unitario", function () {
-        formatPrecio(this);
+    $(document).on("input", ".precio-unitario, #flete", function () {
+        let inputVal = this.value;
+        let cleanValue = cleanNumber(inputVal);
+
+        // Permitir la entrada de decimales y punto al final
+        if (cleanValue === '' || cleanValue.endsWith('.') || (!isNaN(cleanValue) && cleanValue.split('.').length <= 2)) {
+            this.value = cleanValue; // Permitir decimales y el punto al final
+        }
+
+        // No limitar inmediatamente el valor al original para permitir edición, solo aplicar al perder el foco
     });
 
-    $(document).on("change", ".cantidad-recibida", function () {
-        limitCantidad(this);
-    });
-
-    $(document).on("change", ".precio-unitario", function () {
+    $(document).on("blur", ".precio-unitario", function () {
         limitPrecio(this);
+        formatPrecio(this); // Formatear como moneda al perder el foco si el valor es válido
+    });
+
+    $(document).on("blur", "#flete", function () {
+        let cleanValue = cleanNumber(this.value);
+        if (cleanValue !== '' && !isNaN(cleanValue)) {
+            this.value = formatCurrency(cleanValue);
+        } else {
+            this.value = ''; // Si no es válido, mantener vacío
+        }
     });
 
     $("#receptionForm").on("submit", function (e) {
@@ -104,22 +158,16 @@ $(document).ready(function () {
                     document.getElementById('printReportButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
 
-                    // Modifica el comportamiento para abrir o descargar el PDF
                     document.getElementById('printReportButton').addEventListener('click', function () {
                         axios.get(`/print-report?ACMROINDOC=${response.data.ACMROINDOC}&ACMROIDOC=${response.data.ACMROIDOC}`, {
-                            responseType: 'blob' // Importante para el PDF
+                            responseType: 'blob'
                         }).then(pdfResponse => {
                             const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
-                            
-                            // Abre el PDF en una nueva pestaña
                             window.open(fileURL, '_blank');
-
-                            // Alternativamente, forzar descarga del PDF
                             const downloadLink = document.createElement('a');
                             downloadLink.href = fileURL;
                             downloadLink.download = `order_report_${response.data.ACMROINDOC}.pdf`;
                             downloadLink.click();
-
                         }).catch(error => {
                             console.error("Error loading the PDF:", error);
                         });
@@ -237,7 +285,18 @@ $(document).ready(function () {
     function toggleFleteInput() {
         const fleteSelect = document.getElementById('flete_select');
         const fleteInputDiv = document.getElementById('flete_input_div');
-        fleteInputDiv.style.display = fleteSelect.value == '1' ? 'block' : 'none';
+        const fleteroFields = document.getElementById('fletero_fields');
+        const fleteroFieldsName = document.getElementById('fletero_fields_name');
+
+        if (fleteSelect.value == '1') {
+            fleteInputDiv.style.display = 'block';
+            fleteroFields.style.display = 'block';
+            fleteroFieldsName.style.display = 'block';
+        } else {
+            fleteInputDiv.style.display = 'none';
+            fleteroFields.style.display = 'none';
+            fleteroFieldsName.style.display = 'none';
+        }
     }
 
     $('#flete_select').on('change', toggleFleteInput);

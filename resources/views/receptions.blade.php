@@ -14,6 +14,23 @@
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('assets/css/sb-admin-2.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <style>
+        .input-no-spinner {
+            -moz-appearance: textfield;
+        }
+
+        .input-no-spinner::-webkit-outer-spin-button,
+        .input-no-spinner::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
 </head>
 
 <body id="page-top">
@@ -25,40 +42,47 @@
                 <div class="container-fluid">
                     <h1 class="mt-5 text-center">Detalles de Recepción</h1>
                     <br>
-
                     <!-- Mensajes de error y éxito -->
                     @if (session('error'))
                     <div class="alert alert-danger">
                         {{ session('error') }}
                     </div>
                     @endif
-
                     @if (session('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}
                     </div>
                     @endif
-
-                    <div class="row g-3 align-items-end">
-                        <br>
+                    <div class="row g-3 align-items-end justify-content-center filter-container">
                         <form method="POST" action="{{ route('receiptOrder', $order->ACMVOIDOC) }}" id="receptionForm">
                             @csrf
-                            <div class="row g-3 align-items-end">
+                            <div class="row g-3 align-items-end justify-content-center">
                                 <!-- Formulario de recepción -->
                                 <div class="col-md-2">
-                                    <label for="numero" class="form-label">Número:</label>
+                                    <label for="flete_select" class="form-label">Flete</label>
+                                    <select id="flete_select" name="flete_select" class="form-select" required>
+                                        <option value="0">Sin Flete</option>
+                                        <option value="1">Con Flete</option>
+                                    </select>
+                                </div>
+                                <div id="flete_input_div" class="col-md-2" style="display: none;">
+                                    <label for="flete" class="form-label">Monto Flete:</label>
+                                    <input type="text" id="flete" name="freight" class="form-control input-no-spinner" placeholder="$0.00">
+                                </div>
+                                <div class="col-md-2" id="fletero_fields" style="display: none;">
+                                    <label for="numero" class="form-label"># Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="numero" name="carrier_number" class="form-control" required>
+                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </div>
                                     <ul id="numeroList" class="list-group" style="display: none;"></ul>
                                 </div>
-                                <div class="col-md-4">
-                                    <label for="fletero" class="form-label">Fletero:</label>
+                                <div class="col-md-4" id="fletero_fields_name" style="display: none;">
+                                    <label for="fletero" class="form-label">Nombre Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="fletero" name="carrier_name" class="form-control" required>
+                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -66,57 +90,44 @@
                                     <ul id="fleteroList" class="list-group" style="display: none;"></ul>
                                 </div>
                                 <div class="col-md-1">
-                                    <label for="tipo_doc" class="form-label">Tipo Doc:</label>
+                                    <label for="tipo_doc" class="form-label">Doc. Origen:</label>
                                     <input type="text" id="tipo_doc" name="document_type" class="form-control" value="{{ $order->CNTDOCID }}" readonly required>
                                 </div>
-                                <div class="col-md-1">
-                                    <label for="num_doc" class="form-label">No. de Doc:</label>
+                                <div class="col-md-2">
+                                    <label for="num_doc" class="form-label"></label>
                                     <input type="text" id="num_doc" name="document_number" class="form-control" value="{{ $order->ACMVOIDOC }}" readonly required>
                                 </div>
                                 <div class="col-md-4">
                                     <label for="nombre_proveedor" class="form-label">Nombre del Proveedor:</label>
                                     <input type="text" id="nombre_proveedor" name="supplier_name" class="form-control" value="{{ $provider ? $provider->CNCDIRNOM : 'No disponible' }}" readonly required>
                                 </div>
-                                <div class="col-md-1">
-                                    <label for="referencia" class="form-label">Referencia:</label>
+                                <div class="col-md-2">
+                                    <label for="referencia" class="form-label">Tipo de Referencia:</label>
                                     <select id="referencia" name="reference_type" class="form-control" required>
-                                        <option value="1">FACTURA</option>
-                                        <option value="2">REMISION</option>
-                                        <option value="3">MISCELANEO</option>
+                                        <option value="1">Factura</option>
+                                        <option value="2">Remision</option>
+                                        <option value="3">Miscelaneo</option>
                                     </select>
                                 </div>
-                                <div class="col-md-1">
+                                <div class="col-md-2">
                                     <label for="ACMROIREF" class="form-label">Referencia:</label>
                                     <input type="text" id="ACMROIREF" name="reference" class="form-control" required>
                                 </div>
                                 <div class="col-md-1">
-                                    <label for="almacen" class="form-label">Almacén:</label>
+                                    <label for="almacen" class="form-label">Almacen:</label>
                                     <input type="text" id="almacen" name="store" class="form-control" value="{{ $order->ACMVOIALID }}" readonly required>
                                 </div>
-
                                 <div class="col-md-2">
-                                    <label for="fecha" class="form-label">Fecha Recepción:</label>
+                                    <label for="fecha" class="form-label">Fecha Recepcion</label>
                                     <input type="date" id="fecha" name="reception_date" class="form-control" value="{{ $currentDate }}" readonly required>
                                 </div>
-                                <div class="col-md-1">
-                                    <label for="rcn_final" class="form-label">DOC:</label>
+                                <div class="col-md-2">
+                                    <label for="rcn_final" class="form-label">Doc. Recepcion</label>
                                     <input type="text" id="rcn_final" name="document_type1" class="form-control" value="RCN" readonly required>
                                 </div>
                                 <div class="col-md-1">
-                                    <label for="num_rcn_letras" class="form-label">NO DE DOC:</label>
+                                    <label for="num_rcn_letras" class="form-label"></label>
                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
-                                </div>
-
-                                <div class="col-md-1">
-                                    <label for="flete_select" class="form-label">Flete:</label>
-                                    <select id="flete_select" name="flete_select" class="form-select" onchange="toggleFleteInput()" required>
-                                        <option value="0">Sin Flete</option>
-                                        <option value="1">Con Flete</option>
-                                    </select>
-                                </div>
-                                <div id="flete_input_div" class="col-md-1" style="display: none;">
-                                    <label for="flete" class="form-label">Flete:</label>
-                                    <input type="text" id="flete" name="freight" class="form-control" placeholder="Monto">
                                 </div>
 
                                 <div class="col-md-2 d-flex">
@@ -125,9 +136,7 @@
                                 </div>
                             </div>
                             <br>
-
                             <input type="hidden" id="totalCost" name="total_cost" value="0">
-
                             <div class="table-responsive">
                                 <div class="container-fluid">
                                     <div class="card shadow mb-4">
@@ -159,23 +168,17 @@
                                                             <td>{{ $reception->ACMVOIUMT }}</td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}</td>
                                                             <td>
-                                                                <input type="number" class="form-control cantidad-recibida" name="cantidad_recibida[{{ $index }}]"
-                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}"
-                                                                    oninput="limitCantidad(this)" onchange="limitCantidad(this)"
-                                                                    onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();">
+                                                                <input type="number" class="form-control cantidad-recibida input-no-spinner" name="cantidad_recibida[{{ $index }}]"
+                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}">
                                                             </td>
                                                             <td>
-                                                                <input type="text" class="form-control precio-unitario" name="precio_unitario[{{ $index }}]"
+                                                                <input type="text" class="form-control precio-unitario input-no-spinner" name="precio_unitario[{{ $index }}]"
                                                                     value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" 
-                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
-                                                                    oninput="formatPrecio(this)" onchange="limitPrecio(this)"
-                                                                    onkeydown="if(event.key === 'e' || event.key === 'E') event.preventDefault();" required>
+                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" required>
                                                             </td>
-
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
-                                                            <td class="subtotal">0.0000</td>
-                                                            <td class="total">0.0000</td>
-
+                                                            <td class="subtotal">$0.00</td>
+                                                            <td class="total">$0.00</td>
                                                             <input type="hidden" name="acmvoilin[{{ $index }}]" value="{{ (int)$reception->ACMVOILIN }}">
                                                             <input type="hidden" name="acmvoiprid[{{ $index }}]" value="{{ (int)$reception->ACMVOIPRID }}">
                                                             <input type="hidden" name="acmvoiprds[{{ $index }}]" value="{{ $reception->ACMVOIPRDS }}">
@@ -185,9 +188,7 @@
                                                             <input type="hidden" name="acmvoiqtp[{{ $index }}]" value="{{ $reception->ACMVOIQTP }}">
                                                         </tr>
                                                         @endforeach
-
                                                     </tbody>
-
                                                 </table>
                                             </div>
                                         </div>
@@ -201,7 +202,6 @@
             </div>
         </div>
     </div>
-
     <!-- Modal de Carga -->
     <div class="modal fade animate__animated animate__fadeIn" id="loadingModal" tabindex="-1" role="dialog" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -222,15 +222,13 @@
             </div>
         </div>
     </div>
-
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.4.1/jquery.easing.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="{{ asset('js/reception.js') }}"></script>
-    
+    <script src="{{ asset('js/reception.js') }}"></script> <!-- Asegúrate de que el archivo reception.js esté cargado correctamente -->
 </body>
 
 </html>

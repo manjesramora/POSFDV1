@@ -71,16 +71,7 @@
                                         <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
                                             <thead>
                                                 <tr>
-                                                    <th class="col-md-1">
-                                                        <a href="{{ route('orders', ['sortColumn' => 'CNTDOCID', 'sortDirection' => ($sortColumn == 'CNTDOCID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                                            T. DOC
-                                                            @if($sortColumn == 'CNTDOCID')
-                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
-                                                            @else
-                                                            <i class="fas fa-sort"></i>
-                                                            @endif
-                                                        </a>
-                                                    </th>
+                                                    
                                                     <th class="col-md-1">
                                                         <a href="{{ route('orders', ['sortColumn' => 'ACMVOIDOC', 'sortDirection' => ($sortColumn == 'ACMVOIDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
                                                             NO. DOC
@@ -138,7 +129,7 @@
                                                 @foreach ($orders as $order)
                                                 <tr>
                                                     <!-- Asegúrate de que $order->id sea el campo correcto -->
-                                                    <td>{{ $order->CNTDOCID }}</td>
+                                                    
                                                     <td>{{ $order->ACMVOIDOC }}</td>
                                                     <td>{{ $order->CNCDIRID }}</td>
                                                     <td>{{ $order->provider->CNCDIRNOM }}</td>
