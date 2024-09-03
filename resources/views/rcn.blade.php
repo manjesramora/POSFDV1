@@ -28,33 +28,44 @@
 
                     <br><br>
 
-                    <!-- Filtro de fechas -->
+                    <!-- Filtro de fechas y búsqueda combinados -->
                     <div class="container">
                         <div class="row align-items-center justify-content-center mb-4 h-100">
                             <div class="col-md-10">
                                 <div class="d-flex justify-content-center align-items-center h-100">
-                                    <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="filterForm">
+                                    <!-- Formulario combinado para búsqueda y filtro de fechas -->
+                                    <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="combinedForm" style="margin-top: 30px;">
+                                        <!-- Campo de búsqueda por número de OL -->
+                                        <div class="input-group me-2" style="width: 215px;">
+                                            <input type="text" class="form-control uper" placeholder="Buscar número de OL" id="searchUser" name="search" value="{{ request('search') }}" onkeypress="if(event.keyCode === 13) { this.form.submit(); }">
+                                        </div>
+                                        <!-- Botón para enviar el formulario de búsqueda -->
+                                        <div class="me-2">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Campo de fecha de inicio -->
                                         <div class="me-2">
                                             <label for="start_date" class="form-label">Desde</label>
                                             <div class="input-group">
                                                 <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" required>
-                                                <button class="btn btn-danger" type="button" onclick="document.getElementById('start_date').value = '';">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
                                             </div>
                                         </div>
+                                        <!-- Campo de fecha de fin -->
                                         <div class="me-2">
                                             <label for="end_date" class="form-label">Hasta</label>
                                             <div class="input-group">
                                                 <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" required>
-                                                <button class="btn btn-danger" type="button" onclick="document.getElementById('end_date').value = '';">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
                                             </div>
                                         </div>
+                                        <!-- Botón para enviar el formulario combinado -->
                                         <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">Filtrar</button>
+                                            <button type="submit" class="btn btn-primary">Filtrar fecha</button>
                                         </div>
+
+                                        <!-- Botón para mostrar todas -->
                                         <div>
                                             <button type="button" class="btn btn-secondary" onclick="resetFilters()">Mostrar todas</button>
                                         </div>
@@ -140,66 +151,53 @@
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-        <!-- Script para resetear los filtros -->
-        <script>
-            function resetFilters() {
-                document.getElementById('start_date').value = '';
-                document.getElementById('end_date').value = '';
-                document.getElementById('filterForm').submit();
-            }
-        </script>
+        <script src="{{ asset('js/rcn.js') }}"></script>
     </div>
 
     @foreach($rcns as $rcn)
-<!-- Modal para mostrar RCNs asociadas -->
-<div class="modal fade" id="rcnModal{{ $rcn->ACMROIDOC }}" tabindex="-1" aria-labelledby="rcnModalLabel{{ $rcn->ACMROIDOC }}" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="rcnModalLabel{{ $rcn->ACMROIDOC }}">RCNs para OL: {{ $rcn->ACMROIDOC }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <!-- Mostrar las RCNs asociadas a la OL seleccionada que cumplen con los requisitos -->
-                <table class="table table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            <th class="col-2 text-center">RCN</th>
-                            <th class="col-2 text-center">Fecha Recepción</th>
-                            <th class="col-2 text-center">Número de Partidas</th>
-                            <th class="col-2 text-center">Acciones</th> <!-- Nueva columna para el botón de imprimir -->
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($rcns->where('ACMROIDOC', $rcn->ACMROIDOC)->filter(function($associatedRcn) {
-                            return strpos($associatedRcn->ACMROITDOC, 'RCN') !== false 
-                                && is_null($associatedRcn->ACACTLID) 
-                                && is_null($associatedRcn->ACACSGID) 
-                                && is_null($associatedRcn->ACACANID);
-                        }) as $associatedRcn)
-                        <tr>
-                            <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
-                            <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
-                            <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
-                            <td class="col-2 text-center align-middle">
-                                <!-- Botón para imprimir cada RCN -->
-                                <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" class="btn btn-secondary">
-                                    <i class="fas fa-print"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+    <!-- Modal para mostrar RCNs asociadas -->
+    <div class="modal fade" id="rcnModal{{ $rcn->ACMROIDOC }}" tabindex="-1" aria-labelledby="rcnModalLabel{{ $rcn->ACMROIDOC }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rcnModalLabel{{ $rcn->ACMROIDOC }}">RCNs para OL: {{ $rcn->ACMROIDOC }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Mostrar las RCNs asociadas a la OL seleccionada que cumplen con los requisitos -->
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th class="col-2 text-center">RCN</th>
+                                <th class="col-2 text-center">Fecha Recepción</th>
+                                <th class="col-2 text-center">Número de Partidas</th>
+                                <th class="col-2 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($allDetailedRcns[$rcn->ACMROIDOC] as $associatedRcn)
+                            <tr>
+                                <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
+                                <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
+                                <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
+                                <td class="col-2 text-center align-middle">
+                                    <!-- Botón para abrir el PDF en una nueva pestaña -->
+                                    <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-@endforeach
+    @endforeach
 
 </body>
 
