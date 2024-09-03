@@ -28,7 +28,7 @@
 
                     <br><br>
 
-                    <!-- Filtro de fechas y búsqueda combinados -->
+                    <!-- Filtro de búsqueda y fechas combinado -->
                     <div class="container">
                         <div class="row align-items-center justify-content-center mb-4 h-100">
                             <div class="col-md-10">
@@ -39,30 +39,25 @@
                                         <div class="input-group me-2" style="width: 215px;">
                                             <input type="text" class="form-control uper" placeholder="Buscar número de OL" id="searchUser" name="search" value="{{ request('search') }}" onkeypress="if(event.keyCode === 13) { this.form.submit(); }">
                                         </div>
-                                        <!-- Botón para enviar el formulario de búsqueda -->
-                                        <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fa-solid fa-magnifying-glass"></i>
-                                            </button>
-                                        </div>
-
                                         <!-- Campo de fecha de inicio -->
                                         <div class="me-2">
                                             <label for="start_date" class="form-label">Desde</label>
                                             <div class="input-group">
-                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" required>
+                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" onchange="validateDates()">
                                             </div>
                                         </div>
                                         <!-- Campo de fecha de fin -->
                                         <div class="me-2">
                                             <label for="end_date" class="form-label">Hasta</label>
                                             <div class="input-group">
-                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" required>
+                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" onchange="validateDates()">
                                             </div>
                                         </div>
-                                        <!-- Botón para enviar el formulario combinado -->
+                                        <!-- Botón único para buscar y filtrar -->
                                         <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">Filtrar fecha</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                            </button>
                                         </div>
 
                                         <!-- Botón para mostrar todas -->
@@ -75,7 +70,7 @@
                         </div>
                     </div>
 
-                    <!-- Begin Page Content -->
+                    <!-- Contenido de la tabla -->
                     <div class="container-fluid">
                         <div class="card shadow mb-4">
                             <div class="card-body">
@@ -85,9 +80,9 @@
                                             <tr>
                                                 @php
                                                 $columns = [
-                                                'CNTDOCID' => 'Tipo Documento',
-                                                'ACMROIDOC' => 'Número de OL',
-                                                'ACMROIFREC' => 'Fecha Recepción',
+                                                    'CNTDOCID' => 'Tipo Documento',
+                                                    'ACMROIDOC' => 'Número de OL',
+                                                    'ACMROIFREC' => 'Fecha Recepción',
                                                 ];
                                                 @endphp
                                                 @foreach ($columns as $field => $label)
@@ -95,13 +90,13 @@
                                                     <a href="{{ route('rcn', ['sort_by' => $field, 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
                                                         {{ $label }}
                                                         @if(request('sort_by') == $field)
-                                                        @if(request('sort_order') == 'asc')
-                                                        <i class="fas fa-sort-up"></i>
+                                                            @if(request('sort_order') == 'asc')
+                                                                <i class="fas fa-sort-up"></i>
+                                                            @else
+                                                                <i class="fas fa-sort-down"></i>
+                                                            @endif
                                                         @else
-                                                        <i class="fas fa-sort-down"></i>
-                                                        @endif
-                                                        @else
-                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                            <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
                                                         @endif
                                                     </a>
                                                 </th>
@@ -152,6 +147,41 @@
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="{{ asset('js/rcn.js') }}"></script>
+
+        <!-- JavaScript para validar fechas -->
+        <script>
+            function validateDates() {
+                var startDate = document.getElementById('start_date').value;
+                var endDate = document.getElementById('end_date').value;
+
+                if (startDate && !endDate) {
+                    document.getElementById('end_date').setCustomValidity('Por favor, seleccione una fecha de fin.');
+                } else if (!startDate && endDate) {
+                    document.getElementById('start_date').setCustomValidity('Por favor, seleccione una fecha de inicio.');
+                } else {
+                    document.getElementById('end_date').setCustomValidity('');
+                    document.getElementById('start_date').setCustomValidity('');
+                }
+
+                if (startDate && endDate) {
+                    var start = new Date(startDate);
+                    var end = new Date(endDate);
+
+                    if (start > end) {
+                        document.getElementById('end_date').setCustomValidity('La fecha de fin debe ser posterior a la fecha de inicio.');
+                    } else {
+                        document.getElementById('end_date').setCustomValidity('');
+                    }
+                }
+            }
+
+            function resetFilters() {
+                document.getElementById('searchUser').value = '';
+                document.getElementById('start_date').value = '';
+                document.getElementById('end_date').value = '';
+                document.getElementById('combinedForm').submit();
+            }
+        </script>
     </div>
 
     @foreach($rcns as $rcn)
