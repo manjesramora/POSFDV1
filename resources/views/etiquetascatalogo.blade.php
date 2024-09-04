@@ -23,8 +23,8 @@
 </head>
 
 <body id="page-top">
-      <!-- Overlay para la animación de "Cargando" -->
-      <div class="loading-overlay" id="loadingOverlay">
+    <!-- Overlay para la animación de "Cargando" -->
+    <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
     </div>
     <div id="wrapper">
@@ -33,8 +33,8 @@
             <div id="content">
                 @include('navbar')
                 <div class="container-fluid">
-                <h1 class="mt-5" style="text-align: center;">ETIQUETAS Y CATALOGO</h1>
-                <br>
+                    <h1 class="mt-5" style="text-align: center;">ETIQUETAS Y CATALOGO</h1>
+                    <br>
                     <div class="input-container mb-3 filtro">
                         <div class="row justify-content-center">
                             <div class="col-md-1">
@@ -72,7 +72,7 @@
                                 <select name="activo" id="activo" class="form-control">
                                     <option value="todos" {{ request('activo') == 'todos' ? 'selected' : '' }}>Todos</option>
                                     <option value="activos" {{ request('activo') == 'activos' ? 'selected' : '' }}>Activos</option>
-                                </select> 
+                                </select>
                             </div>
                             <div class="col-md-1 d-flex align-items-end">
                                 <button type="button" class="btn btn-primary me-2" onclick="buscarFiltros()">
@@ -86,14 +86,18 @@
                     </div>
                 </div>
 
-                    <!-- Tabla de datos -->
-                    <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">                        
-                        <div class="card-body">
-                            <div class="table-responsive small-font">
+                <!-- Tabla de datos -->
+                <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">
+                    <div class="card-body">
+                        <div class="table-responsive small-font">
+                            @if($labels->isEmpty() && request()->except('sort', 'direction'))
+                                <div id="no-results-message" class="alert alert-warning text-center" style="display: block;">
+                                    Producto no Encontrado
+                                </div>
+                            @else
                                 <div id="no-results-message" class="alert alert-warning text-center" style="display: none;">
                                     Producto no Encontrado
                                 </div>
-                            <div class="table-responsive small-font">
                                 <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
@@ -108,30 +112,11 @@
                                                 'INPROD.INPR02ID' => 'DPTO',
                                                 'INSDOS.INSDOSQDS' => 'EXI',
                                                 'INPROD.INUMBAID' => 'UMB',
-                                                
-
                                             ];
-                                        
-                                                /*'INPROD.INPRODID' => 'PRODUCTO',
-                                                'INPROD.INPRODDSC' => 'DESCRIPCIÓN',
-                                                'INPROD.INPRODI2' => 'SKU',
-                                                'INSDOS.INSDOSQDS' => 'EXI',
-                                                'INPROD.INPR02ID' => 'DPTO',
-                                                'INPROD.INPRODCBR' => 'CODIGO BARRAS',
-                                                'INPROD.INPR03ID' => 'LINEA',
-                                                'INPROD.INPR04ID' => 'SUBLINEA',
-                                                'INSDOS.INALMNID' => 'ALMACÉN',
-                                                'INPROD.INUMBAID' => 'UMB',
-                                                'PrecioBase' => 'PRECIO BASE',
-                                                'AlmacenPrecio' => 'A/P',
-                                                'INPROD.INPRODRD' => 'RDO',
-                                                'INPROD.INPRODMIV' => 'IVA',
-                                            ];
-                                            */
                                             @endphp
                                             @foreach ($columns as $column => $label)
                                             <th>
-                                                <a href="{{ route('labelscatalog', array_merge(request()->query(), ['sort' => $column, 'direction' => request('direction') === 'asc' ? 'desc' : 'asc'])) }}" class="sortable-column">
+                                                <a href="#" data-column="{{ $column }}" data-direction="{{ request('sort') === $column && request('direction') === 'asc' ? 'desc' : 'asc' }}" class="sortable-column">
                                                     {{ $label }}
                                                     @if (request('sort') === $column)
                                                     @if (request('direction') === 'asc')
@@ -160,33 +145,11 @@
                                             <td>{{ $label->INPR02ID }}</td>
                                             <td>{{ number_format($label->Existencia, 2) }}</td>
                                             <td>{{ $label->INUMBAID }}</td>
-                                            
-                                            
                                             <td>
-                                            
-                                            <!--<td>{{ $label->INPRODID }}</td>
-                                            <td>{{ $label->INPRODDSC }}</td>
-                                            <td>{{ $label->INPRODI2 }}</td>
-                                            <td>{{ $label->INPR02ID }}</td>
-                                            <td>{{ $label->INPRODCBR }}</td>
-                                            <td>{{ $label->INPR03ID }}</td>
-                                            <td>{{ $label->INPR04ID }}</td>
-                                            <td>{{ $label->CentroCostos }}</td>
-                                            <td>{{ $label->INUMBAID }}</td>
-                                            <td>{{ $label->PrecioBase }}</td>
-                                            <td>{{ $label->AlmacenPrecio }}</td>
-                                            <td>{{ $label->INPRODRD }}</td>
-                                            <td>{{ $label->INPRODMIV }}</td>
-                                            <td>
-                                            -->
                                                 <div class="btn-group" role="group" aria-label="Acciones">
                                                     <button class="btn btn-secondary" onclick="showPrintModal('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}')" style="margin-right: 10px;">SKU
                                                         <i class="fas fa-barcode"></i>
                                                     </button>
-                                                    <!--<button class="btn btn-primary" onclick="showPrintModalWithPrice('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}', '{{ $label->PrecioBase }}', '{{ $label->INPRODID }}')">SKU y Precio
-                                                    <i class="fas fa-barcode"></i>    
-                                                     </button>
-                                                    -->
                                                 </div>
                                             </td>
                                         </tr>
@@ -200,123 +163,113 @@
                                         @endif
                                     </div>
                                 </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para seleccionar la cantidad de etiquetas a imprimir -->
+                <div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="printModalLabel">Imprimir Etiquetas</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="printForm" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="sku" id="modalSku">
+                                    <input type="hidden" name="description" id="modalDescription">
+                                    <div class="form-group">
+                                        <label for="modalSkuInput">SKU</label>
+                                        <input type="text" id="modalSkuInput" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalDescriptionInput">Descripción</label>
+                                        <input type="text" id="modalDescriptionInput" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="quantity">Cantidad de etiquetas</label>
+                                        <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1">
+                                        <small id="quantityError" class="form-text text-danger" style="display: none;"></small>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="submitPrintForm()">Imprimir</button>
                             </div>
                         </div>
                     </div>
+                </div>
 
-
-<!-- Modal para seleccionar la cantidad de etiquetas a imprimir -->
-<div class="modal fade" id="printModal" tabindex="-1" aria-labelledby="printModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="printModalLabel">Imprimir Etiquetas</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="printForm" method="POST">
-                    @csrf
-                    <input type="hidden" name="sku" id="modalSku">
-                    <input type="hidden" name="description" id="modalDescription">
-                    <div class="form-group">
-                        <label for="modalSkuInput">SKU</label>
-                        <input type="text" id="modalSkuInput" class="form-control" disabled>
+                <!-- Modal para seleccionar la cantidad de etiquetas a imprimir con SKU y Precio -->
+                <div class="modal fade" id="printModalWithPrice" tabindex="-1" aria-labelledby="printModalWithPriceLabel" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="printModalWithPriceLabel">Imprimir Etiquetas con Precio</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="printFormWithPrice" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="sku" id="modalSkuWithPrice">
+                                    <input type="hidden" name="description" id="modalDescriptionWithPrice">
+                                    <input type="hidden" name="precioBase" id="modalPrecioBase">
+                                    <input type="hidden" name="productId" id="modalProductId">
+                                    <div class="form-group">
+                                        <label for="modalSkuInputWithPrice">SKU</label>
+                                        <input type="text" id="modalSkuInputWithPrice" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalDescriptionInputWithPrice">Descripción</label>
+                                        <input type="text" id="modalDescriptionInputWithPrice" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="modalPrecioBaseInput">Precio Base</label>
+                                        <input type="text" id="modalPrecioBaseInput" class="form-control" disabled>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="umvSelect">Unidad de Medida de Venta (UMV)</label>
+                                        <select name="umv" id="umvSelect" class="form-control">
+                                            <!-- Las opciones se cargarán dinámicamente -->
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="quantityWithPrice">Cantidad de etiquetas</label>
+                                        <input type="number" name="quantity" id="quantityWithPrice" class="form-control" min="1" value="1">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                <button type="button" class="btn btn-primary" onclick="submitPrintFormWithPrice()">Imprimir</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="modalDescriptionInput">Descripción</label>
-                        <input type="text" id="modalDescriptionInput" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantity">Cantidad de etiquetas</label>
-                        <input type="number" name="quantity" id="quantity" class="form-control" min="1" value="1">
-                        <small id="quantityError" class="form-text text-danger" style="display: none;"></small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="submitPrintForm()">Imprimir</button>
-            </div>
-        </div>
-    </div>
-</div>
+                </div>
 
+                <!-- JavaScript Completo -->
+                <script src="assets/vendor/jquery/jquery.min.js"></script>
+                <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
+                <script src="assets/vendor/chart.js/Chart.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+                <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+                <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+                <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+                <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+                <script src="{{ asset('js/label.js') }}"></script>
 
+                <script>
+                    var printLabelUrl = "{{ route('print.label') }}";
+                    var printLabelUrlWithPrice = "{{ route('print.label.with.price') }}";
 
-
-<!-- Modal para seleccionar la cantidad de etiquetas a imprimir con SKU y Precio -->
-<div class="modal fade" id="printModalWithPrice" tabindex="-1" aria-labelledby="printModalWithPriceLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="printModalWithPriceLabel">Imprimir Etiquetas con Precio</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="printFormWithPrice" method="POST">
-                    @csrf
-                    <input type="hidden" name="sku" id="modalSkuWithPrice">
-                    <input type="hidden" name="description" id="modalDescriptionWithPrice">
-                    <input type="hidden" name="precioBase" id="modalPrecioBase">
-                    <input type="hidden" name="productId" id="modalProductId">
-                    <div class="form-group">
-                        <label for="modalSkuInputWithPrice">SKU</label>
-                        <input type="text" id="modalSkuInputWithPrice" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="modalDescriptionInputWithPrice">Descripción</label>
-                        <input type="text" id="modalDescriptionInputWithPrice" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="modalPrecioBaseInput">Precio Base</label>
-                        <input type="text" id="modalPrecioBaseInput" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label for="umvSelect">Unidad de Medida de Venta (UMV)</label>
-                        <select name="umv" id="umvSelect" class="form-control">
-                            <!-- Las opciones se cargarán dinámicamente -->
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="quantityWithPrice">Cantidad de etiquetas</label>
-                        <input type="number" name="quantity" id="quantityWithPrice" class="form-control" min="1" value="1">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" onclick="submitPrintFormWithPrice()">Imprimir</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
-
-
-
-
-
-
-    <!-- Bootstrap core JavaScript -->
-    <script src="assets/vendor/jquery/jquery.min.js"></script>
-    <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="assets/vendor/chart.js/Chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ asset('js/label.js') }}"></script>
-
-    <script>
-        var printLabelUrl = "{{ route('print.label') }}";
-        var printLabelUrlWithPrice = "{{ route('print.label.with.price') }}";
-    </script>
+                </script>
 </body>
 
 </html>

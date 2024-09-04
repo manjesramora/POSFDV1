@@ -39,23 +39,23 @@ class LabelcatalogController extends Controller
         $activoFilter = $request->input('activo');
         $sortColumn = $request->input('sort', 'INPROD.INPRODID');
         $sortDirection = $request->input('direction', 'asc');
-
+    
         $user = Auth::user();
         $centrosCostosIds = $user->costCenters->pluck('cost_center_id');
-
+    
         // Subconsulta para obtener el precio base más reciente para cada producto donde ALMACEN es NULL o vacío
         $subQueryGeneral = DB::table('AVPREC')
             ->select('AVPRECPRO', DB::raw('MAX(AVPREFIPB) as max_fecha'))
             ->whereNull('AVPRECALM')
             ->orWhere('AVPRECALM', '')
             ->groupBy('AVPRECPRO');
-
+    
         // Subconsulta para obtener el precio base más reciente para cada producto y centro de costos específico
         $subQueryCentroCosto = DB::table('AVPREC')
             ->select('AVPRECPRO', 'AVPRECALM', DB::raw('MAX(AVPREFIPB) as max_fecha'))
             ->whereIn('AVPRECALM', $centrosCostosIds)
             ->groupBy('AVPRECPRO', 'AVPRECALM');
-
+    
         $query = DB::table('INSDOS')
             ->join('INPROD', 'INSDOS.INPRODID', '=', 'INPROD.INPRODID')
             ->leftJoin('INALPR', function ($join) {
@@ -88,19 +88,12 @@ class LabelcatalogController extends Controller
             ->select(
                 'INPROD.INPRODID',
                 'INPROD.INPRODDSC',
-                'INPROD.INPRODDS2',
-                'INPROD.INPRODDS3',
                 'INPROD.INPRODI2',
-                'INPROD.INPRODI3',
-                'INPROD.INTPCMID',
                 'INPROD.INPR02ID',
                 'INPROD.INPR03ID',
                 'INPROD.INPR04ID',
                 'INPROD.INUMBAID',
                 'INPROD.INPRODCBR',
-                'INPROD.INTPALID',
-                'INPROD.INPRODRD',
-                'INPROD.INPRODMIV',
                 DB::raw('ROUND(INSDOS.INSDOSQDS, 2) as Existencia'),
                 'INSDOS.INALMNID as CentroCostos',
                 'INALPR.INAPR17ID as TipoStock',
@@ -121,9 +114,9 @@ class LabelcatalogController extends Controller
             ->whereNotIn('INPROD.INTPALID', ['O', 'D'])
             ->whereRaw('ISNUMERIC(INPROD.INTPALID) = 0')
             ->whereRaw('LEN(INPROD.INPRODI2) >= 7')
-            ->whereIn('INSDOS.INALMNID', $centrosCostosIds)
-            ->orderBy($sortColumn, $sortDirection);
-
+            ->whereIn('INSDOS.INALMNID', $centrosCostosIds);
+    
+        // Aplicar filtros
         if (!empty($productIdFilter)) {
             $query->where('INPROD.INPRODID', 'like', $productIdFilter . '%');
         }
@@ -134,10 +127,10 @@ class LabelcatalogController extends Controller
             $query->where('INPROD.INPRODDSC', 'like', $nameFilter . '%');
         }
         if (!empty($lineaFilter) && $lineaFilter !== 'LN') {
-            $query->where('INPR03ID', 'like', $lineaFilter . '%'); // Ajusta el campo 'LINEA' según el nombre real en tu base de datos
+            $query->where('INPR03ID', 'like', $lineaFilter . '%');
         }
         if (!empty($sublineaFilter) && $sublineaFilter !== 'SB') {
-            $query->where('INPR04ID', 'like', $sublineaFilter . '%'); // Ajusta el campo 'SUBLINEA' según el nombre real en tu base de datos
+            $query->where('INPR04ID', 'like', $sublineaFilter . '%');
         }
         if (!empty($departamentoFilter)) {
             $query->where('INPROD.INPR02ID', 'like', $departamentoFilter . '%');
@@ -145,18 +138,23 @@ class LabelcatalogController extends Controller
         if ($activoFilter === 'activos') {
             $query->where('INALPR.INAPR17ID', '<>', 'X');
         }
-        // Verificar si hay algún filtro activo
-        if (empty($productIdFilter) && empty($skuFilter) && empty($nameFilter) && 
-        empty($lineaFilter) && empty($sublineaFilter) && empty($departamentoFilter)) {
-        // No hay filtros activos, no ejecutar la consulta
-        $labels = collect([]); // Retornar una colección vacía
-        return view('etiquetascatalogo', compact('labels'));
+    
+        // Ejecutar la consulta solo si hay filtros activos
+        if (!empty($productIdFilter) || !empty($skuFilter) || !empty($nameFilter) || 
+            !empty($lineaFilter) || !empty($sublineaFilter) || !empty($departamentoFilter) || 
+            !empty($activoFilter)) {
+            
+            $query->orderBy($sortColumn, $sortDirection);
+            $labels = $query->paginate(20)->appends($request->query());
+        } else {
+            // Retornar una colección vacía si no hay filtros activos
+            $labels = collect([]);
         }
-
-       $labels = $query->paginate(20)->appends($request->query());
-
+    
         return view('etiquetascatalogo', compact('labels'));
     }
+    
+
 
 
 
