@@ -28,50 +28,65 @@
 
                     <br><br>
 
-                    <!-- Filtro de fechas -->
+                    <!-- Filtro de Proveedor Nombre -->
                     <div class="container">
                         <div class="row align-items-center justify-content-center mb-4 h-100">
                             <div class="col-md-10">
                                 <div class="d-flex justify-content-center align-items-center h-100">
                                     <form method="GET" action="{{ route('freights') }}" class="d-flex align-items-end" id="filterForm">
+                                        <!-- Filtro de fechas (ya existente) -->
                                         <div class="me-2">
                                             <label for="start_date" class="form-label">Desde</label>
                                             <div class="input-group">
-                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" required>
-                                                <button class="btn btn-danger" type="button" onclick="document.getElementById('start_date').value = '';">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
+                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
                                             </div>
                                         </div>
                                         <div class="me-2">
                                             <label for="end_date" class="form-label">Hasta</label>
                                             <div class="input-group">
-                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" required>
-                                                <button class="btn btn-danger" type="button" onclick="document.getElementById('end_date').value = '';">
+                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
+                                            </div>
+                                        </div>
+
+                                        <!-- Nuevo filtro de Proveedor Nombre -->
+                                        <div class="me-2 col-md-7">
+                                            <label for="CNCDIRNOM" class="form-label">Proveedor Nombre:</label>
+                                            <div class="input-group">
+                                                <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
+                                                <button class="btn btn-danger" type="button" onclick="limpiarCampos()">
                                                     <i class="fas fa-times"></i>
                                                 </button>
                                             </div>
                                         </div>
                                         <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">Filtrar</button>
-                                        </div>
-                                        <div>
-                                            <button type="button" class="btn btn-secondary" onclick="resetFilters()">Mostrar todas</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fa-solid fa-magnifying-glass"></i>
+                                            </button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="container" style="height: 60px;">
-                        <!-- Botón para imprimir reporte -->
-                        <div class="d-flex justify-content-center">
-                            <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary">
-                                <i class="fas fa-print mr-2"></i>Imprimir Reporte
-                            </a>
-                        </div>
 
+                    <!-- Botones para imprimir reporte y mostrar todas -->
+                    <div class="container" style="height: 60px;">
+                        <div class="d-flex justify-content-center">
+                            <div class="me-2">
+                                <!-- Botón para imprimir reporte -->
+                                <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary">
+                                    <i class="fas fa-print mr-2"></i> Imprimir Reporte
+                                </a>
+                            </div>
+                            <div>
+                                <!-- Botón para mostrar todas con un ícono de "borrador" (eraser) -->
+                                <button type="button" class="btn btn-info" onclick="limpiarCampos()">
+                                    <i class="fas fa-eraser"></i> 
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                     <!-- Begin Page Content -->
                     <div class="container-fluid">
                         <div class="card shadow mb-4">
@@ -127,17 +142,6 @@
                                                 <td class="col-1 text-center align-middle">{{ number_format(($freight->freight / $freight->cost) * 100, 2) }}%</td>
                                             </tr>
                                             @endforeach
-                                            <tr>
-                                                <td colspan="7" class="text-end fw-bold">Total:</td>
-                                                <td class="text-center fw-bold">${{ number_format($totalCost, 2) }}</td>
-                                                <td class="text-center fw-bold">${{ number_format($totalFreight, 2) }}</td>
-                                                <td></td>
-                                            </tr>
-                                            <tr>
-                                                <td colspan="7" class="text-end fw-bold">Total General:</td>
-                                                <td colspan="2" class="text-center fw-bold">${{ number_format($totalCost + $totalFreight, 2) }}</td>
-                                                <td></td>
-                                            </tr>
                                         </tbody>
                                     </table>
 
@@ -149,6 +153,8 @@
                 </div>
             </div>
         </div>
+
+        <div id="nameDropdown" class="dropdown-menu"></div>
 
         <!-- Scroll to Top Button-->
         <a class="scroll-to-top rounded" href="#page-top">
@@ -163,6 +169,7 @@
         <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="{{ asset('js/freights.js') }}"></script>
 
         <!-- Script para resetear los filtros -->
         <script>
