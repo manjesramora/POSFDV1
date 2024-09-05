@@ -221,111 +221,156 @@ class OrderController extends Controller
     }
 
     public function receiptOrder(Request $request, $ACMVOIDOC)
-    {
-        try {
-            // Limpiar los datos de entrada: eliminar símbolos de moneda y comas
-            $input = $request->all();
-    
-            // Limpiar los precios unitarios y las cantidades recibidas
-            if (isset($input['precio_unitario'])) {
-                foreach ($input['precio_unitario'] as $key => $precio) {
-                    // Eliminar símbolos de moneda y comas
-                    $input['precio_unitario'][$key] = preg_replace('/[\$,]/', '', $precio);
-                }
+{
+    try {
+        // Captura todos los datos del request
+        $input = $request->all();
+
+        // Limpieza de los campos de precios y cantidades para asegurar que sean números
+        if (isset($input['precio_unitario'])) {
+            foreach ($input['precio_unitario'] as $key => $precio) {
+                // Elimina símbolos de moneda y comas
+                $input['precio_unitario'][$key] = preg_replace('/[\$,]/', '', $precio);
             }
-    
-            if (isset($input['cantidad_recibida'])) {
-                foreach ($input['cantidad_recibida'] as $key => $cantidad) {
-                    // Eliminar símbolos de moneda y comas
-                    $input['cantidad_recibida'][$key] = preg_replace('/[\$,]/', '', $cantidad);
-                }
-            }
-    
-            // Validar los datos limpios
-            $validatedData = $request->merge($input)->validate([
-                'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
-                'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',  // max 4 decimals, can be null
-                'document_number1' => 'required',  // Ensure document_number1 is included and required
-                'carrier_number' => 'nullable|string|max:255', // Optional field
-                'carrier_name' => 'nullable|string|max:255',   // Optional field
-            ], [
-                'numeric' => 'El campo :attribute debe ser un número.',
-                'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
-                'document_number1.required' => 'El número de documento es obligatorio.',
-            ]);
-    
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Registrar errores de validación
-            Log::error('Errores de validación:', $e->errors());
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors()
-            ], 422);
         }
-    
+
+        if (isset($input['cantidad_recibida'])) {
+            foreach ($input['cantidad_recibida'] as $key => $cantidad) {
+                // Elimina comas y otros caracteres no numéricos
+                $input['cantidad_recibida'][$key] = preg_replace('/[\$,]/', '', $cantidad);
+            }
+        }
+
+        if (isset($input['freight'])) {
+            // Elimina símbolos de moneda y comas del flete
+            $input['freight'] = preg_replace('/[\$,]/', '', $input['freight']);
+        }
+
+        if (isset($input['total_cost'])) {
+            // Elimina símbolos de moneda y comas del costo total
+            $input['total_cost'] = preg_replace('/[\$,]/', '', $input['total_cost']);
+        } else {
+            // Establecer el costo total a 0 si no está presente
+            $input['total_cost'] = 0;
+        }
+
+        // Añadir el nombre del proveedor, el tipo de referencia, el almacén y la fecha de recepción desde la base de datos
         $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
         $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-    
+
         if (!$order || !$provider) {
             return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
         }
-    
-        Log::info('Datos recibidos en receiptOrder:', $input);
-    
-        DB::beginTransaction();
-    
-        try {
-            foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
-                if ($cantidadRecibida === null || $cantidadRecibida === '') {
-                    continue;  // Omitir cantidades recibidas vacías o nulas
-                }
-    
-                if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
-                    Log::warning("Valor de `cantidad_recibida` no válido para el índice {$index}. Se omite la actualización.");
-                    continue;
-                }
-    
-                $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
-                if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
-                    Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
-                    continue;
-                }
-    
-                // Truncar los valores a 4 decimales sin redondear
-                $cantidadRecibida = number_format((float) bcdiv($cantidadRecibida, '1', 4), 4, '.', '');
-                $precioUnitario = number_format((float) bcdiv($precioUnitario, '1', 4), 4, '.', '');
-    
-                $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
-                $cantidadSolicitada = number_format((float) bcdiv($cantidadSolicitada, '1', 4), 4, '.', '');
-    
-                DB::table('ACMVOR1')
-                    ->where('ACMVOIDOC', $ACMVOIDOC)
-                    ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
-                    ->update([
-                        'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
-                        'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
-                    ]);
-            }
-    
-            // Llamar a insertPartidas solo si hay datos válidos para procesar
-            $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
-    
-            DB::commit();
-    
-            Log::info('Recepción registrada con éxito en la base de datos.');
-    
-            return response()->json([
-                'success' => true,
-                'message' => 'Recepción registrada con éxito.',
-                'ACMROINDOC' => $validatedData['document_number1'],
-                'ACMROIDOC' => $order->ACMVOIDOC
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error("Error en la recepción de la orden: " . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
-        }
+
+        // Añadir el nombre del proveedor, tipo de referencia, almacén, referencia y fecha de recepción al input
+        $input['supplier_name'] = $provider->CNCDIRNOM;
+        $input['reference_type'] = $request->input('reference_type', '');
+        $input['store'] = $order->ACMVOIALID; // Obtén el almacén de la orden
+        $input['reference'] = $request->input('reference', ''); // Asegurar que la referencia se envíe o esté vacía por defecto
+        $input['reception_date'] = $request->input('reception_date', now()->toDateString()); // Establecer la fecha actual si no se proporciona
+
+        // Validar los datos limpios
+        $validatedData = $request->merge($input)->validate([
+            'document_type' => 'required|string',
+            'document_number' => 'required|string',
+            'document_type1' => 'required|string',
+            'document_number1' => 'required|string',
+            'freight' => 'nullable|numeric',
+            'total_cost' => 'nullable|numeric',
+            'carrier_number' => 'nullable|string|max:255',
+            'carrier_name' => 'nullable|string|max:255',
+            'supplier_name' => 'required|string|max:255',
+            'reference_type' => 'required|string|max:255',
+            'store' => 'required|string|max:255',
+            'reference' => 'required|string|max:255',
+            'reception_date' => 'required|date', // Asegúrate de que la fecha de recepción esté presente
+            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/', // Hasta 4 decimales
+            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/', // Hasta 4 decimales
+        ], [
+            'document_type.required' => 'El tipo de documento es obligatorio.',
+            'document_number.required' => 'El número de documento es obligatorio.',
+            'supplier_name.required' => 'El nombre del proveedor es obligatorio.',
+            'reference_type.required' => 'El tipo de referencia es obligatorio.',
+            'store.required' => 'El almacén es obligatorio.',
+            'reference.required' => 'La referencia es obligatoria.',
+            'reception_date.required' => 'La fecha de recepción es obligatoria.',
+            'numeric' => 'El campo :attribute debe ser un número.',
+            'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        // Registro de errores de validación
+        Log::error('Errores de validación:', $e->errors());
+        return response()->json([
+            'success' => false,
+            'errors' => $e->errors()
+        ], 422);
     }
+
+    Log::info('Datos recibidos en receiptOrder:', $validatedData);
+
+    DB::beginTransaction();
+
+    try {
+        foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
+            if ($cantidadRecibida === null || $cantidadRecibida === '') {
+                continue;
+            }
+
+            if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                Log::warning("Valor de `cantidad_recibida` no válido para el índice {$index}. Se omite la actualización.");
+                continue;
+            }
+
+            $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
+            if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
+                Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
+                continue;
+            }
+
+            // Truncar los valores a 4 decimales sin redondear
+            $cantidadRecibida = number_format((float) bcdiv($cantidadRecibida, '1', 4), 4, '.', '');
+            $precioUnitario = number_format((float) bcdiv($precioUnitario, '1', 4), 4, '.', '');
+
+            $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+            $cantidadSolicitada = number_format((float) bcdiv($cantidadSolicitada, '1', 4), 4, '.', '');
+
+            DB::table('ACMVOR1')
+                ->where('ACMVOIDOC', $ACMVOIDOC)
+                ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
+                ->update([
+                    'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
+                    'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
+                ]);
+        }
+
+        // Registrar el flete solo si se proporcionó un valor de flete
+        if (isset($validatedData['freight']) && $validatedData['freight'] > 0) {
+            if (!$this->insertFreight($validatedData, $provider)) {
+                throw new \Exception("Error al insertar datos de flete.");
+            }
+        }
+
+        $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
+
+        DB::commit();
+
+        Log::info('Recepción registrada con éxito en la base de datos.');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Recepción registrada con éxito.',
+            'ACMROINDOC' => $validatedData['document_number1'],
+            'ACMROIDOC' => $order->ACMVOIDOC
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error("Error en la recepción de la orden: " . $e->getMessage());
+        return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+    }
+}
+
+    
     
 
 public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUnitarios, $order, $provider)
@@ -619,6 +664,23 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
     public function insertFreight($validatedData, $provider)
     {
         try {
+            // Verificar si todos los campos requeridos están presentes
+            if (!isset($validatedData['document_type']) || 
+                !isset($validatedData['document_number']) || 
+                !isset($validatedData['document_type1']) || 
+                !isset($validatedData['document_number1']) || 
+                !isset($validatedData['freight']) ||
+                !isset($validatedData['total_cost']) ||
+                !isset($validatedData['supplier_name']) ||
+                !isset($validatedData['reference_type']) ||
+                !isset($validatedData['store']) ||
+                !isset($validatedData['reference']) ||
+                !isset($validatedData['reception_date'])) {
+                Log::error("Datos faltantes para insertar flete.", $validatedData);
+                return false;
+            }
+    
+            // Inserción en la tabla Freights
             DB::table('Freights')->insert([
                 'document_type' => $validatedData['document_type'],
                 'document_number' => $validatedData['document_number'],
@@ -636,12 +698,19 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
                 'reception_date' => $validatedData['reception_date'],
                 'freight_percentage' => 0.0,
             ]);
+    
+            Log::info("Datos de flete insertados correctamente en la tabla Freights.");
             return true;
+    
         } catch (\Exception $e) {
             Log::error("Error al insertar freight: " . $e->getMessage());
-            throw $e;
+            return false;
         }
     }
+    
+    
+    
+    
 
     public function getNewCNTDOCNSIG()
     {
