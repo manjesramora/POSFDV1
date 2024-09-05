@@ -107,21 +107,8 @@ $(document).ready(function () {
         window.location.href = currentUrl.toString();
     }
 
-    // Clear all filter input fields
+    // Clear all filter input fields and reload the page
     window.limpiarCampos = function() {
-        // Clear the text inputs
-        document.getElementById("ACMVOIDOC").value = "";
-        document.getElementById("CNCDIRID").value = "";
-        document.getElementById("CNCDIRNOM").value = "";
-
-        // Clear the date inputs
-        document.getElementById("start_date").value = "";
-        document.getElementById("end_date").value = "";
-
-        // Hide dropdowns if visible
-        $("#idDropdown, #nameDropdown").hide();
-
-        // Submit the form to reset filters
-        document.getElementById("filterForm").submit();
+        window.location.href = "/orders"; // Redirigir a la URL original sin parámetros
     }
 });
