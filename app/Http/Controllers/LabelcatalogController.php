@@ -141,8 +141,7 @@ class LabelcatalogController extends Controller
     
         // Ejecutar la consulta solo si hay filtros activos
         if (!empty($productIdFilter) || !empty($skuFilter) || !empty($nameFilter) || 
-            !empty($lineaFilter) || !empty($sublineaFilter) || !empty($departamentoFilter) || 
-            !empty($activoFilter)) {
+            !empty($lineaFilter) || !empty($sublineaFilter) || !empty($departamentoFilter)) {
             
             $query->orderBy($sortColumn, $sortDirection);
             $labels = $query->paginate(20)->appends($request->query());

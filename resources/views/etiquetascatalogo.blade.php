@@ -86,16 +86,11 @@
                     </div>
                 </div>
 
-                <!-- Tabla de datos -->
-                <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">
-                    <div class="card-body">
-                        <div class="table-responsive small-font">
-                            @if($labels->isEmpty() && request()->except('sort', 'direction'))
-                                <div id="no-results-message" class="alert alert-warning text-center" style="display: block;">
-                                    Producto no Encontrado
-                                </div>
-                            @else
-                                <div id="no-results-message" class="alert alert-warning text-center" style="display: none;">
+                 <!-- Tabla de datos -->
+                 <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">                        
+                        <div class="card-body">
+                            <div class="table-responsive small-font">
+                            <div id="no-results-message" class="alert alert-warning text-center" style="display: none;">
                                     Producto no Encontrado
                                 </div>
                                 <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
@@ -163,7 +158,7 @@
                                         @endif
                                     </div>
                                 </div>
-                            @endif
+                  
                         </div>
                     </div>
                 </div>

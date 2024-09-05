@@ -22,6 +22,8 @@ function buscarFiltros() {
     var sublinea = document.getElementById("sublinea").value;
     var departamento = document.getElementById("departamento").value;
     var activo = document.getElementById("activo").value;
+    var activo = document.getElementById("activo").value;
+
 
     var hasFilters = productId || sku || name || linea || sublinea || departamento || activo;
 
@@ -179,7 +181,7 @@ function limpiarFiltros() {
         "sublinea",
         "departamento",
     ];
-
+    
     inputs.forEach((input) => {
         document.getElementById(input).value = "";
     });
@@ -202,7 +204,6 @@ function showPrintModal(sku, description) {
     document.getElementById("modalDescriptionInput").value = description;
     $("#printModal").modal("show");
 }
-
 function showPrintModalWithPrice(sku, description, precioBase, productId) {
     document.getElementById("modalSkuWithPrice").value = sku;
     document.getElementById("modalDescriptionWithPrice").value = description;
