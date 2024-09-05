@@ -34,7 +34,7 @@ class RcnController extends Controller
     $search = $request->input('search');
     $sortBy = $request->input('sort_by', 'ACMROIDOC'); // Campo por defecto para ordenación
     $sortOrder = $request->input('sort_order', 'desc'); // Orden descendente por defecto
-    
+
     // Inicializar la consulta principal para la tabla agregada
     $mainQuery = DB::table('ACMROI')
         ->select(
@@ -49,9 +49,6 @@ class RcnController extends Controller
             DB::raw('COUNT(*) as numero_de_partidas'),
             DB::raw('(SELECT COUNT(DISTINCT sub.ACMROINDOC) FROM ACMROI AS sub WHERE sub.ACMROIDOC = ACMROI.ACMROIDOC) as numero_de_rcns')
         )
-        ->where('ACACTLID', '!=', 'CANCELADO')
-        ->where('ACACSGID', '!=', 'CANCELADO')
-        ->where('ACACANID', '!=', 'CANCELADO')
         ->groupBy('ACMROIDOC')
         ->orderBy($sortBy, $sortOrder);
 
@@ -68,6 +65,9 @@ class RcnController extends Controller
     // Obtener los resultados paginados para la tabla principal
     $rcns = $mainQuery->paginate(10);
 
+    // Obtener los IDs de los ACMROIDOC para la consulta detallada
+    $acmroDocs = collect($rcns->items())->pluck('ACMROIDOC')->toArray();
+
     // Consulta adicional para los detalles del modal
     $detailedRcns = DB::table('ACMROI')
         ->select(
@@ -81,9 +81,7 @@ class RcnController extends Controller
             'ACACANID',
             DB::raw('COUNT(*) as numero_de_partidas')
         )
-        ->where('ACACTLID', '!=', 'CANCELADO')
-        ->where('ACACSGID', '!=', 'CANCELADO')
-        ->where('ACACANID', '!=', 'CANCELADO')
+        ->whereIn('ACMROIDOC', $acmroDocs) // Filtrar solo por los ACMROIDOC que se están mostrando en la tabla principal
         ->groupBy(
             'ACMROITDOC',
             'ACMROINDOC',
@@ -109,6 +107,7 @@ class RcnController extends Controller
     // Retornar la vista con los datos necesarios
     return view('rcn', compact('rcns', 'allDetailedRcns', 'startDate', 'endDate', 'sortBy', 'sortOrder', 'search'));
 }
+
 
 public function generatePdf($ACMROINDOC)
 {

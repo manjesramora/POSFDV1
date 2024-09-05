@@ -205,19 +205,25 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($allDetailedRcns[$rcn->ACMROIDOC] as $associatedRcn)
-                            <tr>
-                                <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
-                                <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
-                                <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
-                                <td class="col-2 text-center align-middle">
-                                    <!-- Botón para abrir el PDF en una nueva pestaña -->
-                                    <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
+                            @if($allDetailedRcns->has($rcn->ACMROIDOC))
+                                @foreach($allDetailedRcns[$rcn->ACMROIDOC]->unique('ACMROINDOC') as $associatedRcn)
+                                    <tr>
+                                        <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
+                                        <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
+                                        <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
+                                        <td class="col-2 text-center align-middle">
+                                            <!-- Botón para abrir el PDF en una nueva pestaña -->
+                                            <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay RCNs asociados disponibles.</td>
+                                </tr>
+                            @endif
                         </tbody>
                     </table>
                 </div>
@@ -227,7 +233,9 @@
             </div>
         </div>
     </div>
-    @endforeach
+@endforeach
+
+
 
 </body>
 
