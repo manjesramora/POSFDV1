@@ -8,18 +8,20 @@ $(document).ready(function () {
             $.ajax({
                 url: "/providers/autocomplete",
                 type: "GET",
-                data: { query: query, field: field },
+                data: { query: query, field: field, screen: 'orders' }, // Enviar 'screen: orders' para identificar la pantalla
                 success: function (data) {
                     let dropdown = field === "CNCDIRID" ? $("#idDropdown") : $("#nameDropdown");
                     dropdown.empty().show();
 
                     data.forEach((item, index) => {
-                        dropdown.append(
-                            `<div class="dropdown-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}" tabindex="${index}">${item.CNCDIRID} - ${item.CNCDIRNOM}</div>`
-                        );
+                        // Solo mostrar proveedores cuyo CNCDIRID comience con "3"
+                        if (item.CNCDIRID.startsWith("3")) {
+                            dropdown.append(
+                                `<div class="dropdown-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}" tabindex="${index}">${item.CNCDIRID} - ${item.CNCDIRNOM}</div>`
+                            );
+                        }
                     });
 
-                    // Focus on the first item in the dropdown
                     dropdown.find(".dropdown-item").first().addClass("active");
                 },
             });
@@ -104,21 +106,22 @@ $(document).ready(function () {
 
         window.location.href = currentUrl.toString();
     }
+
+    // Clear all filter input fields
+    window.limpiarCampos = function() {
+        // Clear the text inputs
+        document.getElementById("ACMVOIDOC").value = "";
+        document.getElementById("CNCDIRID").value = "";
+        document.getElementById("CNCDIRNOM").value = "";
+
+        // Clear the date inputs
+        document.getElementById("start_date").value = "";
+        document.getElementById("end_date").value = "";
+
+        // Hide dropdowns if visible
+        $("#idDropdown, #nameDropdown").hide();
+
+        // Submit the form to reset filters
+        document.getElementById("filterForm").submit();
+    }
 });
-// Clear all filter input fields
-function limpiarCampos() {
-    // Clear the text inputs
-    document.getElementById("ACMVOIDOC").value = "";
-    document.getElementById("CNCDIRID").value = "";
-    document.getElementById("CNCDIRNOM").value = "";
-
-    // Clear the date inputs
-    document.getElementById("start_date").value = "";
-    document.getElementById("end_date").value = "";
-
-    // Hide dropdowns if visible
-    $("#idDropdown, #nameDropdown").hide();
-
-    // Submit the form to reset filters
-    document.getElementById("filterForm").submit();
-}

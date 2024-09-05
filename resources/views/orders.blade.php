@@ -28,17 +28,17 @@
                     <form method="GET" action="{{ route('orders') }}" class="mb-3" id="filterForm">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-2">
-                                <label for="ACMROIDOC" class="form-label">NO DE DOC:</label>
+                                <label for="ACMROIDOC" class="form-label">#DOCUMENTO(OL1):</label>
                                 <input type="text" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric" autocomplete="off">
                             </div>
 
                             <div class="col-md-2">
-                                <label for="CNCDIRID" class="form-label">Proveedor ID:</label>
+                                <label for="CNCDIRID" class="form-label">#PROVEDOR:</label>
                                 <input type="text" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric" autocomplete="off">
                                 <div id="idDropdown" class="dropdown-menu"></div>
                             </div>
                             <div class="col-md-3">
-                                <label for="CNCDIRNOM" class="form-label">Proveedor Nombre:</label>
+                                <label for="CNCDIRNOM" class="form-label">NOMBRE DE PROVEDOR:</label>
                                 <div class="input-group">
                                     <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
                                     <div id="nameDropdown" class="dropdown-menu"></div>
@@ -48,11 +48,11 @@
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <label for="start_date" class="form-label">Fecha de inicio:</label>
+                                <label for="start_date" class="form-label">FECHA DE INICIO:</label>
                                 <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}">
                             </div>
                             <div class="col-md-2">
-                                <label for="end_date" class="form-label">Fecha de fin:</label>
+                                <label for="end_date" class="form-label">FECHA DE FIN:</label>
                                 <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}">
                             </div>
                             <div class="col-md-1">
@@ -74,7 +74,7 @@
                                                     
                                                     <th class="col-md-1">
                                                         <a href="{{ route('orders', ['sortColumn' => 'ACMVOIDOC', 'sortDirection' => ($sortColumn == 'ACMVOIDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                                            NO. DOC
+                                                            #DOCUMENTO
                                                             @if($sortColumn == 'ACMVOIDOC')
                                                             <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
                                                             @else
@@ -84,7 +84,7 @@
                                                     </th>
                                                     <th class="col-md-1">
                                                         <a href="{{ route('orders', ['sortColumn' => 'CNCDIRID', 'sortDirection' => ($sortColumn == 'CNCDIRID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                                            NO. PROV
+                                                            #PROVEDOR
                                                             @if($sortColumn == 'CNCDIRID')
                                                             <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
                                                             @else
@@ -147,8 +147,11 @@
 
                                         </table>
                                         <div class="d-flex justify-content-center">
-                                            {{ $orders->appends(request()->except('page'))->links() }}
-                                        </div>
+    @if ($orders instanceof \Illuminate\Pagination\LengthAwarePaginator || $orders instanceof \Illuminate\Pagination\Paginator)
+        {{ $orders->appends(request()->except('page'))->links() }}
+    @endif
+</div>
+
 
                                     </div>
                                 </div>

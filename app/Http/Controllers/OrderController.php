@@ -103,8 +103,7 @@ class OrderController extends Controller
     }
 }
 
-    
-    public function index(Request $request)
+public function index(Request $request)
 {
     $user = Auth::user();
 
@@ -113,57 +112,81 @@ class OrderController extends Controller
     }
 
     $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
-
     $query = Order::query();
 
     if (!empty($centrosCostosIds)) {
         $query->whereIn('ACMVOIALID', $centrosCostosIds);
     }
 
-    // Remove the default date range
-    // Only filter by date if the user specifies them
     $startDate = $request->input('start_date');
     $endDate = $request->input('end_date');
 
+    // Definir la fecha límite de 6 meses
+    $sixMonthsAgo = Carbon::now()->subMonths(6);
+
+    // Validar que las fechas de búsqueda no sean mayores a 6 meses
     if ($startDate && $endDate) {
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        // Verifica si alguna de las fechas está fuera del rango de 6 meses
+        if ($start->lt($sixMonthsAgo) || $end->lt($sixMonthsAgo)) {
+            return redirect()->route('orders')->with('error', 'El rango de fechas no puede ser mayor a 6 meses desde la fecha actual.');
+        }
+
         $query->whereBetween('ACMVOIFDOC', [$startDate, $endDate]);
+    } else {
+        // Si no se proporcionaron fechas, asegura que los resultados sean dentro de los últimos 6 meses
+        $query->where('ACMVOIFDOC', '>=', $sixMonthsAgo);
     }
 
-    // Check for exact match on ACMVOIDOC if input is filled
-    if ($request->filled('ACMVOIDOC')) {
-        $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
-    }
-
-    if ($request->filled('CNCDIRID')) {
-        $query->where('CNCDIRID', $request->input('CNCDIRID'));
-    }
-
-    if ($request->filled('CNCDIRNOM')) {
-        $query->whereHas('provider', function ($q) use ($request) {
-            $q->where('CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
-        });
-    }
-
-    // Sorting logic
-    $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'CNCDIRNOM', 'ACMVOIFDOC', 'ACMVOIALID'];
+    // Definir valores predeterminados para evitar errores de variables indefinidas
     $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
     $sortDirection = $request->input('sortDirection', 'desc');
 
-    if (in_array($sortColumn, $sortableColumns)) {
-        $query->orderBy($sortColumn, $sortDirection);
+    // Mostrar la pantalla vacía hasta que se aplique el filtro de búsqueda
+    if (!$startDate && !$endDate && !$request->filled('ACMVOIDOC') && !$request->filled('CNCDIRID') && !$request->filled('CNCDIRNOM')) {
+        $orders = collect(); // Pantalla vacía hasta que se aplique el filtro
     } else {
-        $query->orderBy('ACMVOIDOC', 'desc');
+        // Filtros adicionales
+        if ($request->filled('ACMVOIDOC')) {
+            $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
+        }
+
+        if ($request->filled('CNCDIRID')) {
+            $query->where('ACMVOR.CNCDIRID', $request->input('CNCDIRID'));
+        }
+
+        if ($request->filled('CNCDIRNOM')) {
+            $query->whereHas('provider', function ($q) use ($request) {
+                $q->where('CNCDIR.CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
+            });
+        }
+
+        // Sorting logic
+        $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'CNCDIRNOM', 'ACMVOIFDOC', 'ACMVOIALID'];
+
+        if (in_array($sortColumn, $sortableColumns)) {
+            if ($sortColumn == 'CNCDIRNOM') {
+                $query->join('CNCDIR', 'ACMVOR.CNCDIRID', '=', 'CNCDIR.CNCDIRID')
+                      ->orderBy('CNCDIR.CNCDIRNOM', $sortDirection);
+            } else {
+                $query->orderBy($sortColumn, $sortDirection);
+            }
+        } else {
+            $query->orderBy('ACMVOIDOC', 'desc');
+        }
+
+        // Filtrar solo órdenes con movimientos pendientes de recepción
+        $query->whereExists(function ($subquery) {
+            $subquery->select(DB::raw(1))
+                ->from('ACMVOR1')
+                ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
+                ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
+        });
+
+        $orders = $query->paginate(30);
     }
-
-    // Modify the subquery to filter all items by default
-    $query->whereExists(function ($subquery) {
-        $subquery->select(DB::raw(1))
-            ->from('ACMVOR1')
-            ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
-            ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
-    });
-
-    $orders = $query->paginate(30);
 
     if ($request->ajax()) {
         return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
@@ -172,7 +195,36 @@ class OrderController extends Controller
     return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
 }
 
-    
+
+
+public function autocompleteProviders(Request $request)
+{
+    $query = $request->input('query');
+    $field = $request->input('field');
+    $screen = $request->input('screen'); // Especificar pantalla
+
+    $providersQuery = Providers::query();
+
+    if ($screen == 'orders') {
+        // Excluir proveedores cuyo CNCDIRID comience con '4'
+        $providersQuery->where('CNCDIRID', 'like', '3%');
+    }
+
+    // Aplicar filtros de búsqueda por CNCDIRID o CNCDIRNOM
+    $providers = $providersQuery
+        ->when($field == 'CNCDIRID', function ($q) use ($query) {
+            return $q->where('CNCDIRID', 'like', '%' . $query . '%');
+        })
+        ->when($field == 'CNCDIRNOM', function ($q) use ($query) {
+            return $q->where('CNCDIRNOM', 'like', '%' . $query . '%');
+        })
+        ->limit(10) // Limitar el número de resultados
+        ->get(['CNCDIRID', 'CNCDIRNOM']);
+
+    return response()->json($providers);
+}
+
+
 
     public function showReceptions($ACMVOIDOC)
     {
