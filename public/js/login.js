@@ -71,19 +71,28 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     document.getElementById("changePasswordForm").addEventListener("submit", function (event) {
-        event.preventDefault();
+        event.preventDefault(); // Evita que el formulario se envíe automáticamente
+    
         const newPassword = document.getElementById("newPassword").value;
         const confirmPassword = document.getElementById("confirmPassword").value;
-
+    
+        // Validación para verificar que las contraseñas coinciden
+        if (newPassword !== confirmPassword) {
+            document.getElementById("passwordError").textContent = "Las contraseñas no coinciden.";
+            return; // Evita que el formulario continúe si las contraseñas no coinciden
+        }
+    
+        // Validación para evitar el uso de la contraseña genérica
         if (newPassword === "Ferre01@") {
             document.getElementById("passwordError").textContent = "No se puede utilizar la contraseña genérica.";
-            return;
+            return; // Evita que el formulario continúe si se usa la contraseña genérica
         }
-
+    
         const username = document.getElementById("modalUsername").value;
         const csrfTokenInput = document.querySelector('input[name="_token"]');
         const csrfToken = csrfTokenInput ? csrfTokenInput.value : null;
-
+    
+        // Realiza la solicitud al servidor para cambiar la contraseña
         fetch(changePasswordRoute, {
             method: "POST",
             headers: {
@@ -112,6 +121,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
     });
+    
 
     $('#passwordModal').on('shown.bs.modal', function () {
         const passwordInput = document.getElementById("newPassword");
