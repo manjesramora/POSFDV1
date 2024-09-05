@@ -64,10 +64,12 @@ class UserController extends Controller
         // Filtro por centro de costo
         if ($request->filled('cost_center')) {
             $costCenter = $request->input('cost_center');
+            
             $query->whereHas('costCenters', function ($q) use ($costCenter) {
-                $q->where('center_id', $costCenter);
+                $q->where('cost_center_id', $costCenter); // Comparar como cadena directamente
             });
         }
+        
 
         // Filtro por estado
         if ($request->filled('status')) {
