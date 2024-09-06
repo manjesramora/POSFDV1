@@ -29,59 +29,69 @@
                     <br><br>
 
                     <!-- Filtro de Proveedor Nombre -->
-                    <div class="container">
-                        <div class="row align-items-center justify-content-center mb-4 h-100">
-                            <div class="col-md-10">
-                                <div class="d-flex justify-content-center align-items-center h-100">
-                                    <form method="GET" action="{{ route('freights') }}" class="d-flex align-items-end" id="filterForm">
-                                        <!-- Filtro de fechas (ya existente) -->
-                                        <div class="me-2">
-                                            <label for="start_date" class="form-label">Desde</label>
-                                            <div class="input-group">
-                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
-                                            </div>
-                                        </div>
-                                        <div class="me-2">
-                                            <label for="end_date" class="form-label">Hasta</label>
-                                            <div class="input-group">
-                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
-                                            </div>
-                                        </div>
 
-                                        <!-- Nuevo filtro de Proveedor Nombre -->
-                                        <div class="me-2 col-md-7">
-                                            <label for="CNCDIRNOM" class="form-label">Proveedor Nombre:</label>
-                                            <div class="input-group">
-                                                <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
-                                                <button class="btn btn-danger" type="button" onclick="limpiarCampos()">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fa-solid fa-magnifying-glass"></i>
-                                            </button>
-                                        </div>
-                                    </form>
+
+                    <div class="col-md-10">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <form method="GET" action="{{ route('freights') }}" class="d-flex align-items-end" id="filterForm">
+                                <!-- Filtro de fechas (ya existente) -->
+                                <div class="me-2">
+                                    <label for="start_date" class="form-label">Desde</label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
+                                    </div>
                                 </div>
-                            </div>
+                                <div class="me-2">
+                                    <label for="end_date" class="form-label">Hasta</label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
+                                    </div>
+                                </div>
+
+                                <!-- Filtro de Proveedor Nombre -->
+                                <div class="me-2 col-md-5 position-relative">
+                                    <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
+                                    <div class="input-group">
+                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="" autocomplete="off">
+                                    </div>
+                                    <!-- Dropdown para Proveedor -->
+                                    <div id="nameDropdown" class="dropdown-menu"></div>
+                                </div>
+
+                                <!-- Filtro de Transportista Nombre -->
+                                <div class="me-2 col-md-5 position-relative">
+                                    <label for="CNCDIRNOM_TRANSP" class="form-label">Transportista:</label>
+                                    <div class="input-group">
+                                        <input type="text" name="CNCDIRNOM_TRANSP" id="CNCDIRNOM_TRANSP" class="form-control" value="" autocomplete="off">
+                                    </div>
+
+                                    <!-- Dropdown para Transportista -->
+                                    <div id="transporterDropdown" class="dropdown-menu"></div>
+                                </div>
+
+                                <div class="me-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
+
                     <!-- Botones para imprimir reporte y mostrar todas -->
-                    <div class="container" style="height: 60px;">
+                    <div class="container" style="height: 60px; margin-top: 40px;">
                         <div class="d-flex justify-content-center">
                             <div class="me-2">
                                 <!-- Botón para imprimir reporte -->
-                                <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary">
+                                <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary" target="_blank">
                                     <i class="fas fa-print mr-2"></i> Imprimir Reporte
                                 </a>
                             </div>
                             <div>
                                 <!-- Botón para mostrar todas con un ícono de "borrador" (eraser) -->
-                                <button type="button" class="btn btn-info" onclick="limpiarCampos()">
-                                    <i class="fas fa-eraser"></i> 
+                                <button type="button" class="btn btn-danger" onclick="limpiarCampos()">
+                                    <i class="fas fa-eraser"></i>
                                 </button>
                             </div>
                         </div>
@@ -92,94 +102,88 @@
                         <div class="card shadow mb-4">
                             <div class="card-body">
                                 <div class="table-responsive small-font">
-                                    <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+                                    @if ($freights->isEmpty() && (request()->has('start_date') || request()->has('end_date') || request()->has('CNCDIRNOM') || request()->has('CNCDIRNOM_TRANSP')))
+                                    <!-- Mostrar mensaje si no se encontraron resultados después de aplicar los filtros -->
+                                    <div class="alert alert-warning text-center">
+                                        No se encontraron resultados que coincidan con los filtros aplicados.
+                                    </div>
+                                    @elseif (!$freights->isEmpty())
+                                    <!-- Mostrar tabla si hay resultados -->
+                                    <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
-                                                @php
-                                                $columns = [
-                                                'document_number' => 'NO.OL',
-                                                'document_number1' => 'NO.RCN',
-                                                'supplier_number' => 'NO.PROV',
-                                                'supplier_name' => 'PROV',
-                                                'carrier_number' => 'NO.TRANSP',
-                                                'carrier_name' => 'TRANSP',
-                                                'reception_date' => 'FECHA',
-                                                'cost' => 'CTO.PROV',
-                                                'freight' => 'CTO.FLETE',
-                                                'freight_percentage' => '%FLETE'
-                                                ];
-                                                @endphp
-                                                @foreach ($columns as $field => $label)
-                                                <th class="col-1 text-center align-middle sortable">
-                                                    <a href="{{ route('freights', ['sort_by' => $field, 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        {{ $label }}
-                                                        @if(request('sort_by') == $field)
-                                                        @if(request('sort_order') == 'asc')
-                                                        <i class="fas fa-sort-up"></i>
-                                                        @else
-                                                        <i class="fas fa-sort-down"></i>
-                                                        @endif
-                                                        @else
-                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
-                                                        @endif
-                                                    </a>
-                                                </th>
-                                                @endforeach
+                                                <th class="col-1 text-center">NO.OL</th>
+                                                <th class="col-1 text-center">NO.RCN</th>
+                                                <th class="col-1 text-center">NO.PROV</th>
+                                                <th class="col-1 text-center">PROV</th>
+                                                <th class="col-1 text-center">NO.TRANSP</th>
+                                                <th class="col-1 text-center">TRANSP</th>
+                                                <th class="col-1 text-center">FECHA</th>
+                                                <th class="col-1 text-center">CTO.PROV</th>
+                                                <th class="col-1 text-center">CTO.FLETE</th>
+                                                <th class="col-1 text-center">%FLETE</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             @foreach($freights as $freight)
                                             <tr>
-                                                <td class="col-1 text-center align-middle">{{ $freight->document_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->document_number1 }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->supplier_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->supplier_name }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_number }}</td>
-                                                <td class="col-1 text-center align-middle">{{ $freight->carrier_name }}</td>
-                                                <td class="col-1 text-center align-middle">{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
-                                                <td class="col-1 text-center align-middle">${{ number_format($freight->cost, 2) }}</td>
-                                                <td class="col-1 text-center align-middle">${{ number_format($freight->freight, 2) }}</td>
-                                                <td class="col-1 text-center align-middle">{{ number_format(($freight->freight / $freight->cost) * 100, 2) }}%</td>
+                                                <td class="col-1 text-center">{{ $freight->document_number }}</td>
+                                                <td class="col-1 text-center">{{ $freight->document_number1 }}</td>
+                                                <td class="col-1 text-center">{{ $freight->supplier_number }}</td>
+                                                <td class="col-1 text-center">{{ $freight->supplier_name }}</td>
+                                                <td class="col-1 text-center">{{ $freight->carrier_number }}</td>
+                                                <td class="col-1 text-center">{{ $freight->carrier_name }}</td>
+                                                <td class="col-1 text-center">{{ \Carbon\Carbon::parse($freight->reception_date)->format('d/m/Y') }}</td>
+                                                <td class="col-1 text-center">${{ number_format($freight->cost, 2) }}</td>
+                                                <td class="col-1 text-center">${{ number_format($freight->freight, 2) }}</td>
+                                                <td class="col-1 text-center">{{ number_format(($freight->freight / $freight->cost) * 100, 2) }}%</td>
                                             </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    @else
+                                    <!-- Mostrar mensaje si no hay filtros aplicados -->
+                                    <div class="alert alert-info text-center">
+                                        Por favor, aplica filtros para ver los fletes.
+                                    </div>
+                                    @endif
 
+                                    <!-- Paginación -->
+                                    <div class="d-flex justify-content-center">
+                                        @if ($freights instanceof \Illuminate\Pagination\LengthAwarePaginator || $freights instanceof \Illuminate\Pagination\Paginator)
+                                        {{ $freights->appends(request()->except('page'))->links() }}
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        {{ $freights->links() }}
                     </div>
+
+
+                    <!-- Scroll to Top Button-->
+                    <a class="scroll-to-top rounded" href="#page-top">
+                        <i class="fas fa-angle-up"></i>
+                    </a>
+
+                    <!-- Scripts -->
+                    <script src="assets/vendor/jquery/jquery.min.js"></script>
+                    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+                    <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
+                    <script src="assets/vendor/chart.js/Chart.min.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+                    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+                    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+                    <script src="{{ asset('js/freights.js') }}"></script>
+
+                    <!-- Script para resetear los filtros -->
+                    <script>
+                        function resetFilters() {
+                            document.getElementById('start_date').value = '';
+                            document.getElementById('end_date').value = '';
+                            document.getElementById('filterForm').submit();
+                        }
+                    </script>
                 </div>
-            </div>
-        </div>
-
-        <div id="nameDropdown" class="dropdown-menu"></div>
-
-        <!-- Scroll to Top Button-->
-        <a class="scroll-to-top rounded" href="#page-top">
-            <i class="fas fa-angle-up"></i>
-        </a>
-
-        <!-- Scripts -->
-        <script src="assets/vendor/jquery/jquery.min.js"></script>
-        <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-        <script src="assets/vendor/jquery-easing/jquery.easing.min.js"></script>
-        <script src="assets/vendor/chart.js/Chart.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="{{ asset('js/freights.js') }}"></script>
-
-        <!-- Script para resetear los filtros -->
-        <script>
-            function resetFilters() {
-                document.getElementById('start_date').value = '';
-                document.getElementById('end_date').value = '';
-                document.getElementById('filterForm').submit();
-            }
-        </script>
-    </div>
 </body>
 
 </html>

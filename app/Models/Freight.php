@@ -40,9 +40,18 @@ class Freight extends Model
         // Calcular el porcentaje de flete en relación con el total general
         return $totalGeneral > 0 ? ($this->freight / $totalGeneral) * 100 : 0;
     }
+
+    // Relación con el proveedor
     public function provider()
     {
-        return $this->belongsTo(Providers::class, 'supplier_number', 'CNCDIRID');
+        return $this->belongsTo(Providers::class, 'supplier_number', 'CNCDIRID')
+                    ->where('CNCDIRID', 'like', '3%'); // Asegúrate de que el CNCDIRID empiece con '3' para proveedores
+    }
+
+    // Relación con el transportista
+    public function carrier()
+    {
+        return $this->belongsTo(Providers::class, 'carrier_number', 'CNCDIRID')
+                    ->where('CNCDIRID', 'like', '4%'); // Asegúrate de que el CNCDIRID empiece con '4' para transportistas
     }
 }
-

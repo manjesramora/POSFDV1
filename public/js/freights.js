@@ -1,5 +1,5 @@
 $(document).ready(function () {
-    // Autocompletado por ID y por Nombre
+    // Autocompletado para proveedores
     $("#CNCDIRNOM").on("input", function () {
         let query = $(this).val();
 
@@ -7,36 +7,19 @@ $(document).ready(function () {
             $.ajax({
                 url: "/providers/autocomplete",
                 type: "GET",
-                data: { query: query, field: "CNCDIRNOM" },
+                data: { query: query, field: "CNCDIRNOM", type: 'provider' }, // Usar 'provider' para identificar el tipo
                 success: function (data) {
                     let dropdown = $("#nameDropdown");
                     dropdown.empty().show();
 
-                    // Llenar el dropdown con las opciones obtenidas
                     data.forEach((item, index) => {
-                        dropdown.append(
-                            `<div class="dropdown-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}" tabindex="${index}">${item.CNCDIRID} - ${item.CNCDIRNOM}</div>`
-                        );
+                        if (item.CNCDIRID.startsWith("3")) {
+                            dropdown.append(
+                                `<div class="dropdown-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}" tabindex="${index}">${item.CNCDIRID} - ${item.CNCDIRNOM}</div>`
+                            );
+                        }
                     });
 
-                    // Posicionar el dropdown justo debajo del input
-                    let inputOffset = $("#CNCDIRNOM").offset();
-                    let inputHeight = $("#CNCDIRNOM").outerHeight();
-
-                    // Cambia la posición del dropdown usando top y left
-                    dropdown.css({
-                        position: "absolute",
-                        top: inputOffset.top + inputHeight + "px", // Justo debajo del input
-                        left: inputOffset.left + "px", // Alineado con el input
-                        width: $("#CNCDIRNOM").outerWidth() + "px", // Del mismo tamaño que el input
-                    });
-
-                    // Hacer scroll dentro del dropdown si es necesario
-                    dropdown
-                        .css("max-height", "200px")
-                        .css("overflow-y", "auto");
-
-                    // Focus en el primer ítem
                     dropdown.find(".dropdown-item").first().addClass("active");
                 },
             });
@@ -45,17 +28,45 @@ $(document).ready(function () {
         }
     });
 
-    // Selección de un proveedor del dropdown
-    $(document).on("click", ".dropdown-item", function () {
-        selectProvider($(this));
+    // Autocompletado para transportistas
+    $("#CNCDIRNOM_TRANSP").on("input", function () {
+        let query = $(this).val();
+
+        if (query.length >= 3) {
+            $.ajax({
+                url: "/providers/autocomplete",
+                type: "GET",
+                data: { query: query, field: "CNCDIRNOM", type: 'transporter' }, // Usar 'transporter' para diferenciar
+                success: function (data) {
+                    let dropdown = $("#transporterDropdown");
+                    dropdown.empty().show();
+
+                    data.forEach((item, index) => {
+                        if (item.CNCDIRID.startsWith("4")) {
+                            dropdown.append(
+                                `<div class="dropdown-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}" tabindex="${index}">${item.CNCDIRID} - ${item.CNCDIRNOM}</div>`
+                            );
+                        }
+                    });
+
+                    dropdown.find(".dropdown-item").first().addClass("active");
+                },
+            });
+        } else {
+            $("#transporterDropdown").hide();
+        }
     });
 
-    // Function to select a provider
-    function selectProvider(item) {
-        let name = item.data("name");
-        $("#CNCDIRNOM").val(name);
-        $("#nameDropdown").hide();
-    }
+    // Selección de un proveedor del dropdown
+    $(document).on("click", ".dropdown-item", function () {
+        let item = $(this);
+        if (item.closest("#nameDropdown").length) {
+            $("#CNCDIRNOM").val(item.data("name"));
+        } else if (item.closest("#transporterDropdown").length) {
+            $("#CNCDIRNOM_TRANSP").val(item.data("name"));
+        }
+        $("#nameDropdown, #transporterDropdown").hide();
+    });
 
     // Clear all filter input fields and reload the page
     window.limpiarCampos = function () {
