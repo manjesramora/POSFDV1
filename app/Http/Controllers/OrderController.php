@@ -27,81 +27,7 @@ class OrderController extends Controller
             return $next($request);
         });
     }
-    public function generatePdf(Request $request)
-{
-    try {
-        // Obtener parámetros de la solicitud
-        $ACMROINDOC = $request->query('ACMROINDOC');
-        $ACMROIDOC = $request->query('ACMROIDOC');
-
-        // Validar que los parámetros existen
-        if (!$ACMROINDOC || !$ACMROIDOC) {
-            throw new \Exception("Parámetros necesarios faltantes.");
-        }
-
-        // Obtener los registros desde la tabla acmroi utilizando ACMROINDOC
-        $rcns = DB::table('acmroi')
-            ->where('ACMROINDOC', $ACMROINDOC)
-            ->get();
-
-        if ($rcns->isEmpty()) {
-            return response()->json(['error' => 'Orden no encontrada.'], 404);
-        }
-
-        // Get additional data from 'inprod' table and merge with existing 'rcns' data
-        $rcns = $rcns->map(function ($rcn) {
-            $product = DB::table('inprod')
-                ->where('INPRODID', $rcn->INPRODID)
-                ->select('INPRODI2', 'INPRODI3')
-                ->first();
-
-            if ($product) {
-                $rcn->INPRODI2 = $product->INPRODI2;
-                $rcn->INPRODI3 = $product->INPRODI3;
-            } else {
-                $rcn->INPRODI2 = null;
-                $rcn->INPRODI3 = null;
-            }
-
-            return $rcn;
-        });
-
-        // Agrupar los RCNs por una clave relevante, como 'CNTDOCID'
-        $groupedRcns = $rcns->groupBy('CNTDOCID');
-
-        // Verificar si la vista existe
-        if (!view()->exists('report_rcn')) {
-            return response()->json(['error' => 'Vista report_rcn no encontrada.'], 500);
-        }
-
-        // Generar el PDF utilizando la vista 'report_rcn' y pasar las variables necesarias
-        $pdf = PDF::loadView('report_rcn', [
-            'groupedRcns' => $groupedRcns,
-            'startDate' => $rcns->first()->ACMROIFREC,
-            'endDate' => $rcns->first()->ACMROIFREC
-        ]);
-
-        // Agregar numeración de páginas
-        $pdf->output();
-        $canvas = $pdf->getDomPDF()->getCanvas();
-        $canvas->page_script(function ($pageNumber, $pageCount, $canvas, $fontMetrics) {
-            $text = "Página $pageNumber de $pageCount";
-            $font = $fontMetrics->get_font('Arial', 'normal');
-            $size = 8;
-            $width = $canvas->get_width();
-            $height = $canvas->get_height();
-            $textWidth = $fontMetrics->getTextWidth($text, $font, $size);
-            $canvas->text($width - $textWidth - 20, $height - 20, $text, $font, $size);
-        });
-
-        return $pdf->stream('order_report_' . $ACMROINDOC . '.pdf'); // Mostrar el PDF en línea
-
-    } catch (\Exception $e) {
-        // Registrar el error para depuración
-        Log::error("Error generating PDF: " . $e->getMessage());
-        return response()->json(['error' => 'Error al generar el PDF: ' . $e->getMessage()], 500);
-    }
-}
+  
 
 public function index(Request $request)
 {
@@ -565,6 +491,7 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
         }
     }
 
+
     public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costoTotal, $costoUnitario, $order, $provider, $usuario, $fechaActual, $horaActual)
     {
         try {
@@ -594,6 +521,16 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
             $acmroiVolt = number_format((float) ($producto->INPRODVOL * $cantidadRecibida), 6, '.', '');
             $acmroiPesot = number_format((float) ($producto->INPRODPESO * $cantidadRecibida), 6, '.', '');
     
+            // Obtener los valores de ACMVOIFDOC, ACMVOIFDO2 desde acmvor1
+            $ACMVOIFDOC = $order->ACMVOIFDOC ?? null;  // Valor numérico
+            $ACMVOIFDO2 = DB::table('acmvor1')
+                ->where('ACMVOIDOC', $order->ACMVOIDOC)
+                ->value('ACMVOIFDO2');  // Fecha de OL desde acmvor1
+    
+            // Fecha de recepción de la pantalla
+            $reception_date = $validatedData['reception_date'] ?? now()->toDateString();
+    
+            // Datos a insertar en acmroi
             $insertData = [
                 'CNCIASID' => 1,
                 'ACMROITDOC' => 'RCN',
@@ -601,17 +538,17 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
                 'CNTDOCID' => 'OL1',
                 'ACMROIDOC' => isset($order->ACMVOIDOC) ? (int) $order->ACMVOIDOC : 0,
                 'ACMROILIN' => $acmroilin,
-                'ACMROIFREC' => $order->ACMROIFREC ?? null,
+                'ACMROIFREC' => $reception_date,  // Fecha de recepción de la pantalla
                 'CNCDIRID' => isset($provider->CNCDIRID) ? (int) $provider->CNCDIRID : 0,
                 'INALMNID' => isset($validatedData['store']) ? substr($validatedData['store'], 0, 15) : '',
                 'ACMVOIAOD' => isset($order->ACMVOIAOD) ? substr($order->ACMVOIAOD, 0, 3) : '',
                 'CNCMNMID' => isset($order->CNCMNMID) ? substr($order->CNCMNMID, 0, 3) : '',
-                'ACMROIFDOC' => $order->ACMROIFDOC ?? null,
+                'ACMROIFDOC' => $reception_date,  // Guardar la fecha de recepción en ACMROIFDOC
                 'ACMROIUSRC' => $usuario,
-                'ACMROIFCEP' => $order->ACMROIFCEP ?? null,
-                'ACMROIFREQ' => $order->ACMROIFREQ ?? null,
-                'ACMROIFTRN' => $order->ACMROIFTRN ?? null,
-                'ACMROIFCNT' => $order->ACMROIFCNT ?? null,
+                'ACMROIFCEP' => $reception_date,  // Guardar la fecha de recepción en ACMROIFCEP
+                'ACMROIFREQ' => $reception_date,  // Guardar la fecha de recepción en ACMROIFREQ
+                'ACMROIFTRN' => $reception_date,  // Fecha de recepción de la pantalla
+                'ACMROIFCNT' => $reception_date,  // Fecha de recepción de la pantalla
                 'ACMVOIPR' => $order->ACMVOIPR,
                 'INPRODID' => (int) $partida['ACMVOIPRID'],
                 'ACMROIDSC' => isset($partida['ACMVOIPRDS']) ? substr($partida['ACMVOIPRDS'], 0, 60) : '',
@@ -628,8 +565,8 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
                 'ACMROIDOI2' => 'RCN',
                 'ACMROITDOCCAN' => ' ',
                 'ACMROINDOCCAN' => 0,
-                'ACMROIDOI3' => 'PC',
-                'ACMROIDOC3' => $this->getNewCNTDOCNSIG(),
+                'ACMROIDOI3' => '   ',
+                'ACMROIDOC3' => 0,
                 'ACMROIREF' => isset($validatedData['reference']) ? substr($validatedData['reference'], 0, 60) : '',
                 'ACMROITREF' => isset($validatedData['reference_type']) ? (int) $validatedData['reference_type'] : 0,
                 'ACRCOICD01ID' => 'REQ',
@@ -640,9 +577,9 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
                 'ACMROIFSAL' => $fechaActual->format('Y-m-d H:i:s'),
                 'ACMROIFECC' => '1753-01-01 00:00:00.000',
                 'ACMROIACCT' => 1,
-                'ACMROIFOC' => '1753-01-01 00:00:00.000',
+                'ACMROIFOC' => $ACMVOIFDO2,  // Fecha OL desde acmvor1
                 'ACMROICXP' => 'N',
-                'ACMROIFDC' => $order->ACMROIFCEP ?? null,
+                'ACMROIFDC' => $reception_date,  // Guardar la fecha de recepción en ACMROIFDC
                 'ACMROIFVN' => '1753-01-01 00:00:00.000',
                 'ACMROING2' => $costoTotal,
                 'ACMROINI2' => $costoTotal * 0.16,
@@ -651,6 +588,75 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
                 'ACMROIPESOU' => $acmroiPesou,
                 'ACMROIVOLT' => $acmroiVolt,
                 'ACMROIPESOT' => $acmroiPesot,
+                'ACMROINPED'=> 0,
+                'ACMROIDEM'=> 0,
+                'ACMVOIMOD'=> 'N',
+                'ACMVOITCMB'=> 0,
+                'ACMVOIFOB'=> ' ',
+                'ACMROIFP'=> 0,
+                'ACMROIFM'=> 0,
+                'ACMROIFI'=> 0,
+                'ACMROIFG'=> 0,
+                'ACACTLID'=> '          ',
+                'ACACSGID'=> '          ',
+                'ACACANID'=> '          ',
+                'ACMROISFJ'=> 0,
+                'ACMROIFPR'=> '                    ',
+                'ACMROILOTE'=> '                              ',
+                'ACMROIUB1'=> '          ',
+                'ACMROIUB2'=> '          ',
+                'ACMROIUB4'=> '          ',
+                'ACMROIPAD1'=> 0,
+                'ACMROIPFC1'=> '                    ',
+                'ACMROIPAD2'=> 0,
+                'ACMROIPFC2'=> '                    ',
+                'ACMROIPAD3'=> 0,
+                'ACMROIPFC3'=> '   ',
+                'ACMROIDCP1'=> 0,
+                'ACMROICIP1'=> 0,
+                'ACMROIOBS'=> '',
+                'ACMROIYY'=> 0,
+                'ACMROICTGOID'=> '               ',
+                'ACMROICTGODSC'=> '                                        ',
+                'ACMROIACTSID'=> 0,
+                'ACMROIACTSDSC'=> '                                                            ',
+                'ACAUTRID'=> '          ',
+                'ACMROILDP1'=> 0,
+                'ACMROIDOI4'=> '   ',
+                'ACMROIDOC4'=> 0,
+                'ACMROIQTYC'=> 0,
+                'ACMROIQTYQ'=> 0,
+                'ACMROIQTYT'=> 0,
+                'ACACCRLT'=> ' ',
+                'ACMROIFP2'=> 0,
+                'ACMROIFM2'=> 0,
+                'ACMROIFI2'=> 0,
+                'ACMROIFG2'=> 0,
+                'ACMROICCAD'=> '   ',
+                'ACMROIRET'=> ' ',
+                'ACMROIUGPT'=> '          ',
+                'ACMROICEP'=> 0,
+                'ACMROIMEP'=> 0,
+                'ACMROIBGP'=> ' ',
+                'ACMROIEMTID'=> 0,
+                'ACMROIEMTDSC'=> '                                                                                                                        ',
+                'ACMROICHOF'=> '                                                            ',
+                'ACMROIGUIA'=> '                    ',
+                'ACMROIPLAC'=> '               ',
+                'ACMROIRUTA'=> '     ',
+                'ACMROINECO'=> '                    ',
+                'ACMROIOBST'=> '                                                                                                                        ',
+                'ACMROIQTO'=> 0,
+                'ACRCOICGJR01ID'=> '               ',
+                'ACRCOICGJR02ID'=> '               ',
+                'ACRCOICGJR03ID'=> '               ',
+                'ACRCOICGJR04ID'=> '               ',
+                'ACRCOICGJR05ID'=> '               ',
+                'ACRCOICGJR06ID'=> '               ',
+                'ACRCOICGJR07ID'=> '               ',
+                'ACRCOICGJR08ID'=> '               ',
+                'ACRCOICGJR09ID'=> '               ',
+                'ACMROIABC'=> ' ',
             ];
     
             Log::info('Datos que se insertarán en acmroi:', $insertData);
@@ -667,6 +673,7 @@ public function insertPartidas($validatedData, $cantidadesRecibidas, $preciosUni
             throw $e;
         }
     }
+    
     
 
     public function updateInsdos($storeId, $productId, $cantidadRecibida, $costoTotal)

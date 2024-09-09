@@ -1,11 +1,10 @@
 $(document).ready(function () {
     function cleanNumber(value) {
-        // Permitir solo números y puntos decimales
-        return value.replace(/[^0-9.]/g, '').trim();
+        return value.replace(/[^0-9.]/g, '').trim(); // Solo permite números y decimales
     }
 
     function formatCurrency(value) {
-        // Formatear el valor como moneda con hasta cuatro decimales
+        // Formatear valor como moneda con hasta cuatro decimales
         if (!isNaN(value) && value !== "") {
             return '$' + parseFloat(value).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
         }
@@ -14,49 +13,33 @@ $(document).ready(function () {
 
     function formatPrecio(input) {
         let cleanValue = cleanNumber(input.value);
-
-        if (cleanValue === '') {
-            input.value = '';
-        } else if (!isNaN(cleanValue)) {
-            input.value = formatCurrency(cleanValue);
-        }
+        input.value = cleanValue !== '' && !isNaN(cleanValue) ? formatCurrency(cleanValue) : ''; // Formatea si es válido
     }
 
-    // Inicializa los campos con formato de moneda
     $(".precio-unitario, #flete").each(function () {
-        formatPrecio(this);
+        formatPrecio(this); // Inicializa los campos de moneda
     });
 
     function limitCantidad(input) {
-        const max = parseFloat(input.getAttribute("max"));
-        let value = cleanNumber(input.value);
+        const max = parseFloat(input.getAttribute("max")) || 0;
+        let value = parseFloat(cleanNumber(input.value)) || 0;
 
-        // Permitir ingreso de decimales con ceros al final
-        let numericValue = parseFloat(value);
-        
-        // Validar valor máximo y mínimo
-        if (!isNaN(numericValue) && numericValue > max) {
-            numericValue = max;
-        } else if (numericValue < 0 || isNaN(numericValue)) {
-            numericValue = 0;
-        }
+        if (value > max) value = max; // Limita al valor máximo
+        if (value < 0) value = 0; // Evita números negativos
 
-        input.value = numericValue.toString();
-
+        input.value = value.toString();
         calculateTotals(input);
     }
 
     function limitPrecio(input) {
-        let value = parseFloat(cleanNumber(input.value));
-        const originalValue = parseFloat(input.getAttribute('data-original-value'));
+        let value = parseFloat(cleanNumber(input.value)) || 0;
+        const originalValue = parseFloat(input.getAttribute('data-original-value')) || 0;
 
-        // Limitar el precio al valor original si es mayor o NaN o negativo
-        if (isNaN(value) || value < 0 || value > originalValue) {
+        if (value > originalValue || isNaN(value) || value < 0) {
             value = originalValue;
         }
 
         input.value = value;
-
         calculateTotals(input);
     }
 
@@ -64,9 +47,8 @@ $(document).ready(function () {
         const row = input.closest('tr');
         const cantidadRecibida = parseFloat(cleanNumber(row.querySelector('.cantidad-recibida').value)) || 0;
         const precioUnitario = parseFloat(cleanNumber(row.querySelector('.precio-unitario').value)) || 0;
-        const iva = parseFloat(row.cells[8].innerText) || 0;
+        const iva = parseFloat(row.cells[8]?.innerText) || 0;
 
-        // Calcular subtotal y total con cantidad recibida incluyendo 0
         const subtotal = cantidadRecibida * precioUnitario;
         const total = subtotal + (subtotal * (iva / 100));
 
@@ -86,47 +68,32 @@ $(document).ready(function () {
 
     $(document).on("input", ".cantidad-recibida", function () {
         let cleanValue = cleanNumber(this.value);
-        const max = parseFloat(this.getAttribute('max'));
+        const max = parseFloat(this.getAttribute('max')) || 0;
 
-        // Permitir la entrada de decimales con ceros al final
-        const parts = cleanValue.split('.');
-        if (parts.length > 2) {
-            cleanValue = parts[0] + '.' + parts[1]; // Eliminar puntos adicionales
-        }
-
-        // Validar el límite máximo solo si el valor no es NaN y es mayor al máximo
         if (!isNaN(cleanValue) && parseFloat(cleanValue) > max) {
-            cleanValue = max.toFixed(4); // Limitar al valor máximo permitido
+            cleanValue = max.toFixed(4);
         }
 
-        // Asegurar que el valor 0 sea mostrado correctamente, incluyendo decimales como 10.0, 10.00, etc.
         this.value = cleanValue !== '' ? cleanValue : '0';
-
         calculateTotals(this);
     });
 
     $(document).on("input", ".precio-unitario, #flete", function () {
-        let inputVal = this.value;
-        let cleanValue = cleanNumber(inputVal);
+        let cleanValue = cleanNumber(this.value);
 
-        // Permitir la entrada de decimales y punto al final
         if (cleanValue === '' || cleanValue.endsWith('.') || (!isNaN(cleanValue) && cleanValue.split('.').length <= 2)) {
-            this.value = cleanValue; // Permitir decimales y el punto al final
+            this.value = cleanValue;
         }
     });
 
     $(document).on("blur", ".precio-unitario", function () {
         limitPrecio(this);
-        formatPrecio(this); // Formatear como moneda al perder el foco si el valor es válido
+        formatPrecio(this);
     });
 
     $(document).on("blur", "#flete", function () {
         let cleanValue = cleanNumber(this.value);
-        if (cleanValue !== '' && !isNaN(cleanValue)) {
-            this.value = formatCurrency(cleanValue);
-        } else {
-            this.value = ''; // Si no es válido, mantener vacío
-        }
+        this.value = cleanValue !== '' && !isNaN(cleanValue) ? formatCurrency(cleanValue) : '';
     });
 
     $("#receptionForm").on("submit", function (e) {
@@ -139,8 +106,6 @@ $(document).ready(function () {
 
         axios.post(this.action, formData)
             .then(response => {
-                console.log(response);
-
                 if (response.data.success) {
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message}
@@ -153,19 +118,26 @@ $(document).ready(function () {
                     document.getElementById('closeModalButton').classList.add('d-none');
 
                     document.getElementById('printReportButton').addEventListener('click', function () {
-                        axios.get(`/print-report?ACMROINDOC=${response.data.ACMROINDOC}&ACMROIDOC=${response.data.ACMROIDOC}`, {
-                            responseType: 'blob'
-                        }).then(pdfResponse => {
-                            const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
-                            window.open(fileURL, '_blank');
-                            const downloadLink = document.createElement('a');
-                            downloadLink.href = fileURL;
-                            downloadLink.download = `order_report_${response.data.ACMROINDOC}.pdf`;
-                            downloadLink.click();
-                        }).catch(error => {
-                            console.error("Error loading the PDF:", error);
-                        });
+                        const ACMROINDOC = response.data.ACMROINDOC;
+                        const ACMROIDOC = response.data.ACMROIDOC;
+                    
+                        if (ACMROINDOC && ACMROIDOC) {
+                            axios.get(`/print-report/${ACMROINDOC}`, {
+                                responseType: 'blob'
+                            })
+                            .then(pdfResponse => {
+                                const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
+                                window.open(fileURL, '_blank');
+                            })
+                            .catch(error => {
+                                console.error("Error loading the PDF:", error);
+                                alert("Error al cargar el PDF. Inténtalo nuevamente.");
+                            });
+                        } else {
+                            alert("Error: ACMROINDOC o ACMROIDOC faltantes.");
+                        }
                     });
+                    
 
                 } else {
                     document.querySelector('.modal-body p').innerHTML = `
@@ -179,7 +151,7 @@ $(document).ready(function () {
                 }
 
                 document.getElementById('goToOrdersButton').addEventListener('click', function () {
-                    window.location.href = "{{ route('orders') }}";
+                    window.location.href = '/orders';
                 });
             })
             .catch(error => {
@@ -193,10 +165,8 @@ $(document).ready(function () {
                 document.getElementById('closeModalButton').classList.add('d-none');
 
                 document.getElementById('goToOrdersButton').addEventListener('click', function () {
-                    window.location.href = "{{ route('orders') }}";
+                    window.location.href = '/orders';
                 });
-
-                console.error("Error durante la solicitud:", error.response ? error.response.data : error.message);
             });
     });
 
