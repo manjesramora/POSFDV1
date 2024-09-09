@@ -33,10 +33,10 @@ class FreightController extends Controller
         // Si no se aplican filtros, retornar una colección vacía
         if (!$filtersApplied) {
             $freights = collect(); // Colección vacía
-            return view('freights', compact('freights'));
+            return view('freights', compact('freights', 'filtersApplied'));
         }
 
-        // Filtro por nombre de proveedor
+        // Aplicar filtros
         if ($request->filled('CNCDIRNOM')) {
             $providerName = $request->input('CNCDIRNOM');
             $query->whereHas('provider', function ($q) use ($providerName) {
@@ -44,7 +44,6 @@ class FreightController extends Controller
             });
         }
 
-        // Filtro por nombre de transportista
         if ($request->filled('CNCDIRNOM_TRANSP')) {
             $transporterName = $request->input('CNCDIRNOM_TRANSP');
             $query->whereHas('carrier', function ($q) use ($transporterName) {
@@ -52,22 +51,19 @@ class FreightController extends Controller
             });
         }
 
-        // Filtros de fecha (opcional)
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             $query->whereBetween('reception_date', [$startDate, $endDate]);
         }
 
-        // Ordenamiento
         $sortBy = $request->input('sort_by', 'id');
         $sortOrder = $request->input('sort_order', 'asc');
         $query->orderBy($sortBy, $sortOrder);
 
-        // Paginación
         $freights = $query->paginate(10)->appends($request->all());
 
-        return view('freights', compact('freights'));
+        return view('freights', compact('freights', 'filtersApplied'));
     }
 
     public function generatePDF(Request $request)
@@ -82,7 +78,6 @@ class FreightController extends Controller
             });
         }
 
-        // Filtros de búsqueda por transportista
         if ($request->filled('CNCDIRNOM_TRANSP')) {
             $transporterName = $request->input('CNCDIRNOM_TRANSP');
             $query->whereHas('carrier', function ($q) use ($transporterName) {
@@ -90,36 +85,32 @@ class FreightController extends Controller
             });
         }
 
-        // Filtros de fecha
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
         } else {
-            // Obtener la fecha más antigua y la más reciente de la base de datos
             $startDate = Freight::min('reception_date');
             $endDate = Freight::max('reception_date');
         }
 
         $query->whereBetween('reception_date', [$startDate, $endDate]);
 
-        // Ordenamiento
-        $sortBy = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'asc');
-        $query->orderBy($sortBy, $sortOrder);
-
-        $freights = $query->get(); // Obtén todos los registros para el PDF
-
-        // Agrupar por proveedor
+        $freights = $query->get();
         $groupedFreights = $freights->groupBy('supplier_name');
 
-        // Cálculo de totales generales
         $totalCost = $freights->sum('cost');
         $totalFreight = $freights->sum('freight');
 
-        // Generar el PDF usando el método stream en lugar de download
-        $pdf = PDF::loadView('report_freights', compact('groupedFreights', 'totalCost', 'totalFreight', 'startDate', 'endDate'));
+        // Verificar si todas las fechas son iguales
+        $uniqueDates = $freights->pluck('reception_date')->unique();
+        if ($uniqueDates->count() === 1) {
+            $singleDate = $uniqueDates->first();
+        } else {
+            $singleDate = null;
+        }
 
-        // Abrir el PDF en una nueva pestaña (stream)
+        $pdf = PDF::loadView('report_freights', compact('groupedFreights', 'totalCost', 'totalFreight', 'startDate', 'endDate', 'singleDate'));
+
         return $pdf->stream('freights_report.pdf');
     }
 }

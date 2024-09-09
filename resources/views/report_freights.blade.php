@@ -99,7 +99,13 @@
         <h1 style="margin-right: 100px;">REPORTE DE FLETE</h1>
         <p style="margin-right: 100px;">FERRETERIA DURANGO</p>
         <br><br><br>
+
+        <!-- Mostrar una fecha única si todas son iguales, o un rango de fechas -->
+        @if($singleDate)
+        <p style="margin-right: 100px;">{{ \Carbon\Carbon::parse($singleDate)->format('d/m/Y') }}</p>
+        @else
         <p style="margin-right: 100px;">{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') ?? '00/00/0000' }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') ?? '00/00/0000' }}</p>
+        @endif
         <br><br>
     </div>
 

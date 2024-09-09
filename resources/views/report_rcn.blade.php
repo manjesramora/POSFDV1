@@ -138,16 +138,35 @@
             border-top: none !important;
             /* Quita la línea inferior */
         }
+
+        .signature-container {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .signature-line {
+            text-align: center;
+            width: 200px;
+            margin-top: 50px;
+            border-top: 1px solid black;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
     </style>
 </head>
 
 <body>
     <div class="header">
         <img src="{{ public_path('assets/img/LogoFD.jpeg') }}" alt="Logo">
-        <h1 style="margin-right: 100px;">REPORTE DE RCN</h1>
-        <p style="margin-right: 100px;">FERRETERIA DURANGO</p>
+        <h1 style="margin-right: 100px; font-size: 24px;">REPORTE DE RCN</h1>
+        <p style="margin-right: 100px; font-size: 16px;">FERRETERIA DURANGO</p>
         <br><br><br>
-        <p style="margin-right: 100px;">{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') ?? '00/00/0000' }} - {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') ?? '00/00/0000' }}</p>
+        <!-- Fechas: Elaboración e impresión -->
+        <p style="margin-right: 100px;"><strong>Fecha de Elaboración:</strong> {{ $fechaElaboracion }}</p>
+        <p style="margin-right: 11.5px;"><strong>Fecha de Impresión:</strong> {{ $fechaImpresion }}</p>
         <br><br>
 
         <!-- Datos adicionales organizados en una fila con dos subcolumnas -->
@@ -155,26 +174,29 @@
             <!-- Primera subcolumna a la izquierda -->
             <a class="info-column subcolumn" style="text-align: left;">
                 <p>
-                    <span style="margin-right: 150px;">Recepción: RCN {{ $numeroRcn }}</span>
-                    <span>Tipo ref.: {{ $tipoRef }}</span>
+                    <span style="margin-right: 145px;"><strong>Recepción:</strong> RCN {{ $numeroRcn }}</span>
+                    <span><strong>Tipo ref.:</strong> {{ $tipoRef }}</span>
                 </p>
 
-                <p>
-                    <span style="margin-right: 225px;">Doc. Prov.:</span>
-                    <span>No. ref.: {{ $numeroRef }}</span>
+                <p style="margin-top: 5px;">
+                    <span><strong style="margin-right: 220px;">Doc. Prov.:</strong></span>
+                    <span><strong>No. ref.:</strong> {{ $numeroRef }}</span>
                 </p>
 
-                <p>
-                    <span style="margin-right: 200px;">O.C.: OL {{ $numeroOL }}</span>
-                    <span>Proveedor: {{ $nombreProveedor }}</span>
+                <p style="margin-top: 5px;">
+                    <span style="margin-right: 199px;"><strong>O.C.:</strong> OL {{ $numeroOL }}</span>
+                    <span><strong>Proveedor:</strong> {{ $nombreProveedor }}</span>
                 </p>
 
-                <p>Almacén: {{ $almacenId }}</p>
+                <p style="margin-top: 15px;">
+                    <strong>Almacén:</strong> {{ $almacenId }} CENTRO DE DISTRIBUCIÓN {{ $branchName }}
+                </p>
+
             </a>
         </div>
 
         @foreach ($groupedRcns as $groupKey => $rcns)
-       
+
         <table>
             <thead>
                 <tr>
@@ -203,13 +225,13 @@
                     <td>{{ intval($rcn->ACMROILIN) }}</td>
                     <td>{{ $rcn->INPRODI2 }}</td>
                     <td class="merge-right">{{ $rcn->ACMROIDSC }}</td>
-                    <td class="merge-left">{{ $rcn->INPRODI3 }}</td>
+                    <td class="merge-left">{{ $rcn->INPRODCBR }}</td>
                     <td>{{ $rcn->ACMROIUMT }}</td>
                     <td>{{ number_format($rcn->ACMROIPESOU, 2) }}</td>
                     <td>{{ number_format($rcn->ACMROIVOLU, 2) }}</td>
                     <td>{{ number_format($rcn->ACMROIQT, 2) }}</td>
-                    <td>{{ number_format($rcn->ACMROINP, 4) }}</td>
-                    <td>{{ number_format($rcn->ACMROING, 4) }}</td>
+                    <td>{{ number_format($rcn->ACMROINP, 2) }}</td>
+                    <td>{{ number_format($rcn->ACMROING, 2) }}</td>
                 </tr>
                 @php
                 $totalPeso += $rcn->ACMROIPESOU;
@@ -229,21 +251,35 @@
                     <td class="fw-bold">{{ number_format($totalPeso, 2) }}</td>
                     <td class="fw-bold">{{ number_format($totalVolumen, 2) }}</td>
                     <td colspan="2" class="text-end fw-bold merge-right no-horizontal-border">Subtotal:</td>
-                    <td class="fw-bold merge-left no-horizontal-border">{{ number_format($subtotal, 4) }}</td>
+                    <td class="fw-bold merge-left no-horizontal-border">{{ number_format($subtotal, 2) }}</td>
                 </tr>
                 <tr class="no-top-border">
                     <td colspan="7" class="no-border"></td>
                     <td colspan="2" class="text-end fw-bold merge-right no-horizontal-border">IVA (16%):</td>
-                    <td class="fw-bold merge-left no-horizontal-border">{{ number_format($iva, 4) }}</td>
+                    <td class="fw-bold merge-left no-horizontal-border">{{ number_format($iva, 2) }}</td>
                 </tr>
                 <tr>
                     <td colspan="7" class="no-border"></td>
                     <td colspan="2" class="text-end fw-bold merge-right merge-top">Total:</td>
-                    <td class="fw-bold merge-left merge-top">{{ number_format($total, 4) }}</td>
+                    <td class="fw-bold merge-left merge-top">{{ number_format($total, 2) }}</td>
                 </tr>
             </tbody>
         </table>
         @endforeach
+
+        <!-- Forzar un salto de página antes de las firmas 
+        <div class="page-break"></div>
+
+        <div style="position: fixed; bottom: 100px; width: 100%; text-align: center;">
+            <div style="display: inline-block; margin-right: 100px; text-align: center;">
+                ___________________________________
+                <p style="margin-top: 10px;">Bo. Vo.</p>
+            </div>
+            <div style="display: inline-block; text-align: center;">
+                ___________________________________
+                <p style="margin-top: 10px;">ALMACENISTA</p>
+            </div>
+        </div>-->
 </body>
 
 </html>

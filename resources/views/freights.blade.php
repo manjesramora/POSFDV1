@@ -79,17 +79,23 @@
                     </div>
 
 
-                    <!-- Botones para imprimir reporte y mostrar todas -->
+                    <!-- Botón para imprimir reporte, deshabilitado si no se aplicaron filtros -->
                     <div class="container" style="height: 60px; margin-top: 40px;">
                         <div class="d-flex justify-content-center">
                             <div class="me-2">
-                                <!-- Botón para imprimir reporte -->
+                                <!-- Verifica si se aplicaron filtros -->
+                                @if($filtersApplied)
                                 <a href="{{ route('freights.pdf', request()->all()) }}" class="btn btn-secondary" target="_blank">
                                     <i class="fas fa-print mr-2"></i> Imprimir Reporte
                                 </a>
+                                @else
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="fas fa-print mr-2"></i> Imprimir Reporte
+                                </button>
+                                @endif
                             </div>
                             <div>
-                                <!-- Botón para mostrar todas con un ícono de "borrador" (eraser) -->
+                                <!-- Botón para limpiar campos -->
                                 <button type="button" class="btn btn-danger" onclick="limpiarCampos()">
                                     <i class="fas fa-eraser"></i>
                                 </button>

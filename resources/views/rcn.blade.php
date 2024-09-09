@@ -29,44 +29,60 @@
                     <br><br>
 
                     <!-- Filtro de búsqueda y fechas combinado -->
-                    <div class="container">
-                        <div class="row align-items-center justify-content-center mb-4 h-100">
-                            <div class="col-md-10">
-                                <div class="d-flex justify-content-center align-items-center h-100">
-                                    <!-- Formulario combinado para búsqueda y filtro de fechas -->
-                                    <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="combinedForm" style="margin-top: 30px;">
-                                        <!-- Campo de búsqueda por número de OL -->
-                                        <div class="input-group me-2" style="width: 215px;">
-                                            <input type="text" class="form-control uper" placeholder="Buscar número de OL" id="searchUser" name="search" value="{{ request('search') }}" onkeypress="if(event.keyCode === 13) { this.form.submit(); }">
-                                        </div>
-                                        <!-- Campo de fecha de inicio -->
-                                        <div class="me-2">
-                                            <label for="start_date" class="form-label">Desde</label>
-                                            <div class="input-group">
-                                                <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" onchange="validateDates()">
-                                            </div>
-                                        </div>
-                                        <!-- Campo de fecha de fin -->
-                                        <div class="me-2">
-                                            <label for="end_date" class="form-label">Hasta</label>
-                                            <div class="input-group">
-                                                <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" onchange="validateDates()">
-                                            </div>
-                                        </div>
-                                        <!-- Botón único para buscar y filtrar -->
-                                        <div class="me-2">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fa-solid fa-magnifying-glass"></i>
-                                            </button>
-                                        </div>
 
-                                        <!-- Botón para mostrar todas -->
-                                        <div>
-                                            <button type="button" class="btn btn-secondary" onclick="resetFilters()">Mostrar todas</button>
-                                        </div>
-                                    </form>
+                    <div class="row align-items-center justify-content-center mb-4 h-100" style="margin-top: -30px;">
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <!-- Formulario combinado para búsqueda y filtro de fechas -->
+                            <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="combinedForm" style="margin-top: 30px;">
+
+                                <!-- Filtro de búsqueda por número de OL -->
+                                <div class="input-group me-2" style="width: 300px;">
+                                    <label for="start_date" class="form-label">Num. OL</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control uper" placeholder="Buscar..." id="searchUser" name="search" value="{{ request('search') }}" onkeypress="if(event.keyCode === 13) { this.form.submit(); }">
+                                    </div>
                                 </div>
-                            </div>
+
+                                <!-- Filtro de fecha de inicio -->
+                                <div class="me-2">
+                                    <label for="start_date" class="form-label">Desde</label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" onchange="validateDates()">
+                                    </div>
+                                </div>
+
+                                <!-- Filtro de fecha de fin -->
+                                <div class="me-2">
+                                    <label for="end_date" class="form-label">Hasta</label>
+                                    <div class="input-group">
+                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" onchange="validateDates()">
+                                    </div>
+                                </div>
+
+                                <!-- Filtro de Proveedor Nombre -->
+                                <div class="me-2 col-md-5 position-relative">
+                                    <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
+                                    <div class="input-group">
+                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
+                                    </div>
+                                    <!-- Dropdown para Proveedor -->
+                                    <div id="nameDropdown" class="dropdown-menu"></div>
+                                </div>
+
+                                <!-- Botón único para buscar y filtrar -->
+                                <div class="me-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa-solid fa-magnifying-glass"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Botón para mostrar todas -->
+                                <div>
+                                    <button type="button" class="btn btn-danger" onclick="limpiarCampos()">
+                                        <i class="fas fa-eraser"></i>
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
 
@@ -75,33 +91,26 @@
                         <div class="card shadow mb-4">
                             <div class="card-body">
                                 <div class="table-responsive small-font">
+                                    @if (!$filtersApplied)
+                                    <!-- Mostrar un mensaje si no se han aplicado filtros -->
+                                    <div class="alert alert-info text-center">
+                                        Por favor, aplica filtros para ver los registros.
+                                    </div>
+                                    @elseif ($rcns->isEmpty())
+                                    <!-- Mostrar un mensaje si no hay resultados después de aplicar los filtros -->
+                                    <div class="alert alert-warning text-center">
+                                        No se encontraron resultados que coincidan con los filtros aplicados.
+                                    </div>
+                                    @else
+                                    <!-- Mostrar la tabla solo si se aplicaron filtros y hay resultados -->
                                     <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
-                                                @php
-                                                $columns = [
-                                                    'CNTDOCID' => 'Tipo Documento',
-                                                    'ACMROIDOC' => 'Número de OL',
-                                                    'ACMROIFREC' => 'Fecha Recepción',
-                                                ];
-                                                @endphp
-                                                @foreach ($columns as $field => $label)
-                                                <th class="col-1 text-center align-middle sortable">
-                                                    <a href="{{ route('rcn', ['sort_by' => $field, 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        {{ $label }}
-                                                        @if(request('sort_by') == $field)
-                                                            @if(request('sort_order') == 'asc')
-                                                                <i class="fas fa-sort-up"></i>
-                                                            @else
-                                                                <i class="fas fa-sort-down"></i>
-                                                            @endif
-                                                        @else
-                                                            <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
-                                                        @endif
-                                                    </a>
-                                                </th>
-                                                @endforeach
-                                                <!-- Nueva columna para mostrar el número de RCNs -->
+                                                <!-- Definir columnas -->
+                                                <th class="col-1 text-center">Tipo Documento</th>
+                                                <th class="col-1 text-center">Número de OL</th>
+                                                <th class="col-1 text-center">Fecha Recepción</th>
+                                                <th class="col-1 text-center">Proveedor</th>
                                                 <th class="col-1 text-center">Número de RCNs</th>
                                                 <th class="col-1 text-center">RCNs</th>
                                             </tr>
@@ -112,6 +121,7 @@
                                                 <td class="col-1 text-center align-middle">{{ $rcn->CNTDOCID }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $rcn->ACMROIDOC }}</td>
                                                 <td class="col-1 text-center align-middle">{{ \Carbon\Carbon::parse($rcn->ACMROIFREC)->format('d/m/Y') }}</td>
+                                                <td class="col-1 text-center align-middle">{{ $rcn->CNCDIRNOM }}</td>
                                                 <td class="col-1 text-center align-middle">{{ $rcn->numero_de_rcns }}</td>
                                                 <td class="col-1 text-center align-middle">
                                                     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#rcnModal{{ $rcn->ACMROIDOC }}">
@@ -122,10 +132,14 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    @endif
                                 </div>
+                                <!-- Mostrar paginación solo si hay resultados -->
+                                @if ($filtersApplied && !$rcns->isEmpty())
                                 <div class="d-flex justify-content-center mt-3">
                                     {{ $rcns->appends(request()->all())->links() }}
                                 </div>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -206,23 +220,23 @@
                         </thead>
                         <tbody>
                             @if($allDetailedRcns->has($rcn->ACMROIDOC))
-                                @foreach($allDetailedRcns[$rcn->ACMROIDOC]->unique('ACMROINDOC') as $associatedRcn)
-                                    <tr>
-                                        <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
-                                        <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
-                                        <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
-                                        <td class="col-2 text-center align-middle">
-                                            <!-- Botón para abrir el PDF en una nueva pestaña -->
-                                            <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
-                                                <i class="fas fa-print"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @endforeach
+                            @foreach($allDetailedRcns[$rcn->ACMROIDOC]->unique('ACMROINDOC') as $associatedRcn)
+                            <tr>
+                                <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
+                                <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
+                                <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
+                                <td class="col-2 text-center align-middle">
+                                    <!-- Botón para abrir el PDF en una nueva pestaña -->
+                                    <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
+                                        <i class="fas fa-print"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
                             @else
-                                <tr>
-                                    <td colspan="4" class="text-center">No hay RCNs asociados disponibles.</td>
-                                </tr>
+                            <tr>
+                                <td colspan="4" class="text-center">No hay RCNs asociados disponibles.</td>
+                            </tr>
                             @endif
                         </tbody>
                     </table>
@@ -233,7 +247,7 @@
             </div>
         </div>
     </div>
-@endforeach
+    @endforeach
 
 
 
