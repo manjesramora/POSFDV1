@@ -52,7 +52,7 @@
                                 <div class="me-2 col-md-5 position-relative">
                                     <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
                                     <div class="input-group">
-                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="" autocomplete="off">
+                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control uper" value="" autocomplete="off">
                                     </div>
                                     <!-- Dropdown para Proveedor -->
                                     <div id="nameDropdown" class="dropdown-menu"></div>
@@ -62,7 +62,7 @@
                                 <div class="me-2 col-md-5 position-relative">
                                     <label for="CNCDIRNOM_TRANSP" class="form-label">Transportista:</label>
                                     <div class="input-group">
-                                        <input type="text" name="CNCDIRNOM_TRANSP" id="CNCDIRNOM_TRANSP" class="form-control" value="" autocomplete="off">
+                                        <input type="text" name="CNCDIRNOM_TRANSP" id="CNCDIRNOM_TRANSP" class="form-control uper" value="" autocomplete="off">
                                     </div>
 
                                     <!-- Dropdown para Transportista -->
