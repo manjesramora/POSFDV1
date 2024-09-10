@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Freight;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class FreightController extends Controller
 {
@@ -22,20 +23,45 @@ class FreightController extends Controller
             return $next($request);
         });
     }
+
     public function index(Request $request)
     {
         $query = Freight::query();
+        
+        // Calcular la fecha máxima de hace 2 años a partir de hoy
+        $maxStartDate = now()->subYears(2)->format('Y-m-d');
     
         // Verificar si se aplicaron filtros
-        $filtersApplied = $request->filled('CNCDIRNOM') || $request->filled('CNCDIRNOM_TRANSP') || ($request->filled('start_date') && $request->filled('end_date'));
+        $filtersApplied = $request->filled('CNCDIRNOM') || $request->filled('CNCDIRNOM_TRANSP') || $request->filled('start_date') || $request->filled('end_date');
     
-        // Si no se aplican filtros, retornar una colección vacía
         if (!$filtersApplied) {
-            $freights = collect(); // Colección vacía
+            $freights = collect(); // Colección vacía si no se aplican filtros
             return view('freights', compact('freights', 'filtersApplied'));
         }
     
-        // Aplicar filtros
+        // Si se aplican filtros, limitar el rango de fechas
+        if ($request->filled('start_date')) {
+            $startDate = $request->input('start_date');
+            $endDate = $request->filled('end_date') ? $request->input('end_date') : now()->toDateString();
+            
+            // Si la fecha de inicio es anterior a 2 años, ajustarla al máximo permitido
+            if (Carbon::parse($startDate)->lt(Carbon::parse($maxStartDate))) {
+                $startDate = $maxStartDate;
+            }
+            
+            // Asegurarse de que el rango no exceda los 2 años
+            $maxEndDate = Carbon::parse($startDate)->addYears(2)->format('Y-m-d');
+            if (Carbon::parse($endDate)->gt(Carbon::parse($maxEndDate))) {
+                return back()->with('error', 'El rango de fechas no puede ser mayor a 2 años.');
+            }
+    
+            $query->whereBetween('reception_date', [$startDate, $endDate]);
+        } else {
+            // Si no se proporcionan fechas, limitar los resultados a los últimos 2 años
+            $query->whereBetween('reception_date', [$maxStartDate, now()->toDateString()]);
+        }
+    
+        // Aplicar otros filtros (proveedor y transportista)
         if ($request->filled('CNCDIRNOM')) {
             $providerName = $request->input('CNCDIRNOM');
             $query->whereHas('provider', function ($q) use ($providerName) {
@@ -50,23 +76,17 @@ class FreightController extends Controller
             });
         }
     
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $startDate = $request->input('start_date');
-            $endDate = $request->input('end_date');
-            $query->whereBetween('reception_date', [$startDate, $endDate]);
-        }
-    
-        // Manejo del ordenamiento
-        $sortBy = $request->input('sort_by', 'id'); // Por defecto, ordenar por 'id'
-        $sortOrder = $request->input('sort_order', 'asc'); // Por defecto, orden ascendente
+        // Ordenar los resultados
+        $sortBy = $request->input('sort_by', 'id');
+        $sortOrder = $request->input('sort_order', 'asc');
         $query->orderBy($sortBy, $sortOrder);
     
-        // Paginar los resultados
+        // Paginación
         $freights = $query->paginate(10)->appends($request->all());
     
         return view('freights', compact('freights', 'filtersApplied'));
-    }
-    
+    }    
+
     public function generatePDF(Request $request)
     {
         $query = Freight::query();

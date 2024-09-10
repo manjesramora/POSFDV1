@@ -33,7 +33,7 @@
                     <div class="row align-items-center justify-content-center mb-4 h-100" style="margin-top: -30px;">
                         <div class="d-flex justify-content-center align-items-center h-100">
                             <!-- Formulario combinado para búsqueda y filtro de fechas -->
-                            <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="combinedForm" style="margin-top: 30px;">
+                            <form method="GET" action="{{ route('rcn') }}" class="d-flex align-items-end" id="combinedForm" style="margin-top: 30px;" onsubmit="validateDates()">
 
                                 <!-- Filtro de búsqueda por número de OL -->
                                 <div class="input-group me-2" style="width: 300px;">
@@ -47,7 +47,7 @@
                                 <div class="me-2">
                                     <label for="start_date" class="form-label">Desde</label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" onchange="validateDates()">
+                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
                                     </div>
                                 </div>
 
@@ -55,19 +55,19 @@
                                 <div class="me-2">
                                     <label for="end_date" class="form-label">Hasta</label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" onchange="validateDates()">
+                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
                                     </div>
                                 </div>
 
-                                <!-- Filtro de Proveedor Nombre -->
                                 <div class="me-2 col-md-5 position-relative">
                                     <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
                                     <div class="input-group">
-                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
+                                        <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control uper" value="{{ request('CNCDIRNOM') }}" autocomplete="off" oninput="searchProvider()">
                                     </div>
                                     <!-- Dropdown para Proveedor -->
-                                    <div id="nameDropdown" class="dropdown-menu"></div>
+                                    <div id="nameDropdown" class="dropdown-menu" style="max-height: 200px; overflow-y: auto;"></div>
                                 </div>
+
 
                                 <!-- Botón único para buscar y filtrar -->
                                 <div class="me-2">
@@ -108,7 +108,7 @@
                                             <tr>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('rcn', ['sort_by' => 'CNTDOCID', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        Tipo Documento
+                                                        DOCUMENTO
                                                         @if(request('sort_by') == 'CNTDOCID')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>
@@ -122,7 +122,7 @@
                                                 </th>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('rcn', ['sort_by' => 'ACMROIDOC', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        Número de OL
+                                                        NUM. OL
                                                         @if(request('sort_by') == 'ACMROIDOC')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>
@@ -136,7 +136,7 @@
                                                 </th>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('rcn', ['sort_by' => 'ACMROIFREC', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        Fecha Recepción
+                                                        RECEPCION
                                                         @if(request('sort_by') == 'ACMROIFREC')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>
@@ -150,7 +150,7 @@
                                                 </th>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('rcn', ['sort_by' => 'CNCDIRNOM', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        Proveedor
+                                                        PROVEEDOR
                                                         @if(request('sort_by') == 'CNCDIRNOM')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>
@@ -164,7 +164,7 @@
                                                 </th>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('rcn', ['sort_by' => 'numero_de_rcns', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        Número de RCNs
+                                                        NUMERO DE RCNs
                                                         @if(request('sort_by') == 'numero_de_rcns')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>
