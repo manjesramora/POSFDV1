@@ -73,3 +73,11 @@ $(document).ready(function () {
         window.location.href = "/freights"; // Redirigir a la URL original sin parámetros
     };
 });
+
+function resetFilters() {
+    document.getElementById('start_date').value = '';
+    document.getElementById('end_date').value = '';
+    document.getElementById('filterForm').submit();
+}
+
+

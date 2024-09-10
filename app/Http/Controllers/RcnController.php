@@ -33,78 +33,54 @@ class RcnController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
         $search = $request->input('search');
-        $providerName = $request->input('CNCDIRNOM');  
-        $sortBy = $request->input('sort_by', 'ACMROIDOC');
-        $sortOrder = $request->input('sort_order', 'desc');
-    
-        // Verificar si algún filtro ha sido aplicado
+        $providerName = $request->input('CNCDIRNOM');
+        
+        // Definir el campo por el que se quiere ordenar y el orden
+        $sortBy = $request->input('sort_by', 'ACMROIDOC'); // Por defecto, ordenar por 'ACMROIDOC'
+        $sortOrder = $request->input('sort_order', 'desc'); // Por defecto, en orden descendente
+        
+        // Verificar si se aplicaron filtros
         $filtersApplied = $startDate || $endDate || $search || $providerName;
-    
-        $rcns = collect(); // Inicializar vacío para el caso en que no haya filtros
-        $allDetailedRcns = collect(); // Inicializar vacío por si no hay detalles
-    
+        
+        $rcns = collect(); // Inicializar como vacío si no hay filtros
+        $allDetailedRcns = collect(); // Inicializar como vacío si no hay detalles
+        
         if ($filtersApplied) {
-            // Generar una clave única de caché basada en la URL completa para evitar consultas repetidas
-            $cacheKey = 'rcns_' . md5($request->fullUrl());
+            // Consultar los datos de RCN con paginación y aplicando los filtros
+            $rcns = DB::table('ACMROI')
+                ->select(
+                    'ACMROI.ACMROIDOC',
+                    DB::raw('MIN(ACMROITDOC) as ACMROITDOC'),
+                    DB::raw('MIN(ACMROINDOC) as ACMROINDOC'),
+                    DB::raw('MIN(CNTDOCID) as CNTDOCID'),
+                    DB::raw('MIN(ACMROIFREC) as ACMROIFREC'),
+                    DB::raw('COUNT(*) as numero_de_partidas'),
+                    DB::raw('COUNT(DISTINCT ACMROINDOC) as numero_de_rcns'),
+                    'CNCDIR.CNCDIRNOM'
+                )
+                ->leftJoin('CNCDIR', 'ACMROI.CNCDIRID', '=', 'CNCDIR.CNCDIRID')
+                ->where('CNCDIR.CNCDIRID', 'LIKE', '3%')
+                ->groupBy('ACMROI.ACMROIDOC', 'CNCDIR.CNCDIRNOM')
+                ->orderBy($sortBy, $sortOrder); // Aplicar el ordenamiento
     
-            // Cargar los resultados desde caché
-            $rcns = Cache::remember($cacheKey, 60, function () use ($startDate, $endDate, $search, $providerName, $sortBy, $sortOrder) {
-                $mainQuery = DB::table('ACMROI')
-                    ->select(
-                        'ACMROI.ACMROIDOC',
-                        DB::raw('MIN(ACMROITDOC) as ACMROITDOC'),
-                        DB::raw('MIN(ACMROINDOC) as ACMROINDOC'),
-                        DB::raw('MIN(CNTDOCID) as CNTDOCID'),
-                        DB::raw('MIN(ACMROIFREC) as ACMROIFREC'),
-                        DB::raw('COUNT(*) as numero_de_partidas'),
-                        DB::raw('COUNT(DISTINCT ACMROINDOC) as numero_de_rcns'),
-                        'CNCDIR.CNCDIRNOM'
-                    )
-                    ->leftJoin('CNCDIR', 'ACMROI.CNCDIRID', '=', 'CNCDIR.CNCDIRID')  
-                    ->where('CNCDIR.CNCDIRID', 'LIKE', '3%')
-                    ->groupBy('ACMROI.ACMROIDOC', 'CNCDIR.CNCDIRNOM')
-                    ->orderBy($sortBy, $sortOrder);
-    
-                if ($providerName) {
-                    $mainQuery->where('CNCDIR.CNCDIRNOM', 'LIKE', "%{$providerName}%");
-                }
-    
-                if ($search) {
-                    $mainQuery->where('ACMROIDOC', 'LIKE', "%{$search}%");
-                }
-    
-                if ($startDate && $endDate) {
-                    $mainQuery->whereBetween('ACMROIFREC', [Carbon::parse($startDate), Carbon::parse($endDate)]);
-                }
-    
-                return $mainQuery->paginate(10);
-            });
-    
-            // Pre-obtener los IDs de los ACMROIDOC para evitar consultas repetitivas
-            $acmroDocs = collect($rcns->items())->pluck('ACMROIDOC')->toArray();
-    
-            // Consultar los detalles adicionales si hay resultados de la consulta principal
-            if (!empty($acmroDocs)) {
-                $allDetailedRcns = Cache::remember('detailed_rcns_' . md5(implode(',', $acmroDocs)), 60, function () use ($acmroDocs, $startDate, $endDate, $search) {
-                    return DB::table('ACMROI')
-                        ->select(
-                            'ACMROITDOC',
-                            'ACMROINDOC',
-                            'CNTDOCID',
-                            'ACMROIDOC',
-                            'ACMROIFREC',
-                            DB::raw('COUNT(*) as numero_de_partidas')
-                        )
-                        ->whereIn('ACMROIDOC', $acmroDocs)
-                        ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC')
-                        ->get()
-                        ->groupBy('ACMROIDOC');
-                });
+            // Aplicar los filtros
+            if ($providerName) {
+                $rcns->where('CNCDIR.CNCDIRNOM', 'LIKE', "%{$providerName}%");
             }
+    
+            if ($search) {
+                $rcns->where('ACMROIDOC', 'LIKE', "%{$search}%");
+            }
+    
+            if ($startDate && $endDate) {
+                $rcns->whereBetween('ACMROIFREC', [Carbon::parse($startDate), Carbon::parse($endDate)]);
+            }
+    
+            $rcns = $rcns->paginate(10)->appends($request->all());
         }
     
         return view('rcn', compact('rcns', 'allDetailedRcns', 'startDate', 'endDate', 'sortBy', 'sortOrder', 'search', 'providerName', 'filtersApplied'));
-    }
+    }    
     
     public function generatePdf($ACMROINDOC)
     {

@@ -106,12 +106,76 @@
                                     <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
-                                                <!-- Definir columnas -->
-                                                <th class="col-1 text-center">Tipo Documento</th>
-                                                <th class="col-1 text-center">Número de OL</th>
-                                                <th class="col-1 text-center">Fecha Recepción</th>
-                                                <th class="col-1 text-center">Proveedor</th>
-                                                <th class="col-1 text-center">Número de RCNs</th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('rcn', ['sort_by' => 'CNTDOCID', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        Tipo Documento
+                                                        @if(request('sort_by') == 'CNTDOCID')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('rcn', ['sort_by' => 'ACMROIDOC', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        Número de OL
+                                                        @if(request('sort_by') == 'ACMROIDOC')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('rcn', ['sort_by' => 'ACMROIFREC', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        Fecha Recepción
+                                                        @if(request('sort_by') == 'ACMROIFREC')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('rcn', ['sort_by' => 'CNCDIRNOM', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        Proveedor
+                                                        @if(request('sort_by') == 'CNCDIRNOM')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('rcn', ['sort_by' => 'numero_de_rcns', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        Número de RCNs
+                                                        @if(request('sort_by') == 'numero_de_rcns')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
                                                 <th class="col-1 text-center">RCNs</th>
                                             </tr>
                                         </thead>

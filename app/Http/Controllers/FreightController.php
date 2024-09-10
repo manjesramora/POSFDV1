@@ -22,20 +22,19 @@ class FreightController extends Controller
             return $next($request);
         });
     }
-
     public function index(Request $request)
     {
         $query = Freight::query();
-
+    
         // Verificar si se aplicaron filtros
         $filtersApplied = $request->filled('CNCDIRNOM') || $request->filled('CNCDIRNOM_TRANSP') || ($request->filled('start_date') && $request->filled('end_date'));
-
+    
         // Si no se aplican filtros, retornar una colección vacía
         if (!$filtersApplied) {
             $freights = collect(); // Colección vacía
             return view('freights', compact('freights', 'filtersApplied'));
         }
-
+    
         // Aplicar filtros
         if ($request->filled('CNCDIRNOM')) {
             $providerName = $request->input('CNCDIRNOM');
@@ -43,29 +42,31 @@ class FreightController extends Controller
                 $q->where('CNCDIRNOM', 'like', '%' . $providerName . '%');
             });
         }
-
+    
         if ($request->filled('CNCDIRNOM_TRANSP')) {
             $transporterName = $request->input('CNCDIRNOM_TRANSP');
             $query->whereHas('carrier', function ($q) use ($transporterName) {
                 $q->where('CNCDIRNOM', 'like', '%' . $transporterName . '%');
             });
         }
-
+    
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             $query->whereBetween('reception_date', [$startDate, $endDate]);
         }
-
-        $sortBy = $request->input('sort_by', 'id');
-        $sortOrder = $request->input('sort_order', 'asc');
+    
+        // Manejo del ordenamiento
+        $sortBy = $request->input('sort_by', 'id'); // Por defecto, ordenar por 'id'
+        $sortOrder = $request->input('sort_order', 'asc'); // Por defecto, orden ascendente
         $query->orderBy($sortBy, $sortOrder);
-
+    
+        // Paginar los resultados
         $freights = $query->paginate(10)->appends($request->all());
-
+    
         return view('freights', compact('freights', 'filtersApplied'));
     }
-
+    
     public function generatePDF(Request $request)
     {
         $query = Freight::query();

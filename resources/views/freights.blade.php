@@ -115,19 +115,149 @@
                                     </div>
                                     @elseif (!$freights->isEmpty())
                                     <!-- Mostrar tabla si hay resultados -->
-                                    <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
+                                    <table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
-                                                <th class="col-1 text-center">NO.OL</th>
-                                                <th class="col-1 text-center">NO.RCN</th>
-                                                <th class="col-1 text-center">NO.PROV</th>
-                                                <th class="col-1 text-center">PROV</th>
-                                                <th class="col-1 text-center">NO.TRANSP</th>
-                                                <th class="col-1 text-center">TRANSP</th>
-                                                <th class="col-1 text-center">FECHA</th>
-                                                <th class="col-1 text-center">CTO.PROV</th>
-                                                <th class="col-1 text-center">CTO.FLETE</th>
-                                                <th class="col-1 text-center">%FLETE</th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'document_number', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        NO.OL
+                                                        @if(request('sort_by') == 'document_number')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'document_number1', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        NO.RCN
+                                                        @if(request('sort_by') == 'document_number1')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'supplier_number', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        NO.PROV
+                                                        @if(request('sort_by') == 'supplier_number')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'supplier_name', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        PROV
+                                                        @if(request('sort_by') == 'supplier_name')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'carrier_number', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        NO.TRANSP
+                                                        @if(request('sort_by') == 'carrier_number')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'carrier_name', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        TRANSP
+                                                        @if(request('sort_by') == 'carrier_name')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'reception_date', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        FECHA
+                                                        @if(request('sort_by') == 'reception_date')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'cost', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        CTO.PROV
+                                                        @if(request('sort_by') == 'cost')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'freight', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        CTO.FLETE
+                                                        @if(request('sort_by') == 'freight')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
+                                                <th class="col-1 text-center sortable">
+                                                    <a href="{{ route('freights', ['sort_by' => 'freight', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
+                                                        CTO.FLETE
+                                                        @if(request('sort_by') == 'freight')
+                                                        @if(request('sort_order') == 'asc')
+                                                        <i class="fas fa-sort-up"></i>
+                                                        @else
+                                                        <i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                        @else
+                                                        <i class="fas fa-sort-up"></i><i class="fas fa-sort-down"></i>
+                                                        @endif
+                                                    </a>
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -147,22 +277,21 @@
                                             @endforeach
                                         </tbody>
                                     </table>
+                                    <!-- Paginación -->
+                                    <div class="d-flex justify-content-center mt-3">
+                                        {{ $freights->appends(request()->all())->links() }}
+                                    </div>
+
                                     @else
                                     <!-- Mostrar mensaje si no hay filtros aplicados -->
                                     <div class="alert alert-info text-center">
                                         Por favor, aplica filtros para ver los fletes.
                                     </div>
                                     @endif
-
-                                    <!-- Paginación -->
-                                    <div class="d-flex justify-content-center">
-                                        @if ($freights instanceof \Illuminate\Pagination\LengthAwarePaginator || $freights instanceof \Illuminate\Pagination\Paginator)
-                                        {{ $freights->appends(request()->except('page'))->links() }}
-                                        @endif
-                                    </div>
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
 
@@ -180,15 +309,6 @@
                     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
                     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
                     <script src="{{ asset('js/freights.js') }}"></script>
-
-                    <!-- Script para resetear los filtros -->
-                    <script>
-                        function resetFilters() {
-                            document.getElementById('start_date').value = '';
-                            document.getElementById('end_date').value = '';
-                            document.getElementById('filterForm').submit();
-                        }
-                    </script>
                 </div>
 </body>
 
