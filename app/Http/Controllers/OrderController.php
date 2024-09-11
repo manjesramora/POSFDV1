@@ -774,28 +774,36 @@ class OrderController extends Controller
 
 
 
-    public function getNewCNTDOCNSIG()
-    {
-        $cntdoc = DB::table('cntdoc')
-            ->where('cntdocid', 'PC')
-            ->first();
-
-        if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
-            $num_rcn_letras = $cntdoc->CNTDOCNSIG;
-
-            if (is_numeric($num_rcn_letras)) {
-                $new_value = intval($num_rcn_letras) + 1;
-            } else {
-                $new_value = chr(ord($num_rcn_letras) + 1);
-            }
-
-            DB::table('cntdoc')
-                ->where('cntdocid', 'PC')
-                ->update(['CNTDOCNSIG' => $new_value]);
-
-            return $new_value;
-        } else {
-            return 'NUMERO';
-        }
+    public function getNewCNTDOCNSIG($docType)
+{
+    // Verifica si el documento es 'PC'. Si es así, no hagas nada
+    if ($docType === 'PC') {
+        return 'NUMERO'; // O cualquier valor por defecto que quieras para PC
     }
+
+    // Si es otro tipo de documento como 'RCN', continúa con la lógica normal
+    $cntdoc = DB::table('cntdoc')
+        ->where('cntdocid', $docType) // Utiliza el tipo de documento dinámicamente
+        ->first();
+
+    if ($cntdoc && isset($cntdoc->CNTDOCNSIG)) {
+        $num_rcn_letras = $cntdoc->CNTDOCNSIG;
+
+        // Incrementa solo si no es 'PC'
+        if (is_numeric($num_rcn_letras)) {
+            $new_value = intval($num_rcn_letras) + 1;
+        } else {
+            $new_value = chr(ord($num_rcn_letras) + 1);
+        }
+
+        DB::table('cntdoc')
+            ->where('cntdocid', $docType) // Actualiza solo si no es 'PC'
+            ->update(['CNTDOCNSIG' => $new_value]);
+
+        return $new_value;
+    } else {
+        return 'NUMERO'; // Valor por defecto si no se encuentra el documento
+    }
+}
+
 }
