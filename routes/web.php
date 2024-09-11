@@ -85,7 +85,7 @@ Route::post('/change-password', [LoginController::class, 'changePassword'])->nam
 
 // Rutas relacionadas con Catalogo Etiquetas
 
-Route::get('/etiquetascatalogo', [LabelcatalogController::class, 'labelscatalog']);
+Route::get('/label_catalog', [LabelcatalogController::class, 'labelscatalog']);
 
 //Rutas Relacionadas con Imprimir Etiquetas
 Route::post('/print-label', [LabelcatalogController::class, 'printLabel'])->name('print.label');
@@ -96,4 +96,3 @@ Route::get('/get-umv/{productId}', [LabelcatalogController::class, 'getUMV']);
 // Ruta para convertir el precio base según la UMV seleccionada
 Route::post('/convert-price', [LabelcatalogController::class, 'convertPrice']);
 
-Route::get('/insdos', [InsdosController::class, 'index']);

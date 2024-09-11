@@ -49,6 +49,10 @@
                                 <label for="name" class="form-label">DESCRIPCIÓN</label>
                                 <input type="text" name="name" id="name" class="form-control uper" value="{{ request('name') }}">
                             </div>
+                            <div class="col-md-1">
+                                <label for="departamento" class="form-label">DPTO</label>
+                                <input type="text" name="departamento" id="departamento" class="form-control" maxlength="3" pattern="\d*" value="{{ request('departamento') }}" oninput="validateInput(this, 3)">
+                            </div>
                             <div class="col-md-2">
                                 <label for="linea" class="form-label">LINEA</label>
                                 <div class="input-group">
@@ -62,10 +66,6 @@
                                     <span class="input-group-text" id="sublinea-addon">SB</span>
                                     <input type="text" name="sublinea" id="sublinea" class="form-control" maxlength="7" pattern="\d*" value="{{ request('sublinea') ? str_replace('SB', '', request('sublinea')) : '' }}" aria-describedby="sublinea-addon" oninput="validateInput(this, 7)">
                                 </div>
-                            </div>
-                            <div class="col-md-1">
-                                <label for="departamento" class="form-label">DPTO</label>
-                                <input type="text" name="departamento" id="departamento" class="form-control" maxlength="3" pattern="\d*" value="{{ request('departamento') }}" oninput="validateInput(this, 3)">
                             </div>
                             <div class="col-md-1">
                                 <label for="activo" class="form-label">ACTIVOS</label>
@@ -86,79 +86,79 @@
                     </div>
                 </div>
 
-                 <!-- Tabla de datos -->
-                 <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">                        
-                        <div class="card-body">
-                            <div class="table-responsive small-font">
+                <!-- Tabla de datos -->
+                <div class="card shadow mb-4" style="margin-left: 45px; margin-right: 45px;">
+                    <div class="card-body">
+                        <div class="table-responsive small-font">
                             <div id="no-results-message" class="alert alert-warning text-center" style="display: none;">
-                                    Producto no Encontrado
-                                </div>
-                                <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            @php
-                                            $columns = [
-                                                'INPROD.INPRODID' => 'PRODUCTO',
-                                                'INPROD.INPRODDSC' => 'DESCRIPCIÓN',
-                                                'INPROD.INPRODI2' => 'SKU',
-                                                'INPROD.INPRODCBR' => 'CODIGO BARRAS',
-                                                'INPROD.INPR03ID' => 'LINEA',
-                                                'INPROD.INPR04ID' => 'SUBLINEA',
-                                                'INPROD.INPR02ID' => 'DPTO',
-                                                'INSDOS.INSDOSQDS' => 'EXI',
-                                                'INPROD.INUMBAID' => 'UMB',
-                                            ];
-                                            @endphp
-                                            @foreach ($columns as $column => $label)
-                                            <th>
-                                                <a href="#" data-column="{{ $column }}" data-direction="{{ request('sort') === $column && request('direction') === 'asc' ? 'desc' : 'asc' }}" class="sortable-column">
-                                                    {{ $label }}
-                                                    @if (request('sort') === $column)
-                                                    @if (request('direction') === 'asc')
-                                                    <i class="sort-icon fas fa-sort-up"></i>
-                                                    @else
-                                                    <i class="sort-icon fas fa-sort-down"></i>
-                                                    @endif
-                                                    @else
-                                                    <i class="sort-icon fas fa-sort"></i>
-                                                    @endif
-                                                </a>
-                                            </th>
-                                            @endforeach
-                                            <th>ACCIONES</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="proveedorTable">
-                                        @foreach($labels as $label)
-                                        <tr>
-                                            <td>{{ $label->INPRODID }}</td>
-                                            <td>{{ $label->INPRODDSC }}</td>
-                                            <td>{{ $label->INPRODI2 }}</td>
-                                            <td>{{ $label->INPRODCBR }}</td>
-                                            <td>{{ $label->INPR03ID }}</td>
-                                            <td>{{ $label->INPR04ID }}</td>
-                                            <td>{{ $label->INPR02ID }}</td>
-                                            <td>{{ number_format($label->Existencia, 2) }}</td>
-                                            <td>{{ $label->INUMBAID }}</td>
-                                            <td>
-                                                <div class="btn-group" role="group" aria-label="Acciones">
-                                                    <button class="btn btn-secondary" onclick="showPrintModal('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}')" style="margin-right: 10px;">SKU
-                                                        <i class="fas fa-barcode"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                Producto no Encontrado
+                            </div>
+                            <table class="table table-bordered text-center" id="dataTable" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        @php
+                                        $columns = [
+                                        'INPROD.INPRODID' => 'PRODUCTO',
+                                        'INPROD.INPRODDSC' => 'DESCRIPCIÓN',
+                                        'INPROD.INPRODI2' => 'SKU',
+                                        'INPROD.INPRODCBR' => 'CODIGO BARRAS',
+                                        'INPROD.INPR03ID' => 'LINEA',
+                                        'INPROD.INPR04ID' => 'SUBLINEA',
+                                        'INPROD.INPR02ID' => 'DPTO',
+                                        'INSDOS.INSDOSQDS' => 'EXI',
+                                        'INPROD.INUMBAID' => 'UMB',
+                                        ];
+                                        @endphp
+                                        @foreach ($columns as $column => $label)
+                                        <th>
+                                            <a href="#" data-column="{{ $column }}" data-direction="{{ request('sort') === $column && request('direction') === 'asc' ? 'desc' : 'asc' }}" class="sortable-column">
+                                                {{ $label }}
+                                                @if (request('sort') === $column)
+                                                @if (request('direction') === 'asc')
+                                                <i class="sort-icon fas fa-sort-up"></i>
+                                                @else
+                                                <i class="sort-icon fas fa-sort-down"></i>
+                                                @endif
+                                                @else
+                                                <i class="sort-icon fas fa-sort"></i>
+                                                @endif
+                                            </a>
+                                        </th>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                                <div class="d-flex justify-content-center">
-                                    <div id="pagination-links">
-                                        @if ($labels instanceof \Illuminate\Pagination\LengthAwarePaginator)
-                                        {{ $labels->appends(request()->query())->links() }}
-                                        @endif
-                                    </div>
+                                        <th>ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="proveedorTable">
+                                    @foreach($labels as $label)
+                                    <tr>
+                                        <td>{{ $label->INPRODID }}</td>
+                                        <td>{{ $label->INPRODDSC }}</td>
+                                        <td>{{ $label->INPRODI2 }}</td>
+                                        <td>{{ $label->INPRODCBR }}</td>
+                                        <td>{{ $label->INPR03ID }}</td>
+                                        <td>{{ $label->INPR04ID }}</td>
+                                        <td>{{ $label->INPR02ID }}</td>
+                                        <td>{{ number_format($label->Existencia, 2) }}</td>
+                                        <td>{{ $label->INUMBAID }}</td>
+                                        <td>
+                                            <div class="btn-group" role="group" aria-label="Acciones">
+                                                <button class="btn btn-secondary" onclick="showPrintModal('{{ $label->INPRODI2 }}', '{{ $label->INPRODDSC }}')" style="margin-right: 10px;">SKU
+                                                    <i class="fas fa-barcode"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-center">
+                                <div id="pagination-links">
+                                    @if ($labels instanceof \Illuminate\Pagination\LengthAwarePaginator)
+                                    {{ $labels->appends(request()->query())->links() }}
+                                    @endif
                                 </div>
-                  
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -263,7 +263,6 @@
                 <script>
                     var printLabelUrl = "{{ route('print.label') }}";
                     var printLabelUrlWithPrice = "{{ route('print.label.with.price') }}";
-
                 </script>
 </body>
 
