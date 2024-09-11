@@ -336,6 +336,9 @@ function submitPrintForm() {
         return;
     }
 
+    // Mostrar la animación de "Cargando"
+    showLoading();
+
     // Obtener el formulario y convertirlo en FormData
     var printForm = document.getElementById("printForm");
     var formData = new FormData(printForm);
@@ -344,28 +347,35 @@ function submitPrintForm() {
     fetch(printLabelUrl, {
         method: "POST",
         headers: {
-            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]') // Token CSRF para proteger contra ataques
-                .value,
+            "X-CSRF-TOKEN": document.querySelector('input[name="_token"]').value, // Token CSRF para proteger contra ataques
         },
         body: formData, // Enviar los datos del formulario
     })
-        .then((response) => response.json()) // Parsear la respuesta como JSON
-        .then((data) => {
-            // Si se genera un URL, crear un iframe invisible para imprimir
-            if (data.url) {
-                var iframe = document.createElement("iframe");
-                iframe.style.display = "none";
-                iframe.src = data.url;                // Establecer la URL del PDF
-                iframe.onload = function () {
-                    iframe.contentWindow.print();    // Imprimir cuando el PDF esté cargado
-                };
-                document.body.appendChild(iframe);  // Agregar el iframe al DOM
-            } else {
-                console.error("Error al generar el PDF");  // Manejar error si no se genera el PDF
-            }
-        })
-        .catch((error) => console.error("Error:", error)); // Manejo de errores
+    .then((response) => response.json()) // Parsear la respuesta como JSON
+    .then((data) => {
+        // Ocultar la animación de "Cargando"
+        hideLoading();
+
+        // Si se genera un URL, crear un iframe invisible para imprimir
+        if (data.url) {
+            var iframe = document.createElement("iframe");
+            iframe.style.display = "none";
+            iframe.src = data.url;                // Establecer la URL del PDF
+            iframe.onload = function () {
+                iframe.contentWindow.print();    // Imprimir cuando el PDF esté cargado
+            };
+            document.body.appendChild(iframe);  // Agregar el iframe al DOM
+        } else {
+            console.error("Error al generar el PDF");  // Manejar error si no se genera el PDF
+        }
+    })
+    .catch((error) => {
+        console.error("Error:", error); // Manejo de errores
+        // Ocultar la animación de "Cargando" en caso de error
+        hideLoading();
+    });
 }
+
 
 
 // Función que maneja el envío del formulario de impresión con precios
