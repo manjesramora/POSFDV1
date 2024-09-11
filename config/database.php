@@ -118,6 +118,27 @@ return [
     | such as APC or Memcached. Laravel makes it easy to dig right in.
     |
     */
+'sqlsrv_fd09' => [
+    'driver' => 'sqlsrv',
+    'host' => '128.76.8.6',
+    'port' => '1433',
+    'database' => 'ERP_TBI_TEC_PRO_FDGO',
+    'username' => 'USRTEST',
+    'password' => 'PROTOTIPO',
+    'charset' => 'utf8',
+    'prefix' => '',
+],
+
+'sqlsrv_fd10' => [
+    'driver' => 'sqlsrv',
+    'host' => '128.76.8.148',
+    'port' => '1433',
+    'database' => 'ERP_TBI_TEC_PRO_FDGO',
+    'username' => 'USRTEST',
+    'password' => 'PROTOTIPO',
+    'charset' => 'utf8',
+    'prefix' => '',
+],
 
     'redis' => [
 
