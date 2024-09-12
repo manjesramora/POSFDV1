@@ -7,6 +7,17 @@ return [
     'default' => env('DB_CONNECTION', 'sqlsrv'),  // Cambiado a 'sqlsrv' para que sea la conexión predeterminada
 
     'connections' => [
+        'centro' => [
+            'driver' => 'sqlsrv',  // Cambia esto si usas MySQL u otro sistema de BD
+            'host' => env('DB_CENTRO_HOST', '128.76.8.148'), // Configura con tu host
+            'port' => env('DB_CENTRO_PORT', '1433'),
+            'database' => env('DB_CENTRO_DATABASE', 'ERP_TBI_TEC_PRO_FDGO'),
+            'username' => env('DB_CENTRO_USERNAME', 'USRTEST'),
+            'password' => env('DB_CENTRO_PASSWORD', 'PROTOTIPO'),
+            'charset' => 'utf8',
+            'prefix' => '',
+        ],
+
 
         'sqlite' => [
             'driver' => 'sqlite',
@@ -50,15 +61,25 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-
+        // Conexión para centro de costo 'FD09'
+        'FD04' => [
+            'driver' => 'sqlsrv',
+            'host' => '128.76.8.148',
+            'port' => '1433',
+            'database' => 'ERP_TBI_TEC_PRO_FDGO',
+            'username' => 'USRTEST',
+            'password' => 'PROTOTIPO',
+            'charset' => 'utf8',
+            'prefix' => '',
+        ],
         // Conexión para centro de costo 'FD09'
         'FD09' => [
             'driver' => 'sqlsrv',
             'host' => '128.76.8.245',
             'port' => '1433',
             'database' => 'ERP_TBI_TEC_PRO_FDGO',
-            'username' => 'programacion',
-            'password' => 'G3npr',
+            'username' => 'USRTEST',
+            'password' => 'PROTOTIPO',
             'charset' => 'utf8',
             'prefix' => '',
         ],
@@ -75,17 +96,6 @@ return [
             'prefix' => '',
         ],
 
-        // Conexión para centro de costo 'FD04'
-        'FD04' => [
-            'driver' => 'sqlsrv',
-            'host' => '148.76.8.148',
-            'port' => '1433',
-            'database' => 'ERP_TBI_TEC_PRO_FDGO',
-            'username' => 'USRTEST',
-            'password' => 'PROTOTIPO',
-            'charset' => 'utf8',
-            'prefix' => '',
-        ],
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
@@ -110,7 +120,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [
