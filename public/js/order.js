@@ -1,10 +1,10 @@
 $(document).ready(function () {
-    // Establecer las fechas máximas y mínimas
+    // Obtener la fecha actual y la fecha de hace 6 meses
     var today = new Date();
     var sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(today.getMonth() - 6);
 
-    // Formato de fecha YYYY-MM-DD
+    // Función para formatear la fecha en formato YYYY-MM-DD
     function formatDate(date) {
         var dd = String(date.getDate()).padStart(2, '0');
         var mm = String(date.getMonth() + 1).padStart(2, '0'); // Enero es 0
@@ -12,23 +12,25 @@ $(document).ready(function () {
         return yyyy + '-' + mm + '-' + dd;
     }
 
-    // Establecer fecha mínima como hace 6 meses y fecha máxima como hoy
-    $('#start_date').attr('min', formatDate(sixMonthsAgo));
-    $('#end_date').attr('max', formatDate(today));
+    // Formatear fechas en formato YYYY-MM-DD
+    var formattedToday = formatDate(today);
+    var formattedSixMonthsAgo = formatDate(sixMonthsAgo);
 
-    // Validar las fechas y asignar fecha actual si el campo "Hasta" está vacío
-    $("#combinedForm").on("submit", function() {
-        var startDate = $("#start_date").val();
+    // Aplicar límites de fecha en los inputs de fecha
+    $('#start_date').attr('min', formattedSixMonthsAgo);
+    $('#end_date').attr('max', formattedToday);
+
+    // Validar las fechas y asignar fecha actual si el campo "Hasta" está vacío al enviar el formulario
+    $("#filterForm").on("submit", function () {
         var endDate = $("#end_date").val();
-
-        // Obtener la fecha actual en formato YYYY-MM-DD
-        var currentDate = formatDate(today);
+        var startDate = $("#start_date").val();
 
         // Si hay una fecha de inicio pero no una fecha de fin, asigna la fecha actual como fin
         if (startDate && !endDate) {
-            $("#end_date").val(currentDate);
+            $("#end_date").val(formattedToday);
         }
     });
+
 
     // Autocompletado por ID y por Nombre
     $("#CNCDIRID, #CNCDIRNOM").on("input", function () {
@@ -66,7 +68,7 @@ $(document).ready(function () {
         selectProvider($(this));
     });
 
-    // Handle keyboard navigation for dropdown items
+    // Manejar la navegación con las teclas arriba/abajo y Enter
     $("#CNCDIRID, #CNCDIRNOM").on("keydown", function (e) {
         let dropdown = $(this).attr("id") === "CNCDIRID" ? $("#idDropdown") : $("#nameDropdown");
 
@@ -105,9 +107,15 @@ $(document).ready(function () {
         $("#idDropdown, #nameDropdown").hide();
     }
 
+    // Limpiar campos
+    function limpiarCampos() {
+        $("#CNCDIRID, #CNCDIRNOM").val("");
+        $("#idDropdown, #nameDropdown").hide();
+    }
+
     // Limpiar campos adicionales
     function limpiarCamposAdicionales() {
-        document.getElementById("ACMVOIDOC").value = "";
+        document.getElementById("ACMROIDOC").value = "";
         document.getElementById("CNCDIRID").value = "";
         document.getElementById("CNCDIRNOM").value = "";
         document.getElementById("start_date").value = "";
@@ -115,43 +123,25 @@ $(document).ready(function () {
         $("#idDropdown, #nameDropdown").hide();
     }
 
+    // Ordenar tabla
+    function sortTable(column) {
+        let currentUrl = new URL(window.location.href);
+        let currentSortColumn = currentUrl.searchParams.get("sortColumn");
+        let currentSortDirection = currentUrl.searchParams.get("sortDirection");
+
+        let newSortDirection = "asc";
+        if (currentSortColumn === column && currentSortDirection === "asc") {
+            newSortDirection = "desc";
+        }
+
+        currentUrl.searchParams.set("sortColumn", column);
+        currentUrl.searchParams.set("sortDirection", newSortDirection);
+
+        window.location.href = currentUrl.toString();
+    }
+
     // Clear all filter input fields and reload the page
-    window.limpiarCampos = function() {
+    window.limpiarCampos = function () {
         window.location.href = "/orders"; // Redirigir a la URL original sin parámetros
-    }
-});
-
-
-document.addEventListener('DOMContentLoaded', function () {
-    // Seleccionar los campos
-    var acmvoidocInput = document.getElementById('ACMVOIDOC');
-    var cncdidInput = document.getElementById('CNCDIRID');
-
-    // Función que filtra las teclas permitidas
-    function validarNumeros(event) {
-        let key = event.key;
-        // Permitir solo números y controlar las teclas permitidas
-        if (["e", "E", "+", "-", ".", ",", "*", "/"].includes(key)) {
-            event.preventDefault(); // Bloquear la tecla
-        }
-    }
-
-    // Asociar la función a los eventos 'keydown' para ambos campos
-    acmvoidocInput.addEventListener('keydown', validarNumeros);
-    cncdidInput.addEventListener('keydown', validarNumeros);
-
-    // También evitamos que se peguen caracteres inválidos
-    acmvoidocInput.addEventListener('paste', function (event) {
-        let paste = (event.clipboardData || window.clipboardData).getData('text');
-        if (isNaN(paste)) {
-            event.preventDefault();
-        }
-    });
-
-    cncdidInput.addEventListener('paste', function (event) {
-        let paste = (event.clipboardData || window.clipboardData).getData('text');
-        if (isNaN(paste)) {
-            event.preventDefault();
-        }
-    });
+    };
 });
