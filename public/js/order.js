@@ -1,49 +1,20 @@
 $(document).ready(function () {
-    // Obtener la fecha actual y la fecha de hace 6 meses
-    var today = new Date();
-    var sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(today.getMonth() - 6);
-
-    // Función para formatear la fecha en formato YYYY-MM-DD
-    function formatDate(date) {
-        var dd = String(date.getDate()).padStart(2, '0');
-        var mm = String(date.getMonth() + 1).padStart(2, '0'); // Enero es 0
-        var yyyy = date.getFullYear();
-        return yyyy + '-' + mm + '-' + dd;
-    }
-
-    // Formatear fechas en formato YYYY-MM-DD
-    var formattedToday = formatDate(today);
-    var formattedSixMonthsAgo = formatDate(sixMonthsAgo);
-
-    // Aplicar límites de fecha en los inputs de fecha
-    $('#start_date').attr('min', formattedSixMonthsAgo);
-    $('#end_date').attr('max', formattedToday);
-
-    // Validar las fechas y asignar fecha actual si el campo "Hasta" está vacío al enviar el formulario
-    $("#filterForm").on("submit", function () {
-        var endDate = $("#end_date").val();
-        var startDate = $("#start_date").val();
-
-        // Si hay una fecha de inicio pero no una fecha de fin, asigna la fecha actual como fin
-        if (startDate && !endDate) {
-            $("#end_date").val(formattedToday);
-        }
-    });
-
-
     // Autocompletado por ID y por Nombre
     $("#CNCDIRID, #CNCDIRNOM").on("input", function () {
         let query = $(this).val();
-        let field = $(this).attr("id") === "CNCDIRID" ? "CNCDIRID" : "CNCDIRNOM";
+        let field =
+            $(this).attr("id") === "CNCDIRID" ? "CNCDIRID" : "CNCDIRNOM";
 
         if (query.length >= 3) {
             $.ajax({
                 url: "/providers/autocomplete",
                 type: "GET",
-                data: { query: query, field: field, screen: 'orders' }, // Enviar 'screen: orders' para identificar la pantalla
+                data: { query: query, field: field, screen: "orders" }, // Enviar 'screen: orders' para identificar la pantalla
                 success: function (data) {
-                    let dropdown = field === "CNCDIRID" ? $("#idDropdown") : $("#nameDropdown");
+                    let dropdown =
+                        field === "CNCDIRID"
+                            ? $("#idDropdown")
+                            : $("#nameDropdown");
                     dropdown.empty().show();
 
                     data.forEach((item, index) => {
@@ -70,7 +41,10 @@ $(document).ready(function () {
 
     // Manejar la navegación con las teclas arriba/abajo y Enter
     $("#CNCDIRID, #CNCDIRNOM").on("keydown", function (e) {
-        let dropdown = $(this).attr("id") === "CNCDIRID" ? $("#idDropdown") : $("#nameDropdown");
+        let dropdown =
+            $(this).attr("id") === "CNCDIRID"
+                ? $("#idDropdown")
+                : $("#nameDropdown");
 
         if (dropdown.is(":visible")) {
             let activeItem = dropdown.find(".dropdown-item.active");
@@ -144,4 +118,27 @@ $(document).ready(function () {
     window.limpiarCampos = function () {
         window.location.href = "/orders"; // Redirigir a la URL original sin parámetros
     };
+});
+
+$(document).ready(function () {
+    // Obtener la fecha actual
+    var today = new Date();
+    var sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(today.getMonth() - 6);
+
+    // Función para formatear la fecha en formato YYYY-MM-DD
+    function formatDate(date) {
+        var dd = String(date.getDate()).padStart(2, "0");
+        var mm = String(date.getMonth() + 1).padStart(2, "0"); // Enero es 0
+        var yyyy = date.getFullYear();
+        return yyyy + "-" + mm + "-" + dd;
+    }
+
+    // Formatear la fecha de hoy y la de hace 6 meses
+    var formattedToday = formatDate(today);
+    var formattedSixMonthsAgo = formatDate(sixMonthsAgo);
+
+    // Establecer los límites en los inputs de fecha
+    $("#start_date").attr("min", formattedSixMonthsAgo);
+    $("#end_date").attr("max", formattedToday);
 });

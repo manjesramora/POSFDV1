@@ -53,7 +53,7 @@ class OrderController extends Controller
         // Validar que las fechas de búsqueda no sean mayores a 6 meses
         if ($startDate && $endDate) {
             $start = Carbon::parse($startDate);
-            $end = Carbon::parse($endDate);
+            $end = Carbon::parse($endDate)->endOfDay();
 
             // Verifica si alguna de las fechas está fuera del rango de 6 meses
             if ($start->lt($sixMonthsAgo) || $end->lt($sixMonthsAgo)) {
