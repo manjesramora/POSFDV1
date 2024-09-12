@@ -42,7 +42,7 @@
                                 <div class="input-group">
                                     <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control uper" value="{{ request('CNCDIRNOM') }}" autocomplete="off">
                                     <div id="nameDropdown" class="dropdown-menu"></div>
-                                    
+
                                 </div>
                             </div>
                             <div class="col-md-2">
@@ -58,114 +58,114 @@
                                     <i class="fas fa-search"></i>
                                 </button>
                                 <button class="btn btn-danger" type="button" onclick="limpiarCampos()">
-                                <i class="fa-solid fa-eraser"></i>
-                                    </button>
+                                    <i class="fa-solid fa-eraser"></i>
+                                </button>
                             </div>
                             <div class="col-md-1">
-                                
+
                             </div>
                         </div>
                     </form>
                     <!-- Tabla de órdenes -->
                     <div class="table-responsive">
-                    <div class="container-fluid">
-    <div class="card shadow mb-4">
-        <div class="card-body">
-            <div class="table-responsive small-font">
-                @if ($orders->isEmpty() && (request()->has('ACMVOIDOC') || request()->has('CNCDIRID') || request()->has('CNCDIRNOM') || request()->has('start_date') || request()->has('end_date')))
-                    <!-- Mostrar mensaje si no se encontraron órdenes después de aplicar los filtros -->
-                    <div class="alert alert-warning text-center">
-                        No se encontraron órdenes que coincidan con los filtros aplicados.
-                    </div>
-                @elseif (!$orders->isEmpty())
-                    <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
-                        <thead>
-                            <tr>
-                                <th class="col-md-1">
-                                    <a href="{{ route('orders', ['sortColumn' => 'ACMVOIDOC', 'sortDirection' => ($sortColumn == 'ACMVOIDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                        #DOCUMENTO
-                                        @if($sortColumn == 'ACMVOIDOC')
-                                        <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                        <div class="container-fluid">
+                            <div class="card shadow mb-4">
+                                <div class="card-body">
+                                    <div class="table-responsive small-font">
+                                        @if ($orders->isEmpty() && (request()->has('ACMVOIDOC') || request()->has('CNCDIRID') || request()->has('CNCDIRNOM') || request()->has('start_date') || request()->has('end_date')))
+                                        <!-- Mostrar mensaje si no se encontraron órdenes después de aplicar los filtros -->
+                                        <div class="alert alert-warning text-center">
+                                            No se encontraron órdenes que coincidan con los filtros aplicados.
+                                        </div>
+                                        @elseif (!$orders->isEmpty())
+                                        <table class="table table-bordered table-centered" id="dataTable" width="100%" cellspacing="0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="col-md-1">
+                                                        <a href="{{ route('orders', ['sortColumn' => 'ACMVOIDOC', 'sortDirection' => ($sortColumn == 'ACMVOIDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
+                                                            #DOCUMENTO
+                                                            @if($sortColumn == 'ACMVOIDOC')
+                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                                                            @else
+                                                            <i class="fas fa-sort"></i>
+                                                            @endif
+                                                        </a>
+                                                    </th>
+                                                    <th class="col-md-1">
+                                                        <a href="{{ route('orders', ['sortColumn' => 'CNCDIRID', 'sortDirection' => ($sortColumn == 'CNCDIRID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
+                                                            #PROVEEDOR
+                                                            @if($sortColumn == 'CNCDIRID')
+                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                                                            @else
+                                                            <i class="fas fa-sort"></i>
+                                                            @endif
+                                                        </a>
+                                                    </th>
+                                                    <th class="col-md-2">
+                                                        <a href="{{ route('orders', ['sortColumn' => 'CNCDIRNOM', 'sortDirection' => ($sortColumn == 'CNCDIRNOM' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
+                                                            NOMBRE PROVEEDOR
+                                                            @if($sortColumn == 'CNCDIRNOM')
+                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                                                            @else
+                                                            <i class="fas fa-sort"></i>
+                                                            @endif
+                                                        </a>
+                                                    </th>
+                                                    <th class="col-md-2">
+                                                        <a href="{{ route('orders', ['sortColumn' => 'ACMVOIFDOC', 'sortDirection' => ($sortColumn == 'ACMVOIFDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
+                                                            FECHA DE ORDEN
+                                                            @if($sortColumn == 'ACMVOIFDOC')
+                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                                                            @else
+                                                            <i class="fas fa-sort"></i>
+                                                            @endif
+                                                        </a>
+                                                    </th>
+                                                    <th class="col-md-2">
+                                                        <a href="{{ route('orders', ['sortColumn' => 'ACMVOIALID', 'sortDirection' => ($sortColumn == 'ACMVOIALID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
+                                                            ALMACEN
+                                                            @if($sortColumn == 'ACMVOIALID')
+                                                            <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
+                                                            @else
+                                                            <i class="fas fa-sort"></i>
+                                                            @endif
+                                                        </a>
+                                                    </th>
+                                                    <th class="col-md-1">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($orders as $order)
+                                                <tr>
+                                                    <td>{{ $order->ACMVOIDOC }}</td>
+                                                    <td>{{ $order->CNCDIRID }}</td>
+                                                    <td>{{ $order->provider->CNCDIRNOM }}</td>
+                                                    <td>{{ \Carbon\Carbon::parse($order->ACMVOIFDOC)->format('d-m-Y') }}</td>
+                                                    <td>{{ $order->ACMVOIALID }}</td>
+                                                    <td>
+                                                        <a href="{{ route('receptions.show', $order->ACMVOIDOC) }}" class="btn btn-primary">
+                                                            <i class="fas fa-truck"></i>
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
                                         @else
-                                        <i class="fas fa-sort"></i>
+                                        <!-- Pantalla sin cargar registros cuando no se ha aplicado ningún filtro -->
+                                        <div class="alert alert-info text-center">
+                                            Por favor, aplica filtros para ver las órdenes de compra.
+                                        </div>
                                         @endif
-                                    </a>
-                                </th>
-                                <th class="col-md-1">
-                                    <a href="{{ route('orders', ['sortColumn' => 'CNCDIRID', 'sortDirection' => ($sortColumn == 'CNCDIRID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                        #PROVEEDOR
-                                        @if($sortColumn == 'CNCDIRID')
-                                        <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
-                                        @else
-                                        <i class="fas fa-sort"></i>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="col-md-2">
-                                    <a href="{{ route('orders', ['sortColumn' => 'CNCDIRNOM', 'sortDirection' => ($sortColumn == 'CNCDIRNOM' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                        NOMBRE PROVEEDOR
-                                        @if($sortColumn == 'CNCDIRNOM')
-                                        <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
-                                        @else
-                                        <i class="fas fa-sort"></i>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="col-md-2">
-                                    <a href="{{ route('orders', ['sortColumn' => 'ACMVOIFDOC', 'sortDirection' => ($sortColumn == 'ACMVOIFDOC' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                        FECHA DE ORDEN
-                                        @if($sortColumn == 'ACMVOIFDOC')
-                                        <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
-                                        @else
-                                        <i class="fas fa-sort"></i>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="col-md-2">
-                                    <a href="{{ route('orders', ['sortColumn' => 'ACMVOIALID', 'sortDirection' => ($sortColumn == 'ACMVOIALID' && $sortDirection == 'asc') ? 'desc' : 'asc'] + request()->query()) }}" class="btn btn-link p-0">
-                                        ALMACEN
-                                        @if($sortColumn == 'ACMVOIALID')
-                                        <i class="fas {{ $sortDirection == 'asc' ? 'fa-sort-up' : 'fa-sort-down' }}"></i>
-                                        @else
-                                        <i class="fas fa-sort"></i>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="col-md-1">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($orders as $order)
-                            <tr>
-                                <td>{{ $order->ACMVOIDOC }}</td>
-                                <td>{{ $order->CNCDIRID }}</td>
-                                <td>{{ $order->provider->CNCDIRNOM }}</td>
-                                <td>{{ \Carbon\Carbon::parse($order->ACMVOIFDOC)->format('Y-m-d') }}</td>
-                                <td>{{ $order->ACMVOIALID }}</td>
-                                <td>
-                                    <a href="{{ route('receptions.show', $order->ACMVOIDOC) }}" class="btn btn-primary">
-                                        <i class="fas fa-truck"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                @else
-                    <!-- Pantalla sin cargar registros cuando no se ha aplicado ningún filtro -->
-                    <div class="alert alert-info text-center">
-                        Por favor, aplica filtros para ver las órdenes de compra.
-                    </div>
-                @endif
-                <div class="d-flex justify-content-center">
-                    @if ($orders instanceof \Illuminate\Pagination\LengthAwarePaginator || $orders instanceof \Illuminate\Pagination\Paginator)
-                    {{ $orders->appends(request()->except('page'))->links() }}
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                                        <div class="d-flex justify-content-center">
+                                            @if ($orders instanceof \Illuminate\Pagination\LengthAwarePaginator || $orders instanceof \Illuminate\Pagination\Paginator)
+                                            {{ $orders->appends(request()->except('page'))->links() }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
