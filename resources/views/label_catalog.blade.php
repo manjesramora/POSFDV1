@@ -47,7 +47,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="name" class="form-label">DESCRIPCIÓN</label>
-                                <input type="text" name="name" id="name" class="form-control uper" value="{{ request('name') }}">
+                                <input type="text" name="name" id="name" class="form-control uper" maxlength="75" value="{{ request('name') }}">
                             </div>
                             <div class="col-md-1">
                                 <label for="departamento" class="form-label">DPTO</label>

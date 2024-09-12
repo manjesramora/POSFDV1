@@ -112,7 +112,12 @@
                                     <label for="num_rcn_letras" class="form-label"></label>
                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
                                 </div>
+                                <div class="col-md-12">
+                                <div id="reception-error" class="alert alert-danger d-none text-center mx-auto">
+                                    No es posible realizar la recepción si todas las Cantidades Recibidas son 0
+                                </div>
 
+                                </div>
                                 <div class="col-md-2 d-flex">
                                     <a href="{{ route('orders') }}" class="btn btn-secondary me-2">Regresar</a>
                                     <button type="submit" class="btn btn-info">Recepcionar</button>

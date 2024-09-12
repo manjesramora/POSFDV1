@@ -69,14 +69,20 @@ $(document).ready(function () {
     $(document).on("input", ".cantidad-recibida", function () {
         let cleanValue = cleanNumber(this.value);
         const max = parseFloat(this.getAttribute('max')) || 0;
-
+    
         if (!isNaN(cleanValue) && parseFloat(cleanValue) > max) {
             cleanValue = max.toFixed(4);
         }
-
+    
         this.value = cleanValue !== '' ? cleanValue : '0';
         calculateTotals(this);
+    
+        // Validar si todas las cantidades son 0 para mostrar/ocultar el mensaje de error
+        if (!validateNonZeroQuantities()) {
+            toggleErrorMessage(false); // Ocultar el mensaje de error si una cantidad es mayor a 0
+        }
     });
+    
 
     $(document).on("input", ".precio-unitario, #flete", function () {
         let cleanValue = cleanNumber(this.value);
@@ -98,12 +104,44 @@ $(document).ready(function () {
 
     $("#receptionForm").on("submit", function (e) {
         e.preventDefault();
-
+    
+        // Función para validar que al menos una cantidad recibida sea mayor que 0
+        function validateNonZeroQuantities() {
+            let allZero = true;
+            // Recorre todas las cantidades recibidas
+            $(".cantidad-recibida").each(function () {
+                const cantidad = parseFloat(cleanNumber($(this).val())) || 0;
+                if (cantidad > 0) {
+                    allZero = false;
+                    return false; // Sale del loop si encuentra una cantidad mayor a 0
+                }
+            });
+            return allZero;
+        }
+    
+        // Mostrar/ocultar el mensaje de error
+        function toggleErrorMessage(show) {
+            const errorDiv = $("#reception-error");
+            if (show) {
+                errorDiv.removeClass("d-none");
+            } else {
+                errorDiv.addClass("d-none");
+            }
+        }
+    
+        // Verificar si todas las cantidades recibidas son 0
+        if (validateNonZeroQuantities()) {
+            toggleErrorMessage(true); // Mostrar el mensaje de error
+            return; // Detener el envío del formulario
+        }
+    
+        toggleErrorMessage(false); // Ocultar el mensaje si la validación es correcta
+    
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         loadingModal.show();
-
+    
         const formData = new FormData(this);
-
+    
         axios.post(this.action, formData)
             .then(response => {
                 if (response.data.success) {
@@ -116,11 +154,11 @@ $(document).ready(function () {
                     document.querySelector('.spinner-border').classList.add('d-none');
                     document.getElementById('printReportButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
-
+    
                     document.getElementById('printReportButton').addEventListener('click', function () {
                         const ACMROINDOC = response.data.ACMROINDOC;
                         const ACMROIDOC = response.data.ACMROIDOC;
-                    
+    
                         if (ACMROINDOC && ACMROIDOC) {
                             axios.get(`/print-report/${ACMROINDOC}`, {
                                 responseType: 'blob'
@@ -137,8 +175,6 @@ $(document).ready(function () {
                             alert("Error: ACMROINDOC o ACMROIDOC faltantes.");
                         }
                     });
-                    
-
                 } else {
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message || "Ocurrió un error inesperado."}
@@ -149,7 +185,7 @@ $(document).ready(function () {
                     document.getElementById('goToOrdersButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
                 }
-
+    
                 document.getElementById('goToOrdersButton').addEventListener('click', function () {
                     window.location.href = '/orders';
                 });
@@ -163,7 +199,7 @@ $(document).ready(function () {
                 document.querySelector('.spinner-border').classList.add('d-none');
                 document.getElementById('goToOrdersButton').classList.remove('d-none');
                 document.getElementById('closeModalButton').classList.add('d-none');
-
+    
                 document.getElementById('goToOrdersButton').addEventListener('click', function () {
                     window.location.href = '/orders';
                 });
