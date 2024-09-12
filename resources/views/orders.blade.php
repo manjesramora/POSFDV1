@@ -62,11 +62,11 @@
                             </div>
 
                             <!-- BOTONES -->
-                            <div class="col-12 col-sm-6 col-md-1 d-flex justify-content-between">
+                            <div class="col-12 col-sm-6 col-md-1 n">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-search"></i>
                                 </button>
-                                <button class="btn btn-danger" type="button" onclick="limpiarCampos()">
+                                <button class="btn btn-danger" type="button" onclick="limpiarCampos()" style="margin-left:5px">
                                     <i class="fa-solid fa-eraser"></i>
                                 </button>
                             </div>
