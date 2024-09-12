@@ -15,9 +15,9 @@
         <!-- Boton Empleados -->
         @if(auth()->user()->hasPermission('EMPLEADOS'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('employees') }}">
-                <i class="fa fa-address-book"></i>
-                <span>Empleados</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('employees') }}">
+                <i class="fa fa-address-book" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">EMPLEADOS</span>
             </a>
         </li>
         @endif
@@ -25,9 +25,9 @@
         <!-- Boton Usuarios -->
         @if(auth()->user()->hasPermission('USUARIOS'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('users') }}">
-                <i class="fa-solid fa-user"></i>
-                <span>Usuarios</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('users') }}">
+                <i class="fa-solid fa-user" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">USUARIOS</span>
             </a>
         </li>
         @endif
@@ -35,9 +35,9 @@
         <!-- Boton Roles -->
         @if(auth()->user()->hasPermission('ROLES'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('roles') }}">
-                <i class="fa-solid fa-user-check"></i>
-                <span>Roles</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('roles') }}">
+                <i class="fa-solid fa-user-check" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">ROLES</span>
             </a>
         </li>
         @endif
@@ -45,9 +45,9 @@
         <!-- Boton Permisos -->
         @if(auth()->user()->hasPermission('PERMISOS'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('permissions') }}">
-                <i class="fa-solid fa-list"></i>
-                <span>Permisos</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('permissions') }}">
+                <i class="fa-solid fa-list" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">PERMISOS</span>
             </a>
         </li>
         @endif
@@ -55,21 +55,19 @@
         <!-- Boton Ordenes de compra -->
         @if(auth()->user()->hasPermission('ORDENES'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('orders') }}">
-                <i class="fa fa-truck"></i>
-                <span>Ordenes de Compra</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('orders') }}">
+                <i class="fa fa-truck" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">ORDENES DE COMPRA</span>
             </a>
         </li>
         @endif
 
-
-
         <!-- Boton Etiquetas y Catalogo -->
         @if(auth()->user()->hasPermission('ETIQUETAS'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('labelscatalog') }}">
-                <i class="fa-solid fa-tag"></i>
-                <span>Etiquetas y Catalogo</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('labelscatalog') }}">
+                <i class="fa-solid fa-tag" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">ETIQUETAS Y CATALOGO</span>
             </a>
         </li>
         @endif
@@ -77,9 +75,9 @@
         <!-- Boton Fletes -->
         @if(auth()->user()->hasPermission('FLETES'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('freights') }}">
-                <i class="fa-solid fa-money-check-dollar"></i>
-                <span>Fletes</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('freights') }}">
+                <i class="fa-solid fa-money-check-dollar" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">FLETES</span>
             </a>
         </li>
         @endif
@@ -87,9 +85,9 @@
         <!-- Boton RCN -->
         @if(auth()->user()->hasPermission('RCN'))
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('rcn') }}">
-                <i class="fa-solid fa-file-invoice"></i>
-                <span>RCN</span>
+            <a class="nav-link d-flex align-items-center" href="{{ route('rcn') }}">
+                <i class="fa-solid fa-file-invoice" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">RCN</span>
             </a>
         </li>
         @endif
@@ -99,5 +97,4 @@
 
     </ul>
     <!-- End of Sidebar -->
-
 </nav>
