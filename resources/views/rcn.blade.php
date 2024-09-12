@@ -37,7 +37,7 @@
 
                                 <!-- Filtro de búsqueda por número de OL -->
                                 <div class="input-group me-2" style="width: 300px;">
-                                    <label for="start_date" class="form-label">Num. OL</label>
+                                    <label for="start_date" class="form-label">NUM. OL</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control uper" placeholder="Buscar..." id="searchUser" name="search" value="{{ request('search') }}" onkeypress="if(event.keyCode === 13) { this.form.submit(); }">
                                     </div>
@@ -45,22 +45,22 @@
 
                                 <!-- Filtro de fecha de inicio -->
                                 <div class="me-2">
-                                    <label for="start_date" class="form-label">Desde</label>
+                                    <label for="start_date" class="form-label">DESDE:</label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
+                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}" style="width: 150px;">
                                     </div>
                                 </div>
 
                                 <!-- Filtro de fecha de fin -->
                                 <div class="me-2">
-                                    <label for="end_date" class="form-label">Hasta</label>
+                                    <label for="end_date" class="form-label">HASTA:</label>
                                     <div class="input-group">
-                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
+                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}" style="width: 150px;">
                                     </div>
                                 </div>
 
                                 <div class="me-2 col-md-5 position-relative">
-                                    <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
+                                    <label for="CNCDIRNOM" class="form-label">PROVEEDOR:</label>
                                     <div class="input-group">
                                         <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control uper" value="{{ request('CNCDIRNOM') }}" autocomplete="off" oninput="searchProvider()">
                                     </div>

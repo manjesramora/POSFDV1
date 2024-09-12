@@ -28,13 +28,13 @@
                     <form method="GET" action="{{ route('orders') }}" class="mb-3" id="filterForm">
                         <div class="row g-3 align-items-end">
                             <div class="col-md-2">
-                                <label for="ACMROIDOC" class="form-label">#DOCUMENTO(OL1):</label>
-                                <input type="number" min="1" max="999999" class="form-control input-no-spinner" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric" autocomplete="off">
+                                <label for="ACMROIDOC" class="form-label" style="width: 150px; margin-left: 210px;">NUM. OL:</label>
+                                <input type="number" min="1" max="999999" class="form-control input-no-spinner" name="ACMVOIDOC" id="ACMVOIDOC" class="form-control" value="{{ request('ACMVOIDOC') }}" inputmode="numeric" autocomplete="off" style="width: 150px; margin-left: 210px;">
                             </div>
 
                             <div class="col-md-2">
-                                <label for="CNCDIRID" class="form-label">#PROVEDOR:</label>
-                                <input type="number" class="form-control input-no-spinner" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric" autocomplete="off">
+                                <label for="CNCDIRID" class="form-label" style="margin-left: 105px;">NUM. PROVEDOR:</label>
+                                <input type="number" class="form-control input-no-spinner" name="CNCDIRID" id="CNCDIRID" class="form-control" value="{{ request('CNCDIRID') }}" inputmode="numeric" autocomplete="off" style="width: 150px; margin-left: 105px;">
                                 <div id="idDropdown" class="dropdown-menu"></div>
                             </div>
                             <div class="col-md-3">
@@ -47,14 +47,15 @@
                             </div>
                             <div class="col-md-2">
                                 <label for="start_date" class="form-label">FECHA DE INICIO:</label>
-                                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}">
+                                <input type="date" name="start_date" id="start_date" class="form-control" value="{{ request('start_date') }}" style="width: 150px;" >
                             </div>
+                            
                             <div class="col-md-2">
-                                <label for="end_date" class="form-label">FECHA DE FIN:</label>
-                                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}">
+                                <label for="end_date" class="form-label" style="margin-left: -105px;">FECHA DE FIN:</label>
+                                <input type="date" name="end_date" id="end_date" class="form-control" value="{{ request('end_date') }}" style="width: 150px; margin-left: -105px;">
                             </div>
                             <div class="col-md-1">
-                                <button type="submit" class="btn btn-primary w-50" id="filterButton">
+                                <button type="submit" class="btn btn-primary w-50" id="filterButton" style="margin-left: -210px;">
                                     <i class="fas fa-search"></i>
                                 </button>
                                 <button class="btn btn-danger" type="button" onclick="limpiarCampos()">

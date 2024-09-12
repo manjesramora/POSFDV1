@@ -36,13 +36,13 @@
                             <form method="GET" action="{{ route('freights') }}" class="d-flex align-items-end" id="filterForm">
                                 <!-- Filtro de fechas (ya existente) -->
                                 <div class="me-2">
-                                    <label for="start_date" class="form-label">Desde</label>
+                                    <label for="start_date" class="form-label">DESDE:</label>
                                     <div class="input-group">
                                         <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
                                     </div>
                                 </div>
                                 <div class="me-2">
-                                    <label for="end_date" class="form-label">Hasta</label>
+                                    <label for="end_date" class="form-label">HASTA:</label>
                                     <div class="input-group">
                                         <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
                                     </div>
@@ -50,7 +50,7 @@
 
                                 <!-- Filtro de Proveedor Nombre -->
                                 <div class="me-2 col-md-5 position-relative">
-                                    <label for="CNCDIRNOM" class="form-label">Proveedor:</label>
+                                    <label for="CNCDIRNOM" class="form-label">PROVEEDOR:</label>
                                     <div class="input-group">
                                         <input type="text" name="CNCDIRNOM" id="CNCDIRNOM" class="form-control uper" value="" autocomplete="off">
                                     </div>
@@ -60,7 +60,7 @@
 
                                 <!-- Filtro de Transportista Nombre -->
                                 <div class="me-2 col-md-5 position-relative">
-                                    <label for="CNCDIRNOM_TRANSP" class="form-label">Transportista:</label>
+                                    <label for="CNCDIRNOM_TRANSP" class="form-label">TRANSPORTISTA:</label>
                                     <div class="input-group">
                                         <input type="text" name="CNCDIRNOM_TRANSP" id="CNCDIRNOM_TRANSP" class="form-control uper" value="" autocomplete="off">
                                     </div>

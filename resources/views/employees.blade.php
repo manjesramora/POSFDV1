@@ -44,7 +44,7 @@
                                 </div>
                                 <!-- Filtro activos/inactivos -->
                                 <div class="col-md-2 mb-3">
-                                    <label for="statusFilter" class="form-label">Estado</label>
+                                    <label for="statusFilter" class="form-label">ESTADO:</label>
                                     <select id="statusFilter" class="form-select" name="status" onchange="document.getElementById('filtersForm').submit()">
                                         <option value="">Todos</option>
                                         <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Activos</option>

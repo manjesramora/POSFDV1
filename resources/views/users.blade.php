@@ -51,7 +51,7 @@
 
 
                                 <div class="col-md-2 mb-3">
-                                    <label for="roleFilter" class="form-label">Roles</label>
+                                    <label for="roleFilter" class="form-label">ROLES:</label>
                                     <select id="roleFilter" class="form-select" name="role" onchange="document.getElementById('filtersForm').submit()">
                                         <option value="">Todos</option>
                                         @foreach($roles as $role)
@@ -60,8 +60,8 @@
                                     </select>
                                 </div>
 
-                                <div class="col-md-1-5 mb-3">
-                                    <label for="costCenterFilter" class="form-label">Centros de Costo</label>
+                                <div class="col-md-2 mb-3">
+                                    <label for="costCenterFilter" class="form-label">CENTROS DE COSTO:</label>
                                     <select id="costCenterFilter" class="form-select" name="cost_center" onchange="document.getElementById('filtersForm').submit()">
                                         <option value="">Todos</option>
                                         @foreach($centers as $center)
@@ -72,7 +72,7 @@
 
                                 <!-- Filtro activos/inactivos -->
                                 <div class="col-md-2 mb-3">
-                                    <label for="statusFilter" class="form-label">Estado</label>
+                                    <label for="statusFilter" class="form-label">ESTADO:</label>
                                     <select id="statusFilter" class="form-select" name="status" onchange="document.getElementById('filtersForm').submit()">
                                         <option value="">Todos</option>
                                         <option value="1" {{ request('status') == '1' ? 'selected' : '' }}>Activos</option>
