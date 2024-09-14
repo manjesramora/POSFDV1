@@ -76,14 +76,15 @@ return [
         // Conexión para centro de costo 'FD10'
         'FD10' => [
             'driver' => 'sqlsrv',
-            'host' => '128.76.8.245',
+            'host' => '128.76.11.8',
             'port' => '1433',
-            'database' => 'ERP_TBI_TEC_PRO_FDGO',
+            'database' => 'ERP_TBI_TEC_PRO_FDGO_MAZATLAN',
             'username' => 'USRTEST',
             'password' => 'PROTOTIPO',
             'charset' => 'utf8',
             'prefix' => '',
         ],
+
         'FD04' => [
             'driver' => 'sqlsrv',
             'host' => '128.76.8.148',

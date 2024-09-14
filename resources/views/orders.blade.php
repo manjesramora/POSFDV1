@@ -149,6 +149,7 @@
                                                 <td>{{ $order->CNCDIRID }}</td>
                                                 <td>{{ $order->provider->CNCDIRNOM }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($order->ACMVOIFDOC)->format('d-m-Y') }}</td>
+
                                                 <td>{{ $order->ACMVOIALID }}</td>
                                                 <td>
                                                     <a href="{{ route('receptions.show', $order->ACMVOIDOC) }}" class="btn btn-primary">
