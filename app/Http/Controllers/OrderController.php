@@ -524,7 +524,7 @@ class OrderController extends Controller
 
             // Listado de conexiones a afectar (local + remota si es FD09 o FD10)
             $connections = $this->getConnections();
-
+            $mesRecepcion = (int) $fechaActual->format('m');
 
             // Detectar el idioma antes de formatear fechas
             foreach ($connections as $connection) {
@@ -568,7 +568,7 @@ class OrderController extends Controller
                     'ACMROIFREQ' => DB::raw("CONVERT(DATETIME, '{$reception_date}', 120)"),  // Fecha de recepción
                     'ACMROIFTRN' => DB::raw("CONVERT(DATETIME, '{$reception_date}', 120)"),  // Fecha de transacción
                     'ACMROIFCNT' => DB::raw("CONVERT(DATETIME, '{$reception_date}', 120)"),  // Fecha de conteo
-                    'ACMVOIPR' => $order->ACMVOIPR,
+                    'ACMVOIPR' => $mesRecepcion,
                     'INPRODID' => (int) $partida['ACMVOIPRID'],
                     'ACMROIDSC' => isset($partida['ACMVOIPRDS']) ? substr($partida['ACMVOIPRDS'], 0, 60) : '',
                     'ACMROIUMT' => isset($partida['ACMVOIUMT']) ? substr($partida['ACMVOIUMT'], 0, 3) : '',
