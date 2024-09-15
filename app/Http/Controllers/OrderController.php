@@ -55,107 +55,107 @@ class OrderController extends Controller
     }
 
     public function index(Request $request)
-{
-    $user = Auth::user();
+    {
+        $user = Auth::user();
 
-    // Redirigir al login si no hay usuario autenticado
-    if (!$user) {
-        return redirect()->route('login');
-    }
-
-    // Obtener los centros de costos asociados al usuario
-    $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
-    $query = Order::query();
-
-    // Filtrar por los centros de costos del usuario
-    if (!empty($centrosCostosIds)) {
-        $query->whereIn('ACMVOIALID', $centrosCostosIds);
-    }
-
-    // Validación de fechas de entrada
-    $startDate = $request->input('start_date');
-    $endDate = $request->input('end_date');
-
-    // Definir la fecha límite de 6 meses atrás
-    $sixMonthsAgo = Carbon::now()->subMonths(6)->format('Y-m-d');
-
-    // Aplicar filtros de fechas si se proporcionan
-    if ($startDate && $endDate) {
-        try {
-            $start = Carbon::parse($startDate)->format('Y-m-d');
-            $end = Carbon::parse($endDate)->endOfDay()->format('Y-m-d');
-        } catch (\Exception $e) {
-            return redirect()->route('orders')->with('error', 'Formato de fecha no válido.');
+        // Redirigir al login si no hay usuario autenticado
+        if (!$user) {
+            return redirect()->route('login');
         }
 
-        // Asegurar que las fechas no son mayores a 6 meses desde la fecha actual
-        if (Carbon::parse($start)->lt($sixMonthsAgo) || Carbon::parse($end)->lt($sixMonthsAgo)) {
-            return redirect()->route('orders')->with('error', 'El rango de fechas no puede ser mayor a 6 meses desde la fecha actual.');
+        // Obtener los centros de costos asociados al usuario
+        $centrosCostosIds = $user->costCenters->pluck('cost_center_id')->toArray();
+        $query = Order::query();
+
+        // Filtrar por los centros de costos del usuario
+        if (!empty($centrosCostosIds)) {
+            $query->whereIn('ACMVOIALID', $centrosCostosIds);
         }
 
-        // Filtrar fechas con BETWEEN sin usar TRY_CONVERT
-        $query->whereBetween(DB::raw("CAST(ACMVOIFDOC AS DATE)"), [$start, $end]);
-    } else {
-        // Si no se especifican fechas, usar los últimos 6 meses
-        $query->where(DB::raw("CAST(ACMVOIFDOC AS DATE)"), '>=', $sixMonthsAgo);
-    }
+        // Validación de fechas de entrada
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
 
-    // Definir valores predeterminados para el ordenamiento
-    $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
-    $sortDirection = $request->input('sortDirection', 'desc');
+        // Definir la fecha límite de 6 meses atrás
+        $sixMonthsAgo = Carbon::now()->subMonths(6)->format('Y-m-d');
 
-    // Lista de columnas permitidas para ordenar
-    $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'CNCDIRNOM', 'ACMVOIFDOC', 'ACMVOIALID'];
+        // Aplicar filtros de fechas si se proporcionan
+        if ($startDate && $endDate) {
+            try {
+                $start = Carbon::parse($startDate)->format('Y-m-d');
+                $end = Carbon::parse($endDate)->endOfDay()->format('Y-m-d');
+            } catch (\Exception $e) {
+                return redirect()->route('orders')->with('error', 'Formato de fecha no válido.');
+            }
 
-    if (in_array($sortColumn, $sortableColumns)) {
-        if ($sortColumn == 'CNCDIRNOM') {
-            // Si se ordena por nombre de proveedor, hacer join con la tabla CNCDIR
-            $query->join('CNCDIR', 'ACMVOR.CNCDIRID', '=', 'CNCDIR.CNCDIRID')
-                  ->orderBy('CNCDIR.CNCDIRNOM', $sortDirection);
+            // Asegurar que las fechas no son mayores a 6 meses desde la fecha actual
+            if (Carbon::parse($start)->lt($sixMonthsAgo) || Carbon::parse($end)->lt($sixMonthsAgo)) {
+                return redirect()->route('orders')->with('error', 'El rango de fechas no puede ser mayor a 6 meses desde la fecha actual.');
+            }
+
+            // Filtrar fechas con BETWEEN sin usar TRY_CONVERT
+            $query->whereBetween(DB::raw("CAST(ACMVOIFDOC AS DATE)"), [$start, $end]);
         } else {
-            // Ordenar por la columna seleccionada
-            $query->orderBy($sortColumn, $sortDirection);
+            // Si no se especifican fechas, usar los últimos 6 meses
+            $query->where(DB::raw("CAST(ACMVOIFDOC AS DATE)"), '>=', $sixMonthsAgo);
         }
-    } else {
-        // Ordenar por defecto por ACMVOIDOC descendente
-        $query->orderBy('ACMVOIDOC', 'desc');
-    }
 
-    // Aplicar otros filtros si están presentes
-    if ($request->filled('ACMVOIDOC')) {
-        $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
-    }
+        // Definir valores predeterminados para el ordenamiento
+        $sortColumn = $request->input('sortColumn', 'ACMVOIDOC');
+        $sortDirection = $request->input('sortDirection', 'desc');
 
-    if ($request->filled('CNCDIRID')) {
-        $query->where('ACMVOR.CNCDIRID', $request->input('CNCDIRID'));
-    }
+        // Lista de columnas permitidas para ordenar
+        $sortableColumns = ['CNTDOCID', 'ACMVOIDOC', 'CNCDIRID', 'CNCDIRNOM', 'ACMVOIFDOC', 'ACMVOIALID'];
 
-    if ($request->filled('CNCDIRNOM')) {
-        // Filtro por nombre del proveedor
-        $query->whereHas('provider', function ($q) use ($request) {
-            $q->where('CNCDIR.CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
+        if (in_array($sortColumn, $sortableColumns)) {
+            if ($sortColumn == 'CNCDIRNOM') {
+                // Si se ordena por nombre de proveedor, hacer join con la tabla CNCDIR
+                $query->join('CNCDIR', 'ACMVOR.CNCDIRID', '=', 'CNCDIR.CNCDIRID')
+                    ->orderBy('CNCDIR.CNCDIRNOM', $sortDirection);
+            } else {
+                // Ordenar por la columna seleccionada
+                $query->orderBy($sortColumn, $sortDirection);
+            }
+        } else {
+            // Ordenar por defecto por ACMVOIDOC descendente
+            $query->orderBy('ACMVOIDOC', 'desc');
+        }
+
+        // Aplicar otros filtros si están presentes
+        if ($request->filled('ACMVOIDOC')) {
+            $query->where('ACMVOIDOC', $request->input('ACMVOIDOC'));
+        }
+
+        if ($request->filled('CNCDIRID')) {
+            $query->where('ACMVOR.CNCDIRID', $request->input('CNCDIRID'));
+        }
+
+        if ($request->filled('CNCDIRNOM')) {
+            // Filtro por nombre del proveedor
+            $query->whereHas('provider', function ($q) use ($request) {
+                $q->where('CNCDIR.CNCDIRNOM', 'like', '%' . $request->input('CNCDIRNOM') . '%');
+            });
+        }
+
+        // Filtrar solo órdenes con movimientos pendientes de recepción
+        $query->whereExists(function ($subquery) {
+            $subquery->select(DB::raw(1))
+                    ->from('ACMVOR1')
+                    ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
+                    ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
         });
+
+        // Paginación
+        $orders = $query->paginate(30);
+
+        // Si es una petición AJAX, renderizar solo la tabla de órdenes
+        if ($request->ajax()) {
+            return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
+        }
+
+        // Renderizar la vista completa de órdenes
+        return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
     }
-
-    // Filtrar solo órdenes con movimientos pendientes de recepción
-    $query->whereExists(function ($subquery) {
-        $subquery->select(DB::raw(1))
-                 ->from('ACMVOR1')
-                 ->whereRaw('ACMVOR1.ACMVOIDOC = ACMVOR.ACMVOIDOC')
-                 ->whereRaw('ACMVOR1.ACMVOIQTO > ACMVOR1.ACMVOIQTR');
-    });
-
-    // Paginación
-    $orders = $query->paginate(30);
-
-    // Si es una petición AJAX, renderizar solo la tabla de órdenes
-    if ($request->ajax()) {
-        return view('orders_table', compact('orders', 'sortColumn', 'sortDirection'))->render();
-    }
-
-    // Renderizar la vista completa de órdenes
-    return view('orders', compact('orders', 'sortColumn', 'sortDirection', 'startDate', 'endDate'));
-}
 
 
     public function showReceptions($ACMVOIDOC)
@@ -720,140 +720,520 @@ class OrderController extends Controller
             throw $e;
         }
     }
-
-    public function receiptOrder(Request $request, $ACMVOIDOC)
+    public function insertCGMVCN($validatedData, $totalPartidas)
     {
-        try {
-            $input = $request->all();
-
-            if (isset($input['precio_unitario'])) {
-                foreach ($input['precio_unitario'] as $key => $precio) {
-                    $input['precio_unitario'][$key] = preg_replace('/[\$,]/', '', $precio);
-                }
-            }
-
-            if (isset($input['cantidad_recibida'])) {
-                foreach ($input['cantidad_recibida'] as $key => $cantidad) {
-                    $input['cantidad_recibida'][$key] = preg_replace('/[\$,]/', '', $cantidad);
-                }
-            }
-
-            if (isset($input['freight'])) {
-                $input['freight'] = preg_replace('/[\$,]/', '', $input['freight']);
-            }
-
-            if (isset($input['total_cost'])) {
-                $input['total_cost'] = preg_replace('/[\$,]/', '', $input['total_cost']);
-            } else {
-                $input['total_cost'] = 0;
-            }
-
-            $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
-            $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
-
-            if (!$order || !$provider) {
-                return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
-            }
-
-            $input['supplier_name'] = $provider->CNCDIRNOM;
-            $input['reference_type'] = $request->input('reference_type', '');
-            $input['store'] = $order->ACMVOIALID;
-            $input['reference'] = $request->input('reference', '');
-            $input['reception_date'] = $request->input('reception_date', now()->toDateString());
-
-            $validatedData = $request->merge($input)->validate([
-                'document_type' => 'required|string',
-                'document_number' => 'required|string',
-                'document_type1' => 'required|string',
-                'document_number1' => 'required|string',
-                'freight' => 'nullable|numeric',
-                'total_cost' => 'nullable|numeric',
-                'carrier_number' => 'nullable|string|max:255',
-                'carrier_name' => 'nullable|string|max:255',
-                'supplier_name' => 'required|string|max:255',
-                'reference_type' => 'required|string|max:255',
-                'store' => 'required|string|max:255',
-                'reference' => 'required|string|max:255',
-                'reception_date' => 'required|date',
-                'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',
-                'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',
-            ], [
-                'document_type.required' => 'El tipo de documento es obligatorio.',
-                'document_number.required' => 'El número de documento es obligatorio.',
-                'supplier_name.required' => 'El nombre del proveedor es obligatorio.',
-                'reference_type.required' => 'El tipo de referencia es obligatorio.',
-                'store.required' => 'El almacén es obligatorio.',
-                'reference.required' => 'La referencia es obligatoria.',
-                'reception_date.required' => 'La fecha de recepción es obligatoria.',
-                'numeric' => 'El campo :attribute debe ser un número.',
-                'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
-            ]);
-
-            Log::info('Datos recibidos en receiptOrder:', $validatedData);
-
-            DB::beginTransaction();
-
+        $centroCosto = trim(Auth::user()->costCenters->first()->cost_center_id); // Centro de costo asociado al usuario
+    
+        // Conexiones de base de datos (local y remota)
+        $connectionLocal = 'FD04'; // Local
+        $connectionRemota = $centroCosto; // Remota (centro de costo)
+    
+        // Verifica si la conexión remota es válida
+        $connections = [$connectionLocal];
+        if (in_array($connectionRemota, ['FD09', 'FD10'])) {
+            $connections[] = $connectionRemota;
+        }
+    
+        // Fecha de recepción
+        $fechaRecepcion = Carbon::now(); // Fecha actual para la recepción
+        $numRCN = $validatedData['document_number1']; // Número de RCN generado
+        $usuario = Auth::user()->username; // Nombre del usuario logueado
+        $totalLineas = $totalPartidas / 2; // Número de líneas es el total de partidas dividido entre 2
+    
+        foreach ($connections as $connection) {
             try {
-                foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
-                    if ($cantidadRecibida === null || $cantidadRecibida === '') {
-                        continue;
-                    }
-
-                    if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
-                        Log::warning("Valor de cantidad_recibida no válido para el índice {$index}. Se omite la actualización.");
-                        continue;
-                    }
-
-                    $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
-                    if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
-                        Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
-                        continue;
-                    }
-
-                    $cantidadRecibida = number_format((float) bcdiv($cantidadRecibida, '1', 4), 4, '.', '');
-                    $precioUnitario = number_format((float) bcdiv($precioUnitario, '1', 4), 4, '.', '');
-
-                    $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
-                    $cantidadSolicitada = number_format((float) bcdiv($cantidadSolicitada, '1', 4), 4, '.', '');
-
-                    DB::table('ACMVOR1')
-                        ->where('ACMVOIDOC', $ACMVOIDOC)
-                        ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
-                        ->update([
-                            'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
-                            'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
-                        ]);
-                }
-
-                if (isset($validatedData['freight']) && $validatedData['freight'] > 0) {
-                    if (!$this->insertFreight($validatedData, $provider)) {
-                        throw new \Exception("Error al insertar datos de flete.");
-                    }
-                }
-
-                $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
-
-                DB::commit();
-
-                Log::info('Recepción registrada con éxito en la base de datos.');
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Recepción registrada con éxito.',
-                    'ACMROINDOC' => $validatedData['document_number1'],
-                    'ACMROIDOC' => $order->ACMVOIDOC
+                // Obtener el idioma de la base de datos para formatear las fechas
+                $dbLanguage = DB::connection($connection)->select(DB::raw("SELECT @@language AS 'Idioma'"))[0]->Idioma;
+    
+                // Formatear las fechas según el idioma de la base de datos
+                $fechaActualFormatted = $this->getFormattedDate($fechaRecepcion, $dbLanguage);
+                $fechaDefaultFormatted = $this->getFormattedDefaultDate($dbLanguage);
+    
+                // Inserción en la tabla CGMVCN
+                DB::connection($connection)->table('CGMVCN')->insert([
+                    'CNCIASID' => 1,
+                    'CNTDOCID' => 'RCN',
+                    'CGMVCNDOC' => $numRCN, // Número de RCN
+                    'CGMVCNFCNT' => $fechaActualFormatted, // Fecha de recepción
+                    'CGMVCNFTRN' => $fechaActualFormatted, // Fecha de transacción
+                    'CGMVCNFCON' => $fechaActualFormatted, // Fecha de confirmación
+                    'CGMVCNFAHD' => $fechaActualFormatted, // Fecha de auditoría
+                    'CGMVCNFEHR' => $fechaActualFormatted, // Fecha de recepción
+                    'CGMVCNPER' => $fechaRecepcion->format('m'), // Mes de la recepción
+                    'CGMVCNCON' => 'RECEPCION DE MATERIAL', // Descripción de la recepción
+                    'CGMVCNPOST' => 'N', // No posteado
+                    'CGMVCNPMD' => 'N', // No proceso manual
+                    'CNCMNMID' => 'MXP', // Moneda
+                    'CGMVCNMOD' => 'N', // No modificado
+                    'CGMVCNTCMB' => 0, // No intercambio
+                    'CGMVCNPPP' => 'C', // Tipo de pedido
+                    'CGMVCNMPP' => 0, // No modificación posterior
+                    'CGMVCNMDP' => 'CPA', // Código de método de pago
+                    'CGMVCNCAN' => 'N', // No cancelado
+                    'CGMVCNULIN' => $totalLineas, // Número de partidas divididas entre 2
+                    'CGMV01ID' => '          ', // Campo reservado
+                    'CGMV02ID' => '          ', // Campo reservado
+                    'CGMV03ID' => '          ', // Campo reservado
+                    'CGMV04ID' => '          ', // Campo reservado
+                    'CGMV05ID' => '          ', // Campo reservado
+                    'CGMV06ID' => 0, // Campo reservado
+                    'CGMV07ID' => 0, // Campo reservado
+                    'CGMV08ID' => 0, // Campo reservado
+                    'CGMV09ID' => 0, // Campo reservado
+                    'CGMV10ID' => 0, // Campo reservado
+                    'CGMVCNTDC' => '   ', // Campo reservado
+                    'CGMVCNNDC' => 0, // Campo reservado
+                    'CGCJ01ID' => '               ', // Campo reservado
+                    'CGCJ02ID' => '               ', // Campo reservado
+                    'CGCJ03ID' => '               ', // Campo reservado
+                    'CGCJ04ID' => '               ', // Campo reservado
+                    'CGCJ05ID' => '               ', // Campo reservado
+                    'CGCJ06ID' => '               ', // Campo reservado
+                    'CGCJ07ID' => '               ', // Campo reservado
+                    'CGCJ08ID' => '               ', // Campo reservado
+                    'CGCJ09ID' => '               ', // Campo reservado
+                    'CGCJ10ID' => '               ', // Campo reservado
+                    'CGCJ11ID' => '               ', // Campo reservado
+                    'CGCJ12ID' => '               ', // Campo reservado
+                    'CGCJ13ID' => '               ', // Campo reservado
+                    'CGCJ14ID' => '               ', // Campo reservado
+                    'CGCJ15ID' => '               ', // Campo reservado
+                    'CGMVCNUSRO' => 0, // Campo reservado
+                    'CGMVCNUSRU' => 0, // Campo reservado
+                    'CGMVCNWRKS' => '               ', // Campo reservado
+                    'CGMVCNDOCP' => 0, // Campo reservado
+                    'CGMVCNTDP' => '   ', // Campo reservado
+                    'CGMV11ID' => '          ', // Campo reservado
+                    'CGMV12ID' => '          ', // Campo reservado
+                    'CGMV13ID' => '          ', // Campo reservado
+                    'CGMV14ID' => '          ', // Campo reservado
+                    'CGMV15ID' => '          ', // Campo reservado
+                    'CGMV16ID' => '          ', // Campo reservado
+                    'CGMV17ID' => '          ', // Campo reservado
+                    'CGMV18ID' => '          ', // Campo reservado
+                    'CGMV19ID' => '          ', // Campo reservado
+                    'CGMV20ID' => '          ', // Campo reservado
+                    'CGMVCNTDPO' => '   ', // Campo reservado
+                    'CGMVCNNDPO' => 0, // Campo reservado
+                    'CGMVCNFCPO' => $fechaDefaultFormatted, // Fecha por defecto
+                    'CGMVCNUELAB' => $usuario, // Usuario logueado
+                    'CGMVCNUPOST' => '          ', // Campo reservado
+                    'CGMVCNFPOST' => $fechaDefaultFormatted, // Fecha por defecto
+                    'CGMVCNPELM' => 0, // Campo reservado
+                    'CGMVCNUIMP' => '          ', // Campo reservado
+                    'CGMVCNMIMP' => '', // No NULL pero vacío
+                    'CGMVCNCHQ' => '          ', // Campo reservado
+                    'CGMVCNUMOD' => '          ', // Campo reservado
+                    'CGMVCNFMOD' => $fechaDefaultFormatted, // Fecha por defecto
+                    'CGMVCNUUPOST' => '          ', // Campo reservado
+                    'CGMVCNFUPOST' => $fechaDefaultFormatted, // Fecha por defecto
+                    'CGMVCNXML' => ' ', // Campo reservado
+                    'CGMVCNBAN' => 0, // Campo reservado
+                    'CGMVCNCTAB' => '', // No NULL pero vacío
+                    'CGMVCNNCH' => '', // No NULL pero vacío
+                    'CGMVCNIDPG' => '', // No NULL pero vacío
+                    'CGMVCNREF' => '', // No NULL pero vacío
+                    'CGMVCNDIR' => 0, // Campo reservado
+                    'CGMVCNBANO' => 0, // Campo reservado
+                    'CGMVCNCTAO' => '', // No NULL pero vacío
+                    'CGMVCNBMAN' => 0, // Campo reservado
                 ]);
+    
+                Log::info("Registro insertado en CGMVCN en la conexión {$connection} con número de RCN: {$numRCN}");
+    
             } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error("Error en la recepción de la orden: " . $e->getMessage());
-                return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+                Log::error("Error al insertar en CGMVCN en la conexión {$connection}: " . $e->getMessage());
+                throw $e;
             }
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Errores de validación:', $e->errors());
-            return response()->json([
-                'success' => false,
-                'errors' => $e->errors()
-            ], 422);
         }
     }
+    
+
+    public function getFormattedDate($fecha, $dbLanguage)
+    {
+        if (strtolower($dbLanguage) == 'us_english') {
+            return $fecha->format('Y-m-d H:i:s');
+        } else {
+            // Por ejemplo, en Español se podría requerir el formato d/m/Y
+            return $fecha->format('d/m/Y H:i:s');
+        }
+    }
+    
+    public function getFormattedDefaultDate($dbLanguage)
+    {
+        if (strtolower($dbLanguage) == 'us_english') {
+            return '1753-01-01 00:00:00';
+        } else {
+            return '01/01/1753 00:00:00';
+        }
+    }
+    
+
+
+public function receiptOrder(Request $request, $ACMVOIDOC)
+{
+    try {
+        $input = $request->all();
+
+        if (isset($input['precio_unitario'])) {
+            foreach ($input['precio_unitario'] as $key => $precio) {
+                $input['precio_unitario'][$key] = preg_replace('/[\$,]/', '', $precio);
+            }
+        }
+
+        if (isset($input['cantidad_recibida'])) {
+            foreach ($input['cantidad_recibida'] as $key => $cantidad) {
+                $input['cantidad_recibida'][$key] = preg_replace('/[\$,]/', '', $cantidad);
+            }
+        }
+
+        if (isset($input['freight'])) {
+            $input['freight'] = preg_replace('/[\$,]/', '', $input['freight']);
+        }
+
+        if (isset($input['total_cost'])) {
+            $input['total_cost'] = preg_replace('/[\$,]/', '', $input['total_cost']);
+        } else {
+            $input['total_cost'] = 0;
+        }
+
+        $order = Order::where('ACMVOIDOC', $ACMVOIDOC)->first();
+        $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
+
+        if (!$order || !$provider) {
+            return response()->json(['success' => false, 'message' => 'Orden o proveedor no encontrado.']);
+        }
+
+        $input['supplier_name'] = $provider->CNCDIRNOM;
+        $input['reference_type'] = $request->input('reference_type', '');
+        $input['store'] = $order->ACMVOIALID;
+        $input['reference'] = $request->input('reference', '');
+        $input['reception_date'] = $request->input('reception_date', now()->toDateString());
+
+        // Validación de datos
+        $validatedData = $request->merge($input)->validate([
+            'document_type' => 'required|string',
+            'document_number' => 'required|string',
+            'document_type1' => 'required|string',
+            'document_number1' => 'required|string',
+            'freight' => 'nullable|numeric',
+            'total_cost' => 'nullable|numeric',
+            'carrier_number' => 'nullable|string|max:255',
+            'carrier_name' => 'nullable|string|max:255',
+            'supplier_name' => 'required|string|max:255',
+            'reference_type' => 'required|string|max:255',
+            'store' => 'required|string|max:255',
+            'reference' => 'required|string|max:255',
+            'reception_date' => 'required|date',
+            'cantidad_recibida.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',
+            'precio_unitario.*' => 'nullable|numeric|regex:/^\d+(\.\d{1,4})?$/',
+        ], [
+            'document_type.required' => 'El tipo de documento es obligatorio.',
+            'document_number.required' => 'El número de documento es obligatorio.',
+            'supplier_name.required' => 'El nombre del proveedor es obligatorio.',
+            'reference_type.required' => 'El tipo de referencia es obligatorio.',
+            'store.required' => 'El almacén es obligatorio.',
+            'reference.required' => 'La referencia es obligatoria.',
+            'reception_date.required' => 'La fecha de recepción es obligatoria.',
+            'numeric' => 'El campo :attribute debe ser un número.',
+            'regex' => 'El campo :attribute no puede contener más de 4 decimales.',
+        ]);
+
+        Log::info('Datos recibidos en receiptOrder:', $validatedData);
+
+        DB::beginTransaction();
+
+        try {
+            $partidasCGMVCN1 = [];
+
+            foreach ($validatedData['cantidad_recibida'] as $index => $cantidadRecibida) {
+                if ($cantidadRecibida === null || $cantidadRecibida === '') {
+                    continue;
+                }
+
+                if (!is_numeric($cantidadRecibida) || $cantidadRecibida <= 0) {
+                    Log::warning("Valor de cantidad_recibida no válido para el índice {$index}. Se omite la actualización.");
+                    continue;
+                }
+
+                $precioUnitario = $validatedData['precio_unitario'][$index] ?? 0;
+                if ($precioUnitario === null || $precioUnitario === '' || !is_numeric($precioUnitario) || $precioUnitario <= 0) {
+                    Log::warning("Precio unitario no válido en la línea {$index}. Se omite la actualización.");
+                    continue;
+                }
+
+                $cantidadRecibida = number_format((float) bcdiv($cantidadRecibida, '1', 4), 4, '.', '');
+                $precioUnitario = number_format((float) bcdiv($precioUnitario, '1', 4), 4, '.', '');
+
+                $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
+                $cantidadSolicitada = number_format((float) bcdiv($cantidadSolicitada, '1', 4), 4, '.', '');
+
+                DB::table('ACMVOR1')
+                    ->where('ACMVOIDOC', $ACMVOIDOC)
+                    ->where('ACMVOILIN', $request->input('acmvoilin')[$index])
+                    ->update([
+                        'ACMVOIQTR' => DB::raw('ACMVOIQTR + ' . $cantidadRecibida),
+                        'ACMVOIQTP' => $cantidadSolicitada - $cantidadRecibida,
+                    ]);
+
+                // Preparar la información de cada partida para insertarla en CGMVCN1
+                $partidasCGMVCN1[] = [
+                    'cantidad_recibida' => $cantidadRecibida,
+                    'costo_total' => $cantidadRecibida * $precioUnitario,
+                    'unidad_medida' => $request->input('acmvoiumt')[$index],
+                    'producto_id' => $request->input('acmvoiprid')[$index],
+                    'producto_desc' => $request->input('acmvoiprds')[$index],
+                    'producto_sku' => $request->input('acmvoiprid')[$index], // Asumo que el SKU es el mismo que el ID del producto
+                    'producto_inprodi3' => $request->input('inprodi3')[$index] ?? '', // Se debe obtener de la tabla de productos si es necesario
+                ];
+            }
+
+            // Inserción en la tabla de fletes, si aplica
+            if (isset($validatedData['freight']) && $validatedData['freight'] > 0) {
+                if (!$this->insertFreight($validatedData, $provider)) {
+                    throw new \Exception("Error al insertar datos de flete.");
+                }
+            }
+
+            // Insertar partidas en ACMROI (lógica interna para las partidas)
+            $this->insertPartidas($request->all(), $validatedData['cantidad_recibida'], $validatedData['precio_unitario'], $order, $provider);
+
+            // Insertar en CGMVCN (cabecera de la recepción)
+            $this->insertCGMVCN($validatedData, count($validatedData['cantidad_recibida']));
+
+            // Insertar en CGMVCN1 (detalle de la recepción) usando la información preparada
+            $this->insertCGMVCN1($validatedData, $partidasCGMVCN1);
+
+            // Confirmar la transacción
+            DB::commit();
+
+            Log::info('Recepción registrada con éxito en la base de datos.');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Recepción registrada con éxito.',
+                'ACMROINDOC' => $validatedData['document_number1'],
+                'ACMROIDOC' => $order->ACMVOIDOC
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en la recepción de la orden: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Ocurrió un error al registrar la recepción.']);
+        }
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        Log::error('Errores de validación:', $e->errors());
+        return response()->json([
+            'success' => false,
+            'errors' => $e->errors()
+        ], 422);
+    }
+}
+
+
+public function insertCGMVCN1($receptionData, $partidas)
+{
+    $centroCosto = trim(Auth::user()->costCenters->first()->cost_center_id); // Centro de costo asociado al usuario
+
+    // Conexiones de base de datos (local y remota)
+    $connectionLocal = 'FD04'; // Local
+    $connectionRemota = $centroCosto; // Remota (centro de costo)
+
+    // Verifica si la conexión remota es válida
+    $connections = [$connectionLocal];
+    if (in_array($connectionRemota, ['FD09', 'FD10'])) {
+        $connections[] = $connectionRemota;
+    }
+
+    $fechaRecepcion = Carbon::now(); // Fecha actual
+    $numRCN = $receptionData['document_number1']; // Número de RCN generado
+    $usuario = Auth::user()->username; // Nombre del usuario logueado
+
+    foreach ($connections as $connection) {
+        foreach ($partidas as $index => $partida) {
+            $costoTotal = $partida['costo_total']; // Costo total de la partida
+            $cantidadRecibida = $partida['cantidad_recibida']; // Cantidad recepcionada
+            $unidadMedida = $partida['unidad_medida']; // Unidad de medida
+            $productoId = $partida['producto_id']; // ID del producto
+            $productoDesc = $partida['producto_desc']; // Descripción del producto
+            $productoSKU = $partida['producto_sku']; // SKU del producto
+            $productoInprodi3 = $partida['producto_inprodi3']; // INPRODI3 de la tabla INPROD
+
+            try {
+                // Obtener el idioma de la base de datos para formatear las fechas
+                $dbLanguage = DB::connection($connection)->select(DB::raw("SELECT @@language AS 'Idioma'"))[0]->Idioma;
+
+                // Formatear la fecha según el idioma de la base de datos
+                if ($dbLanguage === 'us_english') {
+                    $fechaActualFormatted = $fechaRecepcion->format('Y-m-d H:i:s'); // Formato esperado en inglés (YYYY-MM-DD)
+                } else {
+                    $fechaActualFormatted = $fechaRecepcion->format('d/m/Y H:i:s'); // Formato esperado en español (DD/MM/YYYY)
+                }
+
+                $fechaDefaultFormatted = '1753-01-01 00:00:00'; // Fecha por defecto
+
+                // Primer registro CGMVCN1 (costo total negativo)
+                DB::connection($connection)->table('CGMVCN1')->insert([
+                    'CNCIASID' => 1,
+                    'CNTDOCID' => 'RCN',
+                    'CGMVCNDOC' => $numRCN,
+                    'CGMVCNFCNT' => $fechaActualFormatted, // Fecha de recepción
+                    'CGMVCNLIN' => ($index * 2) + 1, // Primera línea (incremento por partida)
+                    'CGMVCNLIB' => 'NL',
+                    'CGUNNGID' => 1001, // Primer registro 1001
+                    'CGCTASI1' => 4415, // Primer valor específico
+                    'CGCTASI2' => '0001', // Primer valor específico
+                    'CGCTASI3' => '            ', // Campo vacío
+                    'CGCTASCIAS' => 0, // Campo reservado
+                    'CGMVCNFADT' => $fechaActualFormatted, // Fecha de recepción
+                    'CGTSBLID' => ' ', // Campo reservado
+                    'CGMVCNSBL' => 0, // Campo reservado
+                    'CGMVCNSBLD' => '                                                            ', // Campo vacío
+                    'CGMVCNTREF' => '   ', // Campo reservado
+                    'CGMVCNNREF' => 0, // Campo reservado
+                    'CGMVCNDREF' => '   ', // Campo reservado
+                    'CGMVCNPRC' => 0, // Campo reservado
+                    'CGMVCNSIG' => ' ', // Campo reservado
+                    'CGMVCNMNT' => -$costoTotal, // Costo total negativo
+                    'CGMVCNCGO' => 0, // Primer registro tiene costo 0
+                    'CGMVCNABN' => $costoTotal, // Costo total
+                    'CGMVCNQTY' => $cantidadRecibida, // Cantidad recepcionada
+                    'CGMVCNUM' => $unidadMedida, // Unidad de medida
+                    'CGMVCNMON' => 'MXP', // Moneda MXP
+                    'CGMVCNTCM2' => 0, // Campo reservado
+                    'CGMVCNINP1' => $productoId, // ID del producto
+                    'CGMVCNINPD' => $productoDesc, // Descripción del producto
+                    'CGMVCNINP2' => $productoSKU, // SKU del producto
+                    'CGMVCNINP3' => $productoInprodi3, // INPRODI3 del producto
+                    'CGMVCNPOST1' => 'N', // Posteo
+                    'CGMD01ID' => 'REQ       ', // Campo específico
+                    'CGMD02ID' => '          ', // Campo reservado
+                    'CGMD03ID' => '          ', // Campo reservado
+                    'CGMD04ID' => '          ', // Campo reservado
+                    'CGMD05ID' => 'MXP       ', // Moneda MXP
+                    'CGMD06ID' => 0, // Campo reservado
+                    'CGMD07ID' => 0, // Campo reservado
+                    'CGMD08ID' => 0, // Campo reservado
+                    'CGMD09ID' => 0, // Campo reservado
+                    'CGMD10ID' => 0, // Campo reservado
+                    'CGDJ01ID' => '               ', // Campo reservado
+                    'CGDJ02ID' => '               ', // Campo reservado
+                    'CGDJ03ID' => '               ', // Campo reservado
+                    'CGDJ04ID' => '               ', // Campo reservado
+                    'CGDJ05ID' => '               ', // Campo reservado
+                    'CGDJ06ID' => '               ', // Campo reservado
+                    'CGDJ07ID' => '               ', // Campo reservado
+                    'CGDJ08ID' => '               ', // Campo reservado
+                    'CGDJ09ID' => '               ', // Campo reservado
+                    'CGDJ10ID' => '               ', // Campo reservado
+                    'CGDJ11ID' => '               ', // Campo reservado
+                    'CGDJ12ID' => '               ', // Campo reservado
+                    'CGDJ13ID' => '               ', // Campo reservado
+                    'CGDJ14ID' => '               ', // Campo reservado
+                    'CGDJ15ID' => '               ', // Campo reservado
+                    'CGMVCNALIAS' => '.', // Alias
+                    'CGMD11ID' => '          ', // Campo reservado
+                    'CGMD12ID' => '          ', // Campo reservado
+                    'CGMD13ID' => '          ', // Campo reservado
+                    'CGMD14ID' => '          ', // Campo reservado
+                    'CGMD15ID' => '          ', // Campo reservado
+                    'CGMD16ID' => '          ', // Campo reservado
+                    'CGMD17ID' => '          ', // Campo reservado
+                    'CGMD18ID' => '          ', // Campo reservado
+                    'CGMD19ID' => '          ', // Campo reservado
+                    'CGMD20ID' => '          ', // Campo reservado
+                    'CGMVCNTDP1' => '   ', // Campo reservado
+                    'CGMVCNDOCP1' => 0, // Campo reservado
+                    'CGMVCNCAND' => ' ', // Campo reservado
+                    'CGMVCNMXAUT' => 0.0000, // Campo reservado
+                ]);
+
+                // Segundo registro CGMVCN1 (costo total positivo)
+                DB::connection($connection)->table('CGMVCN1')->insert([
+                    'CNCIASID' => 1,
+                    'CNTDOCID' => 'RCN',
+                    'CGMVCNDOC' => $numRCN,
+                    'CGMVCNFCNT' => $fechaActualFormatted, // Fecha de recepción
+                    'CGMVCNLIN' => ($index * 2) + 2, // Segunda línea (incremento por partida)
+                    'CGMVCNLIB' => 'NL',
+                    'CGUNNGID' => 1004, // Segundo registro 1004
+                    'CGCTASI1' => 1102, // Segundo valor específico
+                    'CGCTASI2' => '0002', // Segundo valor específico
+                    'CGCTASI3' => '            ', // Campo vacío
+                    'CGCTASCIAS' => 0, // Campo reservado
+                    'CGMVCNFADT' => $fechaActualFormatted, // Fecha de recepción
+                    'CGTSBLID' => ' ', // Campo reservado
+                    'CGMVCNSBL' => 0, // Campo reservado
+                    'CGMVCNSBLD' => '                                                            ', // Campo vacío
+                    'CGMVCNTREF' => '   ', // Campo reservado
+                    'CGMVCNNREF' => 0, // Campo reservado
+                    'CGMVCNDREF' => '   ', // Campo reservado
+                    'CGMVCNPRC' => 0, // Campo reservado
+                    'CGMVCNSIG' => ' ', // Campo reservado
+                    'CGMVCNMNT' => $costoTotal, // Costo total positivo
+                    'CGMVCNCGO' => $costoTotal, // Costo total
+                    'CGMVCNABN' => 0, // Costo total 0 en segundo registro
+                    'CGMVCNQTY' => $cantidadRecibida, // Cantidad recepcionada
+                    'CGMVCNUM' => $unidadMedida, // Unidad de medida
+                    'CGMVCNMON' => 'MXP', // Moneda MXP
+                    'CGMVCNTCM2' => 0, // Campo reservado
+                    'CGMVCNINP1' => $productoId, // ID del producto
+                    'CGMVCNINPD' => $productoDesc, // Descripción del producto
+                    'CGMVCNINP2' => $productoSKU, // SKU del producto
+                    'CGMVCNINP3' => $productoInprodi3, // INPRODI3 del producto
+                    'CGMVCNPOST1' => 'N', // Posteo
+                    'CGMD01ID' => 'REQ       ', // Campo específico
+                    'CGMD02ID' => '          ', // Campo reservado
+                    'CGMD03ID' => '          ', // Campo reservado
+                    'CGMD04ID' => '          ', // Campo reservado
+                    'CGMD05ID' => 'MXP       ', // Moneda MXP
+                    'CGMD06ID' => 0, // Campo reservado
+                    'CGMD07ID' => 0, // Campo reservado
+                    'CGMD08ID' => 0, // Campo reservado
+                    'CGMD09ID' => 0, // Campo reservado
+                    'CGMD10ID' => 0, // Campo reservado
+                    'CGDJ01ID' => '               ', // Campo reservado
+                    'CGDJ02ID' => '               ', // Campo reservado
+                    'CGDJ03ID' => '               ', // Campo reservado
+                    'CGDJ04ID' => '               ', // Campo reservado
+                    'CGDJ05ID' => '               ', // Campo reservado
+                    'CGDJ06ID' => '               ', // Campo reservado
+                    'CGDJ07ID' => '               ', // Campo reservado
+                    'CGDJ08ID' => '               ', // Campo reservado
+                    'CGDJ09ID' => '               ', // Campo reservado
+                    'CGDJ10ID' => '               ', // Campo reservado
+                    'CGDJ11ID' => '               ', // Campo reservado
+                    'CGDJ12ID' => '               ', // Campo reservado
+                    'CGDJ13ID' => '               ', // Campo reservado
+                    'CGDJ14ID' => '               ', // Campo reservado
+                    'CGDJ15ID' => '               ', // Campo reservado
+                    'CGMVCNALIAS' => '.', // Alias
+                    'CGMD11ID' => '          ', // Campo reservado
+                    'CGMD12ID' => '          ', // Campo reservado
+                    'CGMD13ID' => '          ', // Campo reservado
+                    'CGMD14ID' => '          ', // Campo reservado
+                    'CGMD15ID' => '          ', // Campo reservado
+                    'CGMD16ID' => '          ', // Campo reservado
+                    'CGMD17ID' => '          ', // Campo reservado
+                    'CGMD18ID' => '          ', // Campo reservado
+                    'CGMD19ID' => '          ', // Campo reservado
+                    'CGMD20ID' => '          ', // Campo reservado
+                    'CGMVCNTDP1' => '   ', // Campo reservado
+                    'CGMVCNDOCP1' => 0, // Campo reservado
+                    'CGMVCNCAND' => ' ', // Campo reservado
+                    'CGMVCNMXAUT' => 0.0000, // Campo reservado
+                ]);
+
+                Log::info("Registros insertados en CGMVCN1 en la conexión {$connection} para la partida {$index}");
+
+            } catch (\Exception $e) {
+                Log::error("Error al insertar en CGMVCN1 en la conexión {$connection}: " . $e->getMessage());
+                throw $e;
+            }
+        }
+    }
+}
+
+
+
+
 }
