@@ -24,6 +24,8 @@ class Employee extends Model
         'status' => 1,
     ];
 
+    protected $dateFormat = 'd-m-Y H:i:s'; 
+    
     // Método para formatear la fecha de nacimiento
     public function getBirthAttribute($value)
     {

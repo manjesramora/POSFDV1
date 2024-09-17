@@ -152,13 +152,23 @@
         .table-container {
             margin-bottom: 100px;
             page-break-inside: auto;
-            /* Prevents the table from starting on the next page */
         }
 
         .signature-area {
             text-align: center;
             position: relative;
             page-break-inside: avoid;
+        }
+
+        /* Ensure that all table cells have consistent borders */
+        table,
+        th,
+        td {
+            border: 1px solid black !important;
+        }
+
+        table {
+            border-collapse: collapse !important;
         }
     </style>
 </head>
@@ -201,7 +211,8 @@
                     <tr>
                         <th>LIN</th>
                         <th>SKU</th>
-                        <th colspan="2">DESCRIPCIÓN DEL ARTICULO / CODIGO DE BARRAS</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th>CODIGO DE BARRAS</th>
                         <th>U.M</th>
                         <th>PESO (KG)</th>
                         <th>VOL (MT3)</th>

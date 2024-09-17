@@ -211,6 +211,57 @@
             </div>
         </div>
 
+        @foreach($rcns as $rcn)
+        <!-- Modal para mostrar RCNs asociadas -->
+        <div class="modal fade" id="rcnModal{{ $rcn->ACMROIDOC }}" tabindex="-1" aria-labelledby="rcnModalLabel{{ $rcn->ACMROIDOC }}" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="rcnModalLabel{{ $rcn->ACMROIDOC }}">RCNs para OL: {{ $rcn->ACMROIDOC }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Mostrar las RCNs asociadas a la OL seleccionada que cumplen con los requisitos -->
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="col-2 text-center">RCN</th>
+                                    <th class="col-2 text-center">Fecha Recepción</th>
+                                    <th class="col-2 text-center">Número de Partidas</th>
+                                    <th class="col-2 text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if($allDetailedRcns->has($rcn->ACMROIDOC))
+                                @foreach($allDetailedRcns[$rcn->ACMROIDOC]->unique('ACMROINDOC') as $associatedRcn)
+                                <tr>
+                                    <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
+                                    <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
+                                    <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
+                                    <td class="col-2 text-center align-middle">
+                                        <!-- Botón para abrir el PDF en una nueva pestaña -->
+                                        <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                @endforeach
+                                @else
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay RCNs asociados disponibles.</td>
+                                </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endforeach
+
         <!-- Scroll to Top Button-->
         <a class="scroll-to-top rounded" href="#page-top">
             <i class="fas fa-angle-up"></i>
@@ -261,60 +312,6 @@
             }
         </script>
     </div>
-
-    @foreach($rcns as $rcn)
-    <!-- Modal para mostrar RCNs asociadas -->
-    <div class="modal fade" id="rcnModal{{ $rcn->ACMROIDOC }}" tabindex="-1" aria-labelledby="rcnModalLabel{{ $rcn->ACMROIDOC }}" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="rcnModalLabel{{ $rcn->ACMROIDOC }}">RCNs para OL: {{ $rcn->ACMROIDOC }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Mostrar las RCNs asociadas a la OL seleccionada que cumplen con los requisitos -->
-                    <table class="table table-bordered table-striped">
-                        <thead>
-                            <tr>
-                                <th class="col-2 text-center">RCN</th>
-                                <th class="col-2 text-center">Fecha Recepción</th>
-                                <th class="col-2 text-center">Número de Partidas</th>
-                                <th class="col-2 text-center">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if($allDetailedRcns->has($rcn->ACMROIDOC))
-                            @foreach($allDetailedRcns[$rcn->ACMROIDOC]->unique('ACMROINDOC') as $associatedRcn)
-                            <tr>
-                                <td class="col-2 text-center align-middle">{{ $associatedRcn->ACMROINDOC }}</td>
-                                <td class="col-2 text-center align-middle">{{ \Carbon\Carbon::parse($associatedRcn->ACMROIFREC)->format('d/m/Y') }}</td>
-                                <td class="col-2 text-center align-middle">{{ $associatedRcn->numero_de_partidas }}</td>
-                                <td class="col-2 text-center align-middle">
-                                    <!-- Botón para abrir el PDF en una nueva pestaña -->
-                                    <a href="{{ route('rcn.generatePdf', $associatedRcn->ACMROINDOC) }}" target="_blank" class="btn btn-secondary">
-                                        <i class="fas fa-print"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                            @else
-                            <tr>
-                                <td colspan="4" class="text-center">No hay RCNs asociados disponibles.</td>
-                            </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endforeach
-
-
-
 </body>
 
 </html>

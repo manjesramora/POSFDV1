@@ -99,7 +99,7 @@ class EmployeeController extends Controller
         $employee->status = $request->status;
 
         // Formatea la fecha al formato deseado (DD-MM-YYYY)
-        $formattedBirth = date('d-m-Y', strtotime($request->birth));
+        $formattedBirth = date('Y-m-d', strtotime($request->birth));
         $employee->birth = $formattedBirth;
 
         // Guarda el empleado en la base de datos

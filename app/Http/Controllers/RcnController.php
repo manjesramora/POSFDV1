@@ -31,19 +31,19 @@ class RcnController extends Controller
     {
         // Obtener el usuario autenticado
         $user = Auth::user();
-    
+
         // Obtener los centros de costo asociados al usuario
         $userCostCenters = DB::table('users_cost_centers')
             ->join('store_cost_centers', 'users_cost_centers.center_id', '=', 'store_cost_centers.id')
             ->where('users_cost_centers.user_id', $user->id)
             ->pluck('store_cost_centers.cost_center_id')
             ->toArray();
-    
+
         // Inicializar variables de datos
         $rcns = collect(); // Inicializar $rcns como colección vacía
         $allDetailedRcns = collect(); // Inicializar $allDetailedRcns como colección vacía
         $filtersApplied = false; // Variable para verificar si se aplicaron filtros
-    
+
         // Obtener los parámetros de filtro
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
@@ -51,10 +51,10 @@ class RcnController extends Controller
         $providerName = $request->input('CNCDIRNOM');
         $sortBy = $request->input('sort_by', 'ACMROIDOC');
         $sortOrder = $request->input('sort_order', 'desc');
-    
+
         // Verificar si algún filtro ha sido aplicado
         $filtersApplied = $startDate || $endDate || $search || $providerName;
-    
+
         // Si el usuario no tiene centros de costo asociados y no ha aplicado filtros
         if (empty($userCostCenters)) {
             if (!$filtersApplied) {
@@ -67,30 +67,30 @@ class RcnController extends Controller
                     ->with('warning', 'No se encontraron resultados que coincidan con los filtros aplicados.');
             }
         }
-    
+
         // Si no se aplican filtros, retornar la vista sin realizar consultas
         if (!$filtersApplied) {
             return view('rcn', compact('rcns', 'allDetailedRcns', 'filtersApplied'))
                 ->with('info', 'Por favor, aplica filtros para ver los registros.');
         }
-    
+
         // Obtener la fecha actual y calcular la fecha de hace 6 meses
         $currentDate = Carbon::now();
         $sixMonthsAgo = $currentDate->copy()->subMonths(6);
-    
+
         // Si no hay fecha de inicio, establecer hace 6 meses como la fecha mínima
         if (!$startDate) {
             $startDate = $sixMonthsAgo->format('Y-m-d');
         }
-    
+
         // Si no hay fecha de fin, establecer la fecha actual como fecha máxima
         if (!$endDate) {
             $endDate = $currentDate->format('Y-m-d');
         }
-    
+
         // Generar una clave única de caché basada en la URL completa para evitar consultas repetidas
         $cacheKey = 'rcns_' . md5($request->fullUrl());
-    
+
         // Cargar los resultados desde caché
         $rcns = Cache::remember($cacheKey, 60, function () use ($startDate, $endDate, $search, $providerName, $sortBy, $sortOrder, $userCostCenters) {
             $mainQuery = DB::table('ACMROI')
@@ -105,26 +105,32 @@ class RcnController extends Controller
                     'CNCDIR.CNCDIRNOM'
                 )
                 ->leftJoin('CNCDIR', 'ACMROI.CNCDIRID', '=', 'CNCDIR.CNCDIRID')
-                ->leftJoin('store_cost_centers', 'ACMROI.INALMNID', '=', 'store_cost_centers.cost_center_id') // Unión con los centros de costo
-                ->whereIn('store_cost_centers.cost_center_id', $userCostCenters) // Filtrar por los centros de costo del usuario
-                ->whereBetween('ACMROIFREC', [Carbon::parse($startDate), Carbon::parse($endDate)]) // Aplicar filtro de fechas
+                ->leftJoin('store_cost_centers', 'ACMROI.INALMNID', '=', 'store_cost_centers.cost_center_id')
+                ->whereIn('store_cost_centers.cost_center_id', $userCostCenters)
+                ->whereBetween('ACMROIFREC', [
+                    Carbon::parse($startDate)->format('d/m/Y'), // Formatear fecha de inicio
+                    Carbon::parse($endDate)->format('d/m/Y')    // Formatear fecha de fin
+                ])
+                ->where('CNCDIR.CNCDIRID', 'like', '3%')  // Validación: solo mostrar resultados donde CNCDIRID comienza con 3
                 ->groupBy('ACMROI.ACMROIDOC', 'CNCDIR.CNCDIRNOM')
                 ->orderBy($sortBy, $sortOrder);
-    
+
             if ($providerName) {
                 $mainQuery->where('CNCDIR.CNCDIRNOM', 'LIKE', "%{$providerName}%");
             }
-    
+
             if ($search) {
                 $mainQuery->where('ACMROIDOC', 'LIKE', "%{$search}%");
             }
-    
+
             return $mainQuery->paginate(10);
         });
-    
+
+
+
         // Pre-obtener los IDs de los ACMROIDOC para evitar consultas repetitivas
         $acmroDocs = collect($rcns->items())->pluck('ACMROIDOC')->toArray();
-    
+
         // Consultar los detalles adicionales si hay resultados de la consulta principal
         if (!empty($acmroDocs)) {
             $allDetailedRcns = Cache::remember('detailed_rcns_' . md5(implode(',', $acmroDocs)), 60, function () use ($acmroDocs) {
@@ -138,23 +144,22 @@ class RcnController extends Controller
                         DB::raw('COUNT(*) as numero_de_partidas')
                     )
                     ->whereIn('ACMROIDOC', $acmroDocs)
+                    ->where('CNCDIRID', 'like', '3%') // Aplicar validación para que solo los registros que cumplan el criterio de CNCDIRID
                     ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC')
                     ->get()
                     ->groupBy('ACMROIDOC');
             });
         }
-    
+
         // Si no se encontraron resultados con los filtros aplicados, mostrar mensaje correspondiente
         if ($rcns->isEmpty()) {
             return view('rcn', compact('rcns', 'allDetailedRcns', 'filtersApplied'))
                 ->with('warning', 'No se encontraron resultados que coincidan con los filtros aplicados.');
         }
-    
+
         return view('rcn', compact('rcns', 'allDetailedRcns', 'filtersApplied'));
     }
-    
 
-    
     public function generatePdf($ACMROINDOC)
     {
         try {
@@ -164,10 +169,11 @@ class RcnController extends Controller
                 ->where('ACACTLID', '!=', 'CANCELADO')
                 ->where('ACACSGID', '!=', 'CANCELADO')
                 ->where('ACACANID', '!=', 'CANCELADO')
+                ->where('CNCDIRID', 'like', '3%')  // Validación: solo mostrar si CNCDIRID comienza con 3
                 ->first();
 
             if (!$rcn) {
-                return redirect()->route('rcn')->with('error', 'RCN no encontrado o cancelado.');
+                return redirect()->route('rcn')->with('error', 'RCN no encontrado, cancelado o no cumple con los criterios.');
             }
 
             // Obtener los registros desde la tabla acmroi utilizando ACMROINDOC y filtrando los que no están cancelados
@@ -176,10 +182,11 @@ class RcnController extends Controller
                 ->where('ACACTLID', '!=', 'CANCELADO')
                 ->where('ACACSGID', '!=', 'CANCELADO')
                 ->where('ACACANID', '!=', 'CANCELADO')
+                ->where('CNCDIRID', 'like', '3%')  // Validación: solo mostrar si CNCDIRID comienza con 3
                 ->get();
 
             if ($rcns->isEmpty()) {
-                return redirect()->route('rcn')->with('error', 'Orden no encontrada o todas las partidas están canceladas.');
+                return redirect()->route('rcn')->with('error', 'Orden no encontrada, cancelada o no cumple con los criterios.');
             }
 
             // Obtener el número de OL, el ID de la dirección del proveedor, el ID del almacén y el número de referencia
