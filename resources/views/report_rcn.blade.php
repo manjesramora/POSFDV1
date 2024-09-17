@@ -160,15 +160,13 @@
             page-break-inside: avoid;
         }
 
-        /* Ensure that all table cells have consistent borders */
-        table,
-        th,
-        td {
-            border: 1px solid black !important;
-        }
-
-        table {
-            border-collapse: collapse !important;
+        .barcode {
+            word-break: break-all;
+            white-space: normal;
+            max-width: 100px;
+            /* Asegura que el texto se ajuste al ancho máximo */
+            overflow-wrap: break-word;
+            /* Asegura que se rompan las palabras largas */
         }
     </style>
 </head>
@@ -235,13 +233,13 @@
                         <td>{{ intval($rcn->ACMROILIN) }}</td>
                         <td>{{ $rcn->INPRODI2 }}</td>
                         <td class="merge-right">{{ $rcn->ACMROIDSC }}</td>
-                        <td class="merge-left">{{ $rcn->INPRODCBR }}</td>
+                        <td class="barcode">{{ $rcn->INPRODCBR }}</td>
                         <td>{{ $rcn->ACMROIUMT }}</td>
                         <td>{{ number_format($rcn->ACMROIPESOU, 2) }}</td>
                         <td>{{ number_format($rcn->ACMROIVOLU, 2) }}</td>
                         <td>{{ number_format($rcn->ACMROIQT, 2) }}</td>
-                        <td>{{ number_format($rcn->ACMROINP, 2) }}</td>
-                        <td>{{ number_format($rcn->ACMROING, 2) }}</td>
+                        <td>{{ '$' . number_format($rcn->ACMROINP, 2) }}</td>
+                        <td>{{ '$' . number_format($rcn->ACMROING, 2) }}</td>
                     </tr>
                     @php
                     $totalPeso += $rcn->ACMROIPESOU;
@@ -260,17 +258,17 @@
                         <td class="fw-bold">{{ number_format($totalPeso, 2) }}</td>
                         <td class="fw-bold">{{ number_format($totalVolumen, 2) }}</td>
                         <td colspan="2" class="text-end fw-bold merge-right no-horizontal-border">Subtotal:</td>
-                        <td class="fw-bold merge-left no-horizontal-border">{{ number_format($subtotal, 2) }}</td>
+                        <td class="fw-bold merge-left no-horizontal-border">{{ '$' . number_format($subtotal, 2) }}</td>
                     </tr>
                     <tr class="no-top-border">
                         <td colspan="7" class="no-border"></td>
                         <td colspan="2" class="text-end fw-bold merge-right no-horizontal-border">IVA (16%):</td>
-                        <td class="fw-bold merge-left no-horizontal-border">{{ number_format($iva, 2) }}</td>
+                        <td class="fw-bold merge-left no-horizontal-border">{{ '$' . number_format($iva, 2) }}</td>
                     </tr>
                     <tr>
                         <td colspan="7" class="no-border"></td>
                         <td colspan="2" class="text-end fw-bold merge-right merge-top">Total:</td>
-                        <td class="fw-bold merge-left merge-top">{{ number_format($total, 2) }}</td>
+                        <td class="fw-bold merge-left merge-top">{{ '$' . number_format($total, 2) }}</td>
                     </tr>
                 </tbody>
             </table>
