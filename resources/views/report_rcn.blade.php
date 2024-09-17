@@ -276,7 +276,7 @@
         </div>
 
         <!-- Signature section -->
-        <div class="signature-area" style="position: absolute; bottom: 100px; width: 100%; text-align: center;">
+        <div class="signature-area" style="position: absolute; bottom: 20px; width: 100%; text-align: center;">
             <div style="display: inline-block; margin-right: 50px; text-align: center;">
                 ___________________________________
                 <p style="margin-top: 10px;">Bo. Vo.</p>
