@@ -113,9 +113,9 @@
                                     <input type="text" id="num_rcn_letras" name="document_number1" class="form-control" value="{{ $num_rcn_letras }}" readonly required>
                                 </div>
                                 <div class="col-md-12">
-                                <div id="reception-error" class="alert alert-danger d-none text-center mx-auto">
-                                    No es posible realizar la recepción si todas las Cantidades Recibidas son 0
-                                </div>
+                                    <div id="reception-error" class="alert alert-danger d-none text-center mx-auto">
+                                        No es posible realizar la recepción si todas las Cantidades Recibidas son 0
+                                    </div>
 
                                 </div>
                                 <div class="col-md-2 d-flex">
@@ -156,12 +156,14 @@
                                                             <td>{{ $reception->ACMVOIUMT }}</td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}</td>
                                                             <td>
-                                                                <input type="number" class="form-control cantidad-recibida input-no-spinner" name="cantidad_recibida[{{ $index }}]"
-                                                                    value="" step="0.0001" min="0" max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}">
+                                                                <input type="text" class="form-control cantidad-recibida input-no-spinner"
+                                                                    name="cantidad_recibida[{{ $index }}]"
+                                                                    step="0.0001"
+                                                                    max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}">
                                                             </td>
                                                             <td>
                                                                 <input type="text" class="form-control precio-unitario input-no-spinner" name="precio_unitario[{{ $index }}]"
-                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" 
+                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
                                                                     data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" required>
                                                             </td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
@@ -219,4 +221,5 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script src="{{ asset('js/reception.js') }}"></script>
 </body>
+
 </html>

@@ -74,7 +74,7 @@ $(document).ready(function () {
             cleanValue = max.toFixed(4);
         }
     
-        this.value = cleanValue !== '' ? cleanValue : '0';
+        this.value = cleanValue !== '' ? cleanValue : '';
         calculateTotals(this);
     
         // Validar si todas las cantidades son 0 para mostrar/ocultar el mensaje de error
@@ -300,4 +300,103 @@ $(document).ready(function () {
     }
 
     $('#flete_select').on('change', toggleFleteInput);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Seleccionar todos los inputs de cantidad recibida
+    const cantidadRecibidaInputs = document.querySelectorAll('.cantidad-recibida');
+
+    // Iterar sobre los inputs para agregar un evento "input"
+    cantidadRecibidaInputs.forEach(function (input) {
+        input.addEventListener('input', function () {
+            const maxCantidad = parseFloat(this.getAttribute('max')); // Obtener el valor máximo permitido
+            const currentCantidad = parseFloat(this.value); // Obtener el valor ingresado
+
+            if (currentCantidad > maxCantidad) {
+                // Mostrar un mensaje de error visual al usuario
+                const mensajeError = document.createElement('div');
+                mensajeError.classList.add('alert', 'alert-danger', 'mt-2');
+                mensajeError.textContent = "La cantidad recibida no puede ser mayor a la cantidad solicitada.";
+                
+                // Insertar el mensaje de error después del input
+                if (!this.nextElementSibling || !this.nextElementSibling.classList.contains('alert')) {
+                    this.parentNode.insertBefore(mensajeError, this.nextElementSibling);
+                }
+
+                // Restablecer el valor al máximo permitido
+                this.value = maxCantidad;
+            } else {
+                // Si la cantidad es válida, eliminar el mensaje de error
+                if (this.nextElementSibling && this.nextElementSibling.classList.contains('alert')) {
+                    this.nextElementSibling.remove();
+                }
+            }
+        });
+    });
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const cantidadRecibidaInputs = document.querySelectorAll('.cantidad-recibida');
+
+    cantidadRecibidaInputs.forEach(function(input) {
+        input.addEventListener('input', function () {
+            let value = this.value;
+
+            // Permitir solo números y un punto decimal
+            if (!/^\d*\.?\d*$/.test(value)) {
+                // Si el valor no es un número válido, eliminar los caracteres no válidos
+                this.value = value.replace(/[^0-9.]/g, '');
+            }
+
+            // Limitar la cantidad a la cantidad solicitada
+            const maxCantidad = parseFloat(this.getAttribute('max'));
+            if (parseFloat(this.value) > maxCantidad) {
+                alert("La cantidad recibida no puede ser mayor a la cantidad solicitada.");
+                this.value = maxCantidad;
+            }
+        });
+
+        // Asegurar que no se pueda introducir más de un punto decimal
+        input.addEventListener('keydown', function(event) {
+            if (event.key === '.' && this.value.includes('.')) {
+                event.preventDefault(); // Evitar que se introduzca un segundo punto decimal
+            }
+        });
+    });
+});
+
+$(document).ready(function () {
+    // Navegación con las flechas del teclado
+    $(document).on("keydown", ".form-control", function (e) {
+        const keyCode = e.which || e.keyCode;
+
+        const currentInput = $(this); // El input actual en el que estamos
+        const currentCell = currentInput.closest('td'); // La celda actual
+        const currentRow = currentCell.closest('tr'); // La fila actual
+        const currentIndex = currentCell.index(); // Índice de la celda actual
+
+        if (keyCode === 37) { // Flecha izquierda
+            currentCell.prev().find('input').focus();
+            e.preventDefault();
+        } else if (keyCode === 39) { // Flecha derecha
+            currentCell.next().find('input').focus();
+            e.preventDefault();
+        } else if (keyCode === 38) { // Flecha arriba
+            const prevRow = currentRow.prev();
+            if (prevRow.length > 0) {
+                prevRow.find('td').eq(currentIndex).find('input').focus();
+                e.preventDefault();
+            }
+        } else if (keyCode === 40) { // Flecha abajo
+            const nextRow = currentRow.next();
+            if (nextRow.length > 0) {
+                nextRow.find('td').eq(currentIndex).find('input').focus();
+                e.preventDefault();
+            }
+        }
+    });
+});
+
+$(document).ready(function () {
+    $('input[type="text"], input[type="number"]').attr('autocomplete', 'off');
 });
