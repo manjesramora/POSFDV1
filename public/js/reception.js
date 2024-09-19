@@ -400,3 +400,23 @@ $(document).ready(function () {
 $(document).ready(function () {
     $('input[type="text"], input[type="number"]').attr('autocomplete', 'off');
 });
+
+// Mostrar el botón cuando el usuario desplaza hacia abajo 200px desde la parte superior
+window.onscroll = function() {
+    scrollFunction();
+};
+
+function scrollFunction() {
+    const scrollToTopBtn = document.getElementById("scrollToTopBtn");
+    if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+        scrollToTopBtn.style.display = "block";
+    } else {
+        scrollToTopBtn.style.display = "none";
+    }
+}
+
+// Función para volver a la parte superior cuando se hace clic en el botón
+function topFunction() {
+    document.body.scrollTop = 0; // Para Safari
+    document.documentElement.scrollTop = 0; // Para Chrome, Firefox, IE y Opera
+}
