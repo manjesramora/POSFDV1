@@ -9,7 +9,7 @@ return [
     'connections' => [
         'centro' => [
             'driver' => 'sqlsrv',  // Cambia esto si usas MySQL u otro sistema de BD
-            'host' => env('DB_CENTRO_HOST', '128.76.8.245'), // Configura con tu host
+            'host' => env('DB_CENTRO_HOST', '128.76.8.14'), // Configura con tu host
             'port' => env('DB_CENTRO_PORT', '1433'),
             'database' => env('DB_CENTRO_DATABASE', 'ERP_TBI_TEC_PRO_FDGO'),
             'username' => env('DB_CENTRO_USERNAME', 'USRTEST'),
@@ -66,7 +66,7 @@ return [
             'driver' => 'sqlsrv',
             'host' => '128.76.12.8',
             'port' => '1433',
-            'database' => 'ERP_TBI_TEC_PRO_FDGO_SALTO',
+            'database' => 'ERP_TBI_TEC_PRO_FDGO',
             'username' => 'USRTEST',
             'password' => 'PROTOTIPO',
             'charset' => 'utf8',
@@ -78,7 +78,7 @@ return [
             'driver' => 'sqlsrv',
             'host' => '128.76.11.8',
             'port' => '1433',
-            'database' => 'ERP_TBI_TEC_PRO_FDGO_MAZATLAN',
+            'database' => 'ERP_TBI_TEC_PRO_FDGO',
             'username' => 'USRTEST',
             'password' => 'PROTOTIPO',
             'charset' => 'utf8',
@@ -87,7 +87,7 @@ return [
 
         'FD04' => [
             'driver' => 'sqlsrv',
-            'host' => '128.76.8.245',
+            'host' => '128.76.8.14',
             'port' => '1433',
             'database' => 'ERP_TBI_TEC_PRO_FDGO',
             'username' => 'USRTEST',
