@@ -46,7 +46,7 @@
 
         .header img {
             float: left;
-            width: 80px; /* Reducir el tamaño de la imagen */
+            width: 100px; /* Reducir el tamaño de la imagen */
         }
 
         .header h1 {
@@ -56,7 +56,7 @@
 
         .header p {
             margin: 0;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         .additional-info {
@@ -161,8 +161,8 @@
 <body>
     <div class="header">
         <img src="{{ public_path('assets/img/LogoFD.jpeg') }}" alt="Logo">
-        <h1 style="margin-right: 100px; font-size: 18px;">REPORTE DE RCN</h1>
-        <p style="margin-right: 100px; font-size: 12px;">FERRETERIA DURANGO</p>
+        <h1 style="margin-right: 100px; font-size: 24px;">REPORTE DE RCN</h1>
+        <p style="margin-right: 100px; font-size: 16px;">FERRETERIA DURANGO</p>
         <br><br><br>
         <p style="margin-right: 100px;"><strong>Fecha de Elaboración:</strong> {{ $fechaElaboracion }}</p>
         <p style="margin-right: 11.5px;"><strong>Fecha de Impresión:</strong> {{ $fechaImpresion }}</p>
