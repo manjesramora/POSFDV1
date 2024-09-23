@@ -64,7 +64,7 @@ return [
         // Conexión para centro de costo 'FD09'
         'FD09' => [
             'driver' => 'sqlsrv',
-            'host' => '128.76.8.6',
+            'host' => '128.76.12.8',
             'port' => '1433',
             'database' => 'ERP_TBI_TEC_PRO_FDGO',
             'username' => 'USRTEST',

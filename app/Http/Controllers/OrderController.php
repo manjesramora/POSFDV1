@@ -648,7 +648,18 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
             $reception_date = Carbon::parse($fechaActual)->format('d/m/Y');
             $ACMVOIFDOC_formatted = $ACMVOIFDOC ? Carbon::parse($ACMVOIFDOC)->format('d/m/Y') : $defaultDate;
             $ACMVOIFDO2_formatted = $ACMVOIFDO2 ? Carbon::parse($ACMVOIFDO2)->format('d/m/Y') : $defaultDate;
+            $almacen = isset($order->ACMVOIALID) ? $order->ACMVOIALID: '';
 
+        // Determinar el valor de CGUNNGID según el almacén
+            $CGUNNGID = 0;
+
+            if ($almacen === 'FD10') {
+                $CGUNNGID = 1010;
+            } elseif ($almacen === 'FD04') {
+                $CGUNNGID = 1004;
+            } elseif ($almacen === 'FD09') {
+                $CGUNNGID = 1009;
+            }
             // Logs para revisar los valores antes de la inserción
             Log::info("Datos antes de la inserción en ACMROI: ", [
                 'reception_date' => $reception_date,
@@ -788,6 +799,7 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
                 'ACMROICAN' => ' ',
                 'ACRCOICD01ID' => 'REQ       ',
                 'ACMROIFOC' => DB::raw("CONVERT(DATETIME, '{$ACMVOIFDOC_formatted}', 103)"),  // Fecha formateada
+                'CGUNNGID' => $CGUNNGID,  // Nuevo campo CGUNNGID basado en el almacén
             ];
 
             $inserted = DB::connection($connection)->table('acmroi')->insert($insertData);
@@ -982,7 +994,8 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
                 
                 $cantidadSolicitada = (float) $request->input('acmvoiqtp')[$index] > 0 ? $request->input('acmvoiqtp')[$index] : $request->input('acmvoiqto')[$index];
                 $cantidadSolicitada = number_format((float) $cantidadSolicitada / 1, 4, '.', '');
-
+                $CGUNNGID = 0;
+                
                 // Actualización de la tabla ACMVOR1
                 DB::table('ACMVOR1')
                     ->where('ACMVOIDOC', $ACMVOIDOC)
