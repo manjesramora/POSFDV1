@@ -6,9 +6,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 10px; /* Reducido a 10px para ajustar mejor a la hoja */
+            font-size: 12px;
         }
 
+        /* Tabla ajustada para que no se desborde */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -30,6 +31,16 @@
             background-color: #f2f2f2;
         }
 
+        .barcode {
+            word-break: break-all;
+            white-space: normal;
+            max-width: 100px;
+            /* Asegura que el texto se ajuste al ancho máximo */
+            overflow-wrap: break-word;
+            /* Asegura que se rompan las palabras largas */
+        }
+
+        /* Se mantiene el estilo para el resto del documento */
         .text-end {
             text-align: right;
         }
@@ -41,104 +52,29 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         .header img {
             float: left;
-            width: 80px; /* Reducir el tamaño de la imagen */
+            width: 100px;
         }
 
         .header h1 {
             margin: 0;
-            font-size: 18px; /* Reducir el tamaño de la fuente del título */
+            font-size: 24px;
         }
 
         .header p {
             margin: 0;
-            font-size: 10px;
+            font-size: 12px;
         }
 
         .additional-info {
             display: flex;
             justify-content: space-between;
             margin-top: 10px;
-            font-size: 10px;
-        }
-
-        .totals {
-            margin-top: 10px;
-            font-size: 10px;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30px;
-            text-align: left;
-            font-size: 10px;
-            font-weight: bold;
-        }
-
-        .pagenum:before {
-            content: counter(page);
-        }
-
-        .total-row {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 10px;
-            font-size: 10px;
-        }
-
-        .total-row div {
-            padding: 4px;
-        }
-
-        .no-border {
-            border: none !important;
-        }
-
-        .large-font {
-            font-size: 10px;
-        }
-
-        .merge-right {
-            border-right: none;
-        }
-
-        .merge-left {
-            border-left: none;
-        }
-
-        .no-horizontal-border {
-            border-top: none !important;
-            border-bottom: none !important;
-        }
-
-        .merge-top {
-            border-top: none !important;
-        }
-
-        .signature-container {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 40px;
-            page-break-inside: avoid;
-        }
-
-        .signature-line {
-            text-align: center;
-            width: 200px;
-            margin-top: 50px;
-            border-top: 1px solid black;
-        }
-
-        .table-container {
-            margin-bottom: 100px;
-            page-break-inside: auto;
+            font-size: 12px;
         }
 
         .signature-area {
@@ -146,23 +82,14 @@
             position: relative;
             page-break-inside: avoid;
         }
-
-        .barcode {
-            word-break: break-all;
-            white-space: normal;
-            max-width: 100px;
-            /* Asegura que el texto se ajuste al ancho máximo */
-            overflow-wrap: break-word;
-            /* Asegura que se rompan las palabras largas */
-        }
     </style>
 </head>
 
 <body>
     <div class="header">
         <img src="{{ public_path('assets/img/LogoFD.jpeg') }}" alt="Logo">
-        <h1 style="margin-right: 100px; font-size: 18px;">REPORTE DE RCN</h1>
-        <p style="margin-right: 100px; font-size: 12px;">FERRETERIA DURANGO</p>
+        <h1 style="margin-right: 100px; font-size: 24px;">REPORTE DE RCN</h1>
+        <p style="margin-right: 100px; font-size: 16px;">FERRETERIA DURANGO</p>
         <br><br><br>
         <p style="margin-right: 100px;"><strong>Fecha de Elaboración:</strong> {{ $fechaElaboracion }}</p>
         <p style="margin-right: 11.5px;"><strong>Fecha de Impresión:</strong> {{ $fechaImpresion }}</p>
