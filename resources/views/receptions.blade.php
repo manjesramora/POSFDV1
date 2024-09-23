@@ -179,6 +179,13 @@
                                                         </tr>
                                                         @endforeach
                                                     </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <td colspan="9" class="text-end"><strong>Total General:</strong></td>
+                                                            <td id="total-subtotal" class="text-center"></td>
+                                                            <td id="total-total" class="text-center"></td>
+                                                        </tr>
+                                                    </tfoot>
                                                 </table>
                                             </div>
                                         </div>

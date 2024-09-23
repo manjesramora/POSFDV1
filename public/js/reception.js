@@ -420,3 +420,52 @@ function topFunction() {
     document.body.scrollTop = 0; // Para Safari
     document.documentElement.scrollTop = 0; // Para Chrome, Firefox, IE y Opera
 }
+
+$(document).ready(function() {
+    // Función para recalcular el subtotal y el total de una fila
+    function recalcularFila(row) {
+        // Obtener la cantidad recibida y el precio unitario de la fila
+        let cantidadRecibida = parseFloat(row.find('input.cantidad-recibida').val()) || 0;
+        let precioUnitario = parseFloat(row.find('input.precio-unitario').val().replace(/[^0-9.-]+/g, "")) || 0;
+        let iva = parseFloat(row.find('td:nth-child(9)').text()) || 0;  // Obtener el valor del IVA de la fila
+
+        // Calcular el subtotal (Cantidad Recibida * Precio Unitario)
+        let subtotal = cantidadRecibida * precioUnitario;
+        row.find('td.subtotal').text(`$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+
+        // Calcular el total (Subtotal + IVA)
+        let total = subtotal + (subtotal * (iva / 100));
+        row.find('td.total').text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    }
+
+    // Función para recalcular los totales de todas las filas
+    function recalcularTotales() {
+        let totalSubtotal = 0;
+        let totalTotal = 0;
+
+        // Iterar sobre cada fila de la tabla para sumar los valores de las columnas Subtotal y Total
+        $('#receptionTableBody tr').each(function() {
+            // Obtener el subtotal y el total de cada fila
+            let subtotal = parseFloat($(this).find('td.subtotal').text().replace(/[^0-9.-]+/g, "")) || 0;
+            let total = parseFloat($(this).find('td.total').text().replace(/[^0-9.-]+/g, "")) || 0;
+
+            // Sumar al total general
+            totalSubtotal += subtotal;
+            totalTotal += total;
+        });
+
+        // Colocar los valores calculados en las celdas correspondientes de la fila de totales
+        $('#total-subtotal').text(`$${totalSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        $('#total-total').text(`$${totalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    }
+
+    // Ejecutar la función cada vez que se actualiza una cantidad recibida o el precio unitario
+    $('.cantidad-recibida, .precio-unitario').on('input', function() {
+        let row = $(this).closest('tr'); // Encontrar la fila correspondiente
+        recalcularFila(row); // Recalcular el subtotal y el total de esa fila
+        recalcularTotales(); // Recalcular los totales generales
+    });
+
+    // Ejecutar al cargar la página para calcular los valores iniciales
+    recalcularTotales();
+});
