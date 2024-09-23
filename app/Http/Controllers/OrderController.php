@@ -648,9 +648,17 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
             $reception_date = Carbon::parse($fechaActual)->format('d/m/Y');
             $ACMVOIFDOC_formatted = $ACMVOIFDOC ? Carbon::parse($ACMVOIFDOC)->format('d/m/Y') : $defaultDate;
             $ACMVOIFDO2_formatted = $ACMVOIFDO2 ? Carbon::parse($ACMVOIFDO2)->format('d/m/Y') : $defaultDate;
-            $almacen = isset($order->ACMVOIALID) ? $order->ACMVOIALID: '';
+             // Obtener el almacén y verificar su valor
+             //Obtener el almacén desde INALMNID
+            $almacen = isset($validatedData['store']) ? $validatedData['store'] : '';
+            Log::info("Almacén detectado (INALMNID): {$almacen}");
 
-        // Determinar el valor de CGUNNGID según el almacén
+            // Si el valor del almacén es incorrecto o está vacío, lanzar una excepción
+            if (empty($almacen)) {
+                throw new \Exception("El valor de INALMNID (almacén) es inválido o está vacío.");
+            }
+
+            // Determinar el valor de CGUNNGID según INALMNID
             $CGUNNGID = 0;
 
             if ($almacen === 'FD10') {
@@ -667,7 +675,8 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
                 'ACMVOIFDO2_formatted' => $ACMVOIFDO2_formatted,
                 'acmroiVolu' => $acmroiVolu,
                 'acmroiPesou' => $acmroiPesou,
-                'connection' => $connection
+                'connection' => $connection,
+                'CGUNNGID' => $CGUNNGID, // Nuevo valor basado en el almacén
             ]);
 
             // Insertar datos en ACMROI con las fechas formateadas
@@ -818,9 +827,6 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
         throw $e;
     }
 }
-
-
-
     public function updateInsdos($storeId, $productId, $cantidadRecibida, $costoTotal)
     {
         $connectionLocal = 'FD04';
@@ -880,7 +886,6 @@ public function insertAcmroi($validatedData, $partida, $cantidadRecibida, $costo
             throw $e;
         }
     }
-    
     
     public function receiptOrder(Request $request, $ACMVOIDOC) 
 {
@@ -1213,7 +1218,6 @@ public function insertCGMVCN($validatedData, $totalPartidas)
     }
 }
 
-
 public function insertCGMVCN1($receptionData, $partidas)
 {
     $centroCosto = trim(Auth::user()->costCenters->first()->cost_center_id); // Centro de costo asociado al usuario
@@ -1252,6 +1256,20 @@ public function insertCGMVCN1($receptionData, $partidas)
                     throw new \Exception("No se encontró el registro en CGMVCN con CGMVCNDOC: {$numRCN}");
                 }
 
+                // Definir los valores de CGUNNGID para la primera y la segunda inserción
+                $cgunngidPrimera = 1001; // Valor por defecto para la primera línea en FD04 y FD09
+                $cgunngidSegunda = 1004; // Valor por defecto para la segunda línea en FD04
+
+                // Ajustar los valores según el centro de costo
+                if ($centroCosto === 'FD04') {
+                    $cgunngidSegunda = 1004;
+                } elseif ($centroCosto === 'FD09') {
+                    $cgunngidSegunda = 1009;
+                } elseif ($centroCosto === 'FD10') {
+                    $cgunngidPrimera = 1010; // En FD10 ambos registros usan 1010
+                    $cgunngidSegunda = 1010;
+                }
+
                 // Primer registro CGMVCN1 (costo total negativo)
                 DB::connection($connection)->table('CGMVCN1')->insert([
                     'CNCIASID' => 1,
@@ -1260,7 +1278,7 @@ public function insertCGMVCN1($receptionData, $partidas)
                     'CGMVCNFCNT' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"),
                     'CGMVCNLIN' => ($index * 2) + 1, // Primera línea (incremento por partida)
                     'CGMVCNLIB' => 'NL',
-                    'CGUNNGID' => 1001, // Primer registro 1001
+                    'CGUNNGID' => $cgunngidPrimera, // CGUNNGID para la primera línea
                     'CGCTASI1' => 4415,
                     'CGCTASI2' => '0001',
                     'CGCTASI3' => '            ',
@@ -1329,17 +1347,6 @@ public function insertCGMVCN1($receptionData, $partidas)
                 ]);
 
                 // Segundo registro CGMVCN1 (costo total positivo)
-                $cgunngid = 1004; // Valor por defecto
-
-                // Validación del centro de costo para cambiar el CGUNNGID
-                if ($centroCosto === 'FD04') {
-                    $cgunngid = 1004;
-                } elseif ($centroCosto === 'FD09') {
-                    $cgunngid = 1009;
-                } elseif ($centroCosto === 'FD10') {
-                    $cgunngid = 1010;
-                }
-
                 DB::connection($connection)->table('CGMVCN1')->insert([
                     'CNCIASID' => 1,
                     'CNTDOCID' => 'RCN',
@@ -1347,7 +1354,7 @@ public function insertCGMVCN1($receptionData, $partidas)
                     'CGMVCNFCNT' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"),
                     'CGMVCNLIN' => ($index * 2) + 2, // Segunda línea (incremento por partida)
                     'CGMVCNLIB' => 'NL',
-                    'CGUNNGID' => $cgunngid, // Asignación dinámica según el centro de costo
+                    'CGUNNGID' => $cgunngidSegunda, // CGUNNGID para la segunda línea
                     'CGCTASI1' => 1102, // Segundo valor específico
                     'CGCTASI2' => '0002',
                     'CGCTASI3' => '            ',
