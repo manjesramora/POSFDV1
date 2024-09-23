@@ -1544,7 +1544,9 @@ public function insertCGMVCN1($receptionData, $partidas)
                     'INCSTSIDLOG' => $incsts->INCSTSID,
                     'INALMNIDLOG' => $almacen,
                     'INPRODIDLOG' => $productoId,
-                    'INCSTFYHLOG' => DB::raw("CONVERT(datetime, '{$fechaLogFormatted}', 120)"), // Usar el formato con horas, minutos y segundos
+                    'INCSTFYHLOG' => DB::raw("CONVERT(datetime, '" . Carbon::now()->format('Y-m-d H:i:s') . "', 120)"),
+
+
                     'INTPCSIDLOG' => $incsts->INTPCSID,
                     'INMTCSIDLOG' => $incsts->INMTCSID,
                     'INCSTSCUNTLOG' => $precioUnitario,
