@@ -131,10 +131,15 @@ $(document).ready(function () {
         } else if (item.closest("#transporterDropdown").length) {
             $("#CNCDIRNOM_TRANSP").val(item.data("name"));
         }
-        $("#filterForm").submit(); // Enviar el formulario al seleccionar un ítem del dropdown
+    
+        // Solo envía el formulario si el campo está lleno
+        if ($("#CNCDIRNOM").val() || $("#CNCDIRNOM_TRANSP").val()) {
+            $("#filterForm").submit();
+        }
+    
         $("#nameDropdown, #transporterDropdown").hide();
     });
-
+    
     // Clear all filter input fields and reload the page
     window.limpiarCampos = function () {
         window.location.href = "/freights"; // Redirigir a la URL original sin parámetros

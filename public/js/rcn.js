@@ -36,8 +36,10 @@ $(document).ready(function () {
         let item = $(this);
         $("#CNCDIRNOM").val(item.data("name"));
         $("#nameDropdown").hide();
-        // Envía el formulario automáticamente cuando selecciona un proveedor del dropdown
-        $("#combinedForm").submit();
+        // Enviar el formulario solo si el campo está lleno
+        if ($("#CNCDIRNOM").val()) {
+            $("#combinedForm").submit();
+        }
     });
 
     // Manejar la navegación con las teclas arriba/abajo y Enter
@@ -45,15 +47,18 @@ $(document).ready(function () {
         let dropdown = $("#nameDropdown");
         let items = dropdown.find(".dropdown-item");
 
-        if (e.keyCode === 40) { // Flecha abajo
+        if (e.keyCode === 40) {
+            // Flecha abajo
             currentFocus++;
             if (currentFocus >= items.length) currentFocus = 0;
             setActive(items);
-        } else if (e.keyCode === 38) { // Flecha arriba
+        } else if (e.keyCode === 38) {
+            // Flecha arriba
             currentFocus--;
             if (currentFocus < 0) currentFocus = items.length - 1;
             setActive(items);
-        } else if (e.keyCode === 13) { // Enter
+        } else if (e.keyCode === 13) {
+            // Enter
             e.preventDefault();
             if (currentFocus > -1 && items.length > 0) {
                 items[currentFocus].click(); // Selecciona el ítem activo
@@ -85,16 +90,16 @@ $(document).ready(function () {
     };
 
     // Validar las fechas y asignar fecha actual si el campo "Hasta" está vacío
-    $("#combinedForm").on("submit", function() {
+    $("#combinedForm").on("submit", function () {
         var startDate = $("#start_date").val();
         var endDate = $("#end_date").val();
 
         // Obtener la fecha actual en formato YYYY-MM-DD
         var today = new Date();
-        var dd = String(today.getDate()).padStart(2, '0');
-        var mm = String(today.getMonth() + 1).padStart(2, '0'); // Enero es 0
+        var dd = String(today.getDate()).padStart(2, "0");
+        var mm = String(today.getMonth() + 1).padStart(2, "0"); // Enero es 0
         var yyyy = today.getFullYear();
-        var currentDate = yyyy + '-' + mm + '-' + dd;
+        var currentDate = yyyy + "-" + mm + "-" + dd;
 
         // Si hay una fecha de inicio pero no una fecha de fin, asigna la fecha actual como fin
         if (startDate && !endDate) {
@@ -111,13 +116,13 @@ $(document).ready(function () {
 
     // Formato de fecha YYYY-MM-DD
     function formatDate(date) {
-        var dd = String(date.getDate()).padStart(2, '0');
-        var mm = String(date.getMonth() + 1).padStart(2, '0'); // Enero es 0
+        var dd = String(date.getDate()).padStart(2, "0");
+        var mm = String(date.getMonth() + 1).padStart(2, "0"); // Enero es 0
         var yyyy = date.getFullYear();
-        return yyyy + '-' + mm + '-' + dd;
+        return yyyy + "-" + mm + "-" + dd;
     }
 
     // Establecer fecha mínima como hace 6 meses y fecha máxima como hoy
-    $('#start_date').attr('min', formatDate(sixMonthsAgo));
-    $('#end_date').attr('max', formatDate(today));
+    $("#start_date").attr("min", formatDate(sixMonthsAgo));
+    $("#end_date").attr("max", formatDate(today));
 });
