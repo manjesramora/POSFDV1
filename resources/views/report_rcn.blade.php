@@ -6,22 +6,24 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
+            font-size: 10px; /* Reducido a 10px para ajustar mejor a la hoja */
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            font-size: 12px;
+            font-size: 10px; /* Reducido a 10px para ajustar mejor a la hoja */
+            table-layout: auto; /* Permitir que las columnas se ajusten automáticamente */
         }
 
         th,
         td {
             border: 1px solid black;
-            padding: 4px;
+            padding: 2px; /* Reducir el padding para ganar más espacio */
             text-align: center;
-            font-size: 12px;
+            font-size: 10px;
+            word-wrap: break-word; /* Ajustar palabras largas a la siguiente línea */
         }
 
         th {
@@ -39,49 +41,34 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .header img {
             float: left;
-            width: 100px;
+            width: 80px; /* Reducir el tamaño de la imagen */
         }
 
         .header h1 {
             margin: 0;
-            font-size: 24px;
+            font-size: 18px; /* Reducir el tamaño de la fuente del título */
         }
 
         .header p {
             margin: 0;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .additional-info {
             display: flex;
             justify-content: space-between;
             margin-top: 10px;
-            font-size: 12px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-        }
-
-        .info-column {
-            width: 50%;
-        }
-
-        .subcolumn {
-            text-align: left;
-            padding-right: 10px;
+            font-size: 10px;
         }
 
         .totals {
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .footer {
@@ -91,7 +78,7 @@
             right: 0;
             height: 30px;
             text-align: left;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: bold;
         }
 
@@ -103,7 +90,7 @@
             display: flex;
             justify-content: flex-end;
             margin-top: 10px;
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .total-row div {
@@ -115,7 +102,7 @@
         }
 
         .large-font {
-            font-size: 12px;
+            font-size: 10px;
         }
 
         .merge-right {
@@ -174,8 +161,8 @@
 <body>
     <div class="header">
         <img src="{{ public_path('assets/img/LogoFD.jpeg') }}" alt="Logo">
-        <h1 style="margin-right: 100px; font-size: 24px;">REPORTE DE RCN</h1>
-        <p style="margin-right: 100px; font-size: 16px;">FERRETERIA DURANGO</p>
+        <h1 style="margin-right: 100px; font-size: 18px;">REPORTE DE RCN</h1>
+        <p style="margin-right: 100px; font-size: 12px;">FERRETERIA DURANGO</p>
         <br><br><br>
         <p style="margin-right: 100px;"><strong>Fecha de Elaboración:</strong> {{ $fechaElaboracion }}</p>
         <p style="margin-right: 11.5px;"><strong>Fecha de Impresión:</strong> {{ $fechaImpresion }}</p>
@@ -276,7 +263,7 @@
         </div>
 
         <!-- Signature section -->
-        <div class="signature-area" style="position: absolute; bottom: 20px; width: 100%; text-align: center;">
+        <div class="signature-area" style="position: absolute; bottom: 70px; width: 100%; text-align: center;">
             <div style="display: inline-block; margin-right: 50px; text-align: center;">
                 ___________________________________
                 <p style="margin-top: 10px;">Bo. Vo.</p>

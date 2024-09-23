@@ -126,8 +126,6 @@ class RcnController extends Controller
             return $mainQuery->paginate(10);
         });
 
-
-
         // Pre-obtener los IDs de los ACMROIDOC para evitar consultas repetitivas
         $acmroDocs = collect($rcns->items())->pluck('ACMROIDOC')->toArray();
 
@@ -141,14 +139,22 @@ class RcnController extends Controller
                         'CNTDOCID',
                         'ACMROIDOC',
                         'ACMROIFREC',
+                        'ACACTLID',
+                        'ACACSGID',
+                        'ACACANID',
                         DB::raw('COUNT(*) as numero_de_partidas')
                     )
                     ->whereIn('ACMROIDOC', $acmroDocs)
-                    ->where('CNCDIRID', 'like', '3%') // Aplicar validación para que solo los registros que cumplan el criterio de CNCDIRID
-                    ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC')
+                    ->where('CNCDIRID', 'like', '3%') // Aplicar validación de CNCDIRID
+                    ->where('ACACTLID', '=', '          ') // 10 espacios en blanco en ACACTLID
+                    ->where('ACACSGID', '=', '          ') // 10 espacios en blanco en ACACSGID
+                    ->where('ACACANID', '=', '          ') // 10 espacios en blanco en ACACANID
+                    // No hacemos comparación entre una fecha y un documento, se elimina esa parte
+                    ->groupBy('ACMROITDOC', 'ACMROINDOC', 'CNTDOCID', 'ACMROIDOC', 'ACMROIFREC', 'ACACTLID', 'ACACSGID', 'ACACANID')
                     ->get()
                     ->groupBy('ACMROIDOC');
             });
+                       
         }
 
         // Si no se encontraron resultados con los filtros aplicados, mostrar mensaje correspondiente
