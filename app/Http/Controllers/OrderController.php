@@ -1532,9 +1532,11 @@ public function insertCGMVCN1($receptionData, $partidas)
     
                 // Formatear la fecha para la inserción en INCSTS_LOG
                 if (strtolower($dbLanguage) == 'spanish') {
-                    $fechaLogFormatted = Carbon::parse($receptionDate)->format('d/m/Y');
+                    // Formato con día/mes/año horas:minutos:segundos
+                    $fechaLogFormatted = Carbon::parse($receptionDate)->format('d/m/Y H:i:s');
                 } else {
-                    $fechaLogFormatted = Carbon::parse($receptionDate)->format('Y-m-d');
+                    // Formato con año-mes-día horas:minutos:segundos
+                    $fechaLogFormatted = Carbon::parse($receptionDate)->format('Y-m-d H:i:s');
                 }
     
                 // Insertar registro en INCSTS_LOG
@@ -1542,7 +1544,7 @@ public function insertCGMVCN1($receptionData, $partidas)
                     'INCSTSIDLOG' => $incsts->INCSTSID,
                     'INALMNIDLOG' => $almacen,
                     'INPRODIDLOG' => $productoId,
-                    'INCSTFYHLOG' => DB::raw("CONVERT(datetime, '{$fechaLogFormatted}', 120)"), // Usar el formato correcto
+                    'INCSTFYHLOG' => DB::raw("CONVERT(datetime, '{$fechaLogFormatted}', 120)"), // Usar el formato con horas, minutos y segundos
                     'INTPCSIDLOG' => $incsts->INTPCSID,
                     'INMTCSIDLOG' => $incsts->INMTCSID,
                     'INCSTSCUNTLOG' => $precioUnitario,
