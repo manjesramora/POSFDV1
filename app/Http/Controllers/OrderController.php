@@ -430,9 +430,15 @@ class OrderController extends Controller
             Log::info("Fecha actual formateada para {$connection}: {$fechaActualFormatted}");
 
             // Obtener el valor de INCREMENTABLE para INCRDXSEO
-            $cntdoc = DB::table('cntdoc')->where('cntdocid', 'SOC')->first();
+            // Obtener el valor de INCREMENTABLE para INCRDXSEO
+            // Este valor se obtiene de la tabla cntdoc y se incrementa en 1
+            $cntdoc = DB::table('cntdoc')->where('cntdocid', 'SOC')->lockForUpdate()->first(); // Bloquear la fila para evitar que otros procesos la modifiquen
             $incrementable = isset($cntdoc->CNTDOCNSIG) ? intval($cntdoc->CNTDOCNSIG) + 1 : 1;
 
+            // Actualizar el valor de CNTDOCNSIG en la tabla cntdoc
+            DB::table('cntdoc')
+                ->where('cntdocid', 'SOC')
+                ->update(['CNTDOCNSIG' => $incrementable]);
             // Asignar el valor de CGUNNGID según el centro de costo
             $cgunngid = 1004; // Valor por defecto para FD04
             if ($centroCosto === 'FD09') {
@@ -449,7 +455,7 @@ class OrderController extends Controller
                 $INCRDXUMB = self::truncarValor((string) $unidadMedida, 3, 'INCRDXUMB');
                 $INCRDXUSU = self::truncarValor($usuarioLogueado, 20, 'INCRDXUSU');
 
-
+                $fechaActualSinHora = Carbon::parse($fechaActualFormatted)->format('Y-m-d');
                 // Loggear el tamaño de los valores antes de la inserción
                 Log::info("Tamaño de INALMNID: " . strlen($INALMNID));
 
@@ -467,7 +473,7 @@ class OrderController extends Controller
                     'INCRDXLIN' => $acmvoilin,
                     'INCRDXMON' => 'MXP', // Moneda
                     'INCRDXLIB' => 'NL',
-                    'INCRDXFTRN' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"), // Fecha de transacción
+                    'INCRDXFTRN' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"), // Fecha de transacción
                     'INCRDXQTY' => (float) $cantidadRecibida,
                     'INCRDXCU' => (float) $costoUnitario,
                     'INCRDXVAL' => (float) $costoTotal,
@@ -476,8 +482,8 @@ class OrderController extends Controller
                     'INCRDXLIN2' => 0,
                     'INCRDXELTR' => '     ', // Campo ajustable
                     'CNCIASID' => 1,
-                    'INCRDXFCNT' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"),
-                    'INCRDXFCRN' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"),
+                    'INCRDXFCNT' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"),
+                    'INCRDXFCRN' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"),
                     'INCRDXFVEN' => $defaultDate, // Fecha de vencimiento por defecto
                     'INCRDXDOT' => 'OL1',
                     'INCRDXDON'=>isset($order->ACMVOIDOC) ? (int) $order->ACMVOIDOC : 0,
@@ -494,16 +500,16 @@ class OrderController extends Controller
                     'INCRDXUMT' => $unidadMedida, // Unidad de medida
                     'INCRDXFCC' => 0,
                     'INCDRZID' => '   ',
-                    'INCRDXPOST' => 0,
+                    'INCRDXPOST' =>'N',
                     'INCRDXRSDS' => '                                                            ',
                     'INCRDXEXP' => 'RECEPCION DE MATERIAL                             ',
                     'INCRDXSEO' => $incrementable, // Incremento para el campo SEO
                     'INCRDXUSC' => '          ',
                     'INCRDXUFC' => $defaultDate,
-                    'INCRDXUHC' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"), // Fecha de transacción
+                    'INCRDXUHC' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"),// Fecha de transacción
                     'INCRDXUSU' => $INCRDXUSU, // Usuario logueado
-                    'INCRDXUFU' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"), // Fecha de actualización
-                    'INCRDXUHU' => DB::raw("CONVERT(DATETIME, '{$fechaActualFormatted}', 120)"), // Fecha de transacción
+                    'INCRDXUFU' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"), // Fecha de actualización
+                    'INCRDXUHU' => DB::raw("CONVERT(DATETIME, '{$fechaActualSinHora}', 120)"),// Fecha de transacción
                     'INCRDXFUF' => $defaultDate,
                     'INCRDXQUF' => 0,
                     'INCXDXOUF' => 0,
@@ -576,6 +582,11 @@ class OrderController extends Controller
                     'INCRDXCGJR10ID' => '               ',
                     'INCRDXCGJRID' => '.              ',
                     'INCRDXLTDIR' => '                              ',
+                    'INCRDXCTY'=>0,
+                    'INCRDXCUB'=>'   ',
+                    'INCRDXCUT'=>'   ',
+                    'INCRDXFCA'=>0,
+                    'INCRDXRSID'=>0,
                 ]);
 
                 Log::info("Nuevo registro insertado correctamente en incrdx.");
