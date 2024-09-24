@@ -162,10 +162,11 @@
                                                                     max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}">
                                                             </td>
                                                             <td>
-                                                                <input type="text" class="form-control precio-unitario input-no-spinner" name="precio_unitario[{{ $index }}]"
-                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}"
-                                                                    data-original-value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" required>
-                                                            </td>
+    <input type="text" class="form-control precio-unitario input-no-spinner" name="precio_unitario[{{ $index }}]"
+        value="{{ rtrim(rtrim(number_format($reception->PrecioUnitario, 4, '.', ''), '0'), '.') }}"
+        data-original-value="{{ rtrim(rtrim(number_format($reception->PrecioUnitario, 4, '.', ''), '0'), '.') }}" required>
+</td>
+
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
                                                             <td class="subtotal">$0.00</td>
                                                             <td class="total">$0.00</td>

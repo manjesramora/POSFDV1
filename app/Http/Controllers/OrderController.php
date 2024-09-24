@@ -168,12 +168,21 @@ class OrderController extends Controller
         return redirect()->route('orders')->with('error', 'Orden no encontrada.');
     }
 
-    $receptions = DB::table('ACMVOR1')
-        ->where('ACMVOIDOC', $ACMVOIDOC)
-        ->whereRaw('ACMVOIQTO > ACMVOIQTR') // Filtrar partidas no completamente recepcionadas
-        ->select('ACMVOILIN', 'ACMVOIPRID', 'ACMVOIPRDS', 'ACMVOINPAR', 'ACMVOIUMT', 'ACMVOIQTO', 'ACMVOINPO', 'ACMVOIIVA', 'ACMVOIQTP')
-        ->orderBy('ACMVOILIN') // Ordenar por ACMVOILIN
-        ->get();
+    $receptions = DB::table('ACMVOR1 as r')
+    ->leftJoin('incsts as i', function ($join) use ($order) {
+        $join->on('r.ACMVOIPRID', '=', 'i.INPRODID')
+             ->where('i.INALMNID', '=', $order->ACMVOIALID)
+             ->where('i.INMTCSID', '=', 'UC');
+    })
+    ->where('r.ACMVOIDOC', $ACMVOIDOC)
+    ->whereRaw('r.ACMVOIQTO > r.ACMVOIQTR') // Filtrar partidas no completamente recepcionadas
+    ->select('r.ACMVOILIN', 'r.ACMVOIPRID', 'r.ACMVOIPRDS', 'r.ACMVOINPAR', 'r.ACMVOIUMT', 'r.ACMVOIQTO', 'i.INCSTSCUNT as PrecioUnitario', 'r.ACMVOIIVA', 'r.ACMVOIQTP')
+    ->orderBy('r.ACMVOILIN') // Ordenar por ACMVOILIN
+    ->get();
+
+
+    // Depura los datos obtenidos
+    // dd($receptions); 
 
     if ($receptions->isEmpty()) {
         return redirect()->route('orders')->with('error', 'No hay partidas válidas para esta recepción.');
@@ -181,6 +190,7 @@ class OrderController extends Controller
 
     $provider = Providers::where('CNCDIRID', $order->CNCDIRID)->first();
 
+    // Manejo del número de documento
     $cntdoc = DB::table('cntdoc')
         ->where('cntdocid', 'RCN')
         ->first();
