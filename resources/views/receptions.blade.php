@@ -177,13 +177,15 @@
 
                                                             <!-- Columna para el precio unitario ya con el descuento aplicado -->
                                                             <td>
-                                                                <input type="text" class="form-control precio-unitario input-no-spinner"
-                                                                    name="precio_unitario[{{ $index }}]]"
-                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO * (1 - $reception->ACMVOIDSC / 100), 4, '.', ''), '0'), '.') }}"
-                                                                    required
-                                                                    oninput="validatePrice(this)"
-                                                                    placeholder="Ingrese un valor mayor a 0">
-                                                            </td>
+    <input type="text" class="form-control precio-unitario input-no-spinner"
+        name="precio_unitario[{{ $index }}]]"
+        value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO * (1 - $reception->ACMVOIDSC / 100), 4, '.', ''), '0'), '.') }}"
+        required
+        oninput="validatePrice(this)"
+        placeholder="Ingrese un valor mayor a 0">
+    <div class="invalid-feedback">El precio debe ser mayor que 0 y con hasta 4 decimales.</div>
+</td>
+
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
                                                             <td class="subtotal">$0.00</td>
                                                             <td class="total">$0.00</td>
@@ -245,13 +247,19 @@
     <script>
         // Validación para que no se permita ingresar un valor de 0
         function validatePrice(input) {
-            let value = parseFloat(input.value) || 0;
-            if (value <= 0) {
-                input.setCustomValidity('El precio unitario no puede ser 0.');
-            } else {
-                input.setCustomValidity(''); // Borrar el mensaje de error cuando el valor es válido
-            }
-        }
+    let value = parseFloat(input.value);
+
+    // Expresión regular para permitir números con hasta 4 decimales
+    const regex = /^\d*\.?\d{0,4}$/;
+
+    // Comprobar si el valor es válido (mayor a 0 y con hasta 4 decimales)
+    if (isNaN(value) || value <= 0 || !regex.test(input.value)) {
+        input.classList.add("is-invalid");  // Añadir clase de error
+    } else {
+        input.classList.remove("is-invalid");  // Quitar clase de error
+    }
+}
+
     </script>
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
