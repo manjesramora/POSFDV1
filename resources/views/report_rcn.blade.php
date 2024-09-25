@@ -185,6 +185,9 @@
                 <p style="margin-top: 15px;">
                     <strong>Almacén:</strong> {{ $almacenId }} CENTRO DE DISTRIBUCIÓN {{ $branchName }}
                 </p>
+                <p style="margin-top: 15px;">
+                    <strong>Flete:</strong> {{ $fleteTexto }}
+                </p>
             </a>
         </div>
 

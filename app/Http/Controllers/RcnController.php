@@ -154,7 +154,6 @@ class RcnController extends Controller
                     ->get()
                     ->groupBy('ACMROIDOC');
             });
-                       
         }
 
         // Si no se encontraron resultados con los filtros aplicados, mostrar mensaje correspondiente
@@ -235,6 +234,14 @@ class RcnController extends Controller
             $fechaElaboracion = \Carbon\Carbon::parse($rcn->ACMROIFREC)->format('d/m/Y');
             $fechaImpresion = \Carbon\Carbon::now()->format('d/m/Y');
 
+            // Obtener el flete de la tabla freights utilizando ACMROIDOC como document_number
+            $flete = DB::table('freights')
+                ->where('document_number', $numeroOL)  // Comparar ACMROIDOC con document_number
+                ->first();
+
+            // Determinar si hay flete o no
+            $fleteTexto = $flete ? '$' . number_format($flete->freight, 2) : 'S.F';
+
             // Generar el PDF utilizando la vista `report_rcn`
             $pdf = PDF::loadView('report_rcn', [
                 'groupedRcns' => $groupedRcns,
@@ -246,7 +253,8 @@ class RcnController extends Controller
                 'branchName' => $branchName,  // Aquí se pasa el nombre de la sucursal
                 'tipoRef' => $this->getTipoReferencia($rcn->ACMROITREF),
                 'almacenId' => $almacenId,
-                'numeroRef' => $numeroRef
+                'numeroRef' => $numeroRef,
+                'fleteTexto' => $fleteTexto  // Pasar la información del flete a la vista
             ]);
 
             // Agregar numeración de páginas
@@ -270,7 +278,6 @@ class RcnController extends Controller
             return redirect()->route('rcn')->with('error', 'Error al generar el PDF: ' . $e->getMessage());
         }
     }
-
 
     private function getTipoReferencia($ref)
     {

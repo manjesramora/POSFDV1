@@ -70,6 +70,7 @@
                             <ul>
                                 <li>Al menos una mayúscula</li>
                                 <li>Un carácter especial</li>
+                                <a>(@ $  ! % * ? & + - ~ _ #)</a>
                                 <li>Un número</li>
                                 <li>Al menos 8 caracteres</li>
                             </ul>

@@ -246,7 +246,7 @@
                                                 </th>
                                                 <th class="col-1 text-center sortable">
                                                     <a href="{{ route('freights', ['sort_by' => 'freight', 'sort_order' => request('sort_order') == 'asc' ? 'desc' : 'asc'] + request()->all()) }}">
-                                                        CTO.FLETE
+                                                        %.FLETE
                                                         @if(request('sort_by') == 'freight')
                                                         @if(request('sort_order') == 'asc')
                                                         <i class="fas fa-sort-up"></i>

@@ -72,13 +72,21 @@ class LoginController extends Controller
     {
         $request->validate([
             'username' => 'required',
-            'newPassword' => ['required', 'string', 'min:8', 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[@$!%*?&]/'],
+            // Modificamos el regex para permitir más caracteres especiales
+            'newPassword' => [
+                'required', 
+                'string', 
+                'min:8', 
+                'regex:/[A-Z]/',        // Debe tener al menos una letra mayúscula
+                'regex:/[0-9]/',        // Debe tener al menos un número
+                'regex:/[@\$!%*?&\+\-\~_#]/'
+            ],
         ]);
-
+    
         $user = User::where('username', $request->username)->firstOrFail();
         $user->password = Hash::make($request->newPassword);
         $user->save();
-
+    
         return response()->json(['success' => true]);
-    }
+    }    
 }
