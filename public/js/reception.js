@@ -1,7 +1,47 @@
 $(document).ready(function () {
-    function cleanNumber(value) {
-        return value.replace(/[^0-9.]/g, '').trim(); // Solo permite números y decimales
+    // Función para limpiar el valor numérico, permitiendo un punto decimal
+function cleanNumber(value) {
+    // Permitir números y un solo punto decimal
+    return value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');  // Mantiene el primer punto y borra cualquier segundo punto
+}
+
+let initialValue;  // Variable para almacenar el valor original al cargar la página
+
+// Guardar el valor original que aparece en pantalla al cargar la página
+$(document).ready(function () {
+    $(".precio-unitario").each(function() {
+        initialValue = parseFloat(cleanNumber($(this).val())) || 0;  // Almacenar el valor original al cargar
+        $(this).data('initial-value', initialValue);  // Almacenar el valor en un atributo de datos
+    });
+});
+
+// Limitar el precio al valor original solo si es mayor que el valor inicial al cargar la página
+function limitPrecio(input) {
+    let value = parseFloat(cleanNumber(input.value)) || 0;
+    const originalValue = parseFloat($(input).data('initial-value')) || 0;  // Obtener el valor original cargado en pantalla
+
+    // Solo si el nuevo valor es mayor que el original valor inicial, restaurar el original
+    if (value > originalValue) {
+        input.value = originalValue.toFixed(4);  // Restaurar al valor original de la carga inicial
     }
+
+    // Recalcular los totales
+    calculateTotals(input);
+}
+
+// Evento cuando el usuario deja de escribir (blur)
+$(document).on("blur", ".precio-unitario", function () {
+    limitPrecio(this);  // Validar y restaurar si es necesario
+    formatPrecio(this);  // Formatear como moneda
+});
+
+// Mantener el formato de precio mientras el usuario escribe (para evitar borrar decimales válidos)
+$(document).on("input", ".precio-unitario", function () {
+    let value = cleanNumber(this.value);
+    if (value !== '') {
+        this.value = value;
+    }
+});
 
     function formatCurrency(value) {
         // Formatear valor como moneda con hasta cuatro decimales
@@ -31,23 +71,15 @@ $(document).ready(function () {
         calculateTotals(input);
     }
 
-    function limitPrecio(input) {
-        let value = parseFloat(cleanNumber(input.value)) || 0;
-        const originalValue = parseFloat(input.getAttribute('data-original-value')) || 0;
 
-        if (value > originalValue || isNaN(value) || value < 0) {
-            value = originalValue;
-        }
+// Guardar el valor original antes de que el usuario lo cambie
 
-        input.value = value;
-        calculateTotals(input);
-    }
 
     function calculateTotals(input) {
         const row = input.closest('tr');
         const cantidadRecibida = parseFloat(cleanNumber(row.querySelector('.cantidad-recibida').value)) || 0;
         const precioUnitario = parseFloat(cleanNumber(row.querySelector('.precio-unitario').value)) || 0;
-        const iva = parseFloat(row.cells[8]?.innerText) || 0;
+        const iva = parseFloat(row.cells[10]?.innerText) || 0;
 
         const subtotal = cantidadRecibida * precioUnitario;
         const total = subtotal + (subtotal * (iva / 100));
@@ -104,7 +136,7 @@ $(document).ready(function () {
 
     $("#receptionForm").on("submit", function (e) {
         e.preventDefault();
-    
+        
         // Función para validar que al menos una cantidad recibida sea mayor que 0
         function validateNonZeroQuantities() {
             let allZero = true;
@@ -140,11 +172,13 @@ $(document).ready(function () {
         const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
         loadingModal.show();
     
+        // Obtener el formulario para enviarlo
         const formData = new FormData(this);
     
         axios.post(this.action, formData)
             .then(response => {
                 if (response.data.success) {
+                    // Mostrar el mensaje de éxito en el modal
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message}
                         <br><br>
@@ -155,6 +189,7 @@ $(document).ready(function () {
                     document.getElementById('printReportButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
     
+                    // Botón para imprimir el reporte
                     document.getElementById('printReportButton').addEventListener('click', function () {
                         const ACMROINDOC = response.data.ACMROINDOC;
                         const ACMROIDOC = response.data.ACMROIDOC;
@@ -176,6 +211,7 @@ $(document).ready(function () {
                         }
                     });
                 } else {
+                    // Mostrar mensaje de error en el modal
                     document.querySelector('.modal-body p').innerHTML = `
                         ${response.data.message || "Ocurrió un error inesperado."}
                         <br><br>
@@ -191,6 +227,7 @@ $(document).ready(function () {
                 });
             })
             .catch(error => {
+                // Manejo de errores durante el envío del formulario
                 document.querySelector('.modal-body p').innerHTML = `
                     Ocurrió un error durante la recepción.
                     <br><br>
@@ -205,11 +242,12 @@ $(document).ready(function () {
                 });
             });
     });
+    
 
     function setupAutocomplete(inputId, listId, field) {
         $(`#${inputId}`).on("input", function () {
             let query = $(this).val();
-
+    
             if (query.length >= 3) {
                 $.ajax({
                     url: "/providers/autocomplete",
@@ -218,13 +256,17 @@ $(document).ready(function () {
                     success: function (data) {
                         let dropdown = $(`#${listId}`);
                         dropdown.empty().show();
-
+    
+                        // Filtrar resultados: excluir fleteros cuyo CNCDIRID empiece con '3'
+                        data = data.filter(item => !item.CNCDIRID.startsWith('3'));
+    
+                        // Agregar los elementos filtrados al dropdown
                         data.forEach((item) => {
                             dropdown.append(
                                 `<li class="list-group-item" data-id="${item.CNCDIRID}" data-name="${item.CNCDIRNOM}">${item.CNCDIRID} - ${item.CNCDIRNOM}</li>`
                             );
                         });
-
+    
                         if (data.length > 0) {
                             dropdown.children().first().addClass('active');
                         }
@@ -234,13 +276,13 @@ $(document).ready(function () {
                 $(`#${listId}`).hide();
             }
         });
-
+    
         $(`#${inputId}`).on("keydown", function (e) {
             const dropdown = $(`#${listId}`);
             const items = dropdown.find('li');
             let activeItem = dropdown.find('.active');
             let index = items.index(activeItem);
-
+    
             if (e.key === "ArrowDown") {
                 e.preventDefault();
                 index = (index + 1) % items.length;
@@ -261,7 +303,7 @@ $(document).ready(function () {
                 dropdown.hide();
             }
         });
-
+    
         $(document).on("click", `#${listId} li`, function () {
             let id = $(this).data("id");
             let name = $(this).data("name");
@@ -270,7 +312,7 @@ $(document).ready(function () {
             $('#numero').val(id);
             $(`#${listId}`).hide();
         });
-
+    
         $(`#clear${inputId.charAt(0).toUpperCase() + inputId.slice(1)}`).on("click", function () {
             $(`#${inputId}`).val("");
             $('#fletero').val("");
@@ -278,6 +320,7 @@ $(document).ready(function () {
             $(`#${listId}`).hide();
         });
     }
+    
 
     setupAutocomplete("numero", "numeroList", "CNCDIRID");
     setupAutocomplete("fletero", "fleteroList", "CNCDIRNOM");
@@ -427,44 +470,50 @@ $(document).ready(function() {
         // Obtener la cantidad recibida y el precio unitario de la fila
         let cantidadRecibida = parseFloat(row.find('input.cantidad-recibida').val()) || 0;
         let precioUnitario = parseFloat(row.find('input.precio-unitario').val().replace(/[^0-9.-]+/g, "")) || 0;
-        let iva = parseFloat(row.find('td:nth-child(9)').text()) || 0;  // Obtener el valor del IVA de la fila
-
+    
+        // Obtener el valor del IVA (columna 11)
+        let iva = parseFloat(row.find('td:nth-child(11)').text()) || 0;  
+    
         // Calcular el subtotal (Cantidad Recibida * Precio Unitario)
         let subtotal = cantidadRecibida * precioUnitario;
-        row.find('td.subtotal').text(`$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-
-        // Calcular el total (Subtotal + IVA)
-        let total = subtotal + (subtotal * (iva / 100));
-        row.find('td.total').text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        row.find('td.subtotal').text(`$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`);
+    
+        // Calcular el total incluyendo el IVA
+        let total = subtotal + (subtotal * (iva / 100));  // Aplicar el IVA al subtotal
+        row.find('td.total').text(`$${total.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`);
     }
+    
 
     // Función para recalcular los totales de todas las filas
     function recalcularTotales() {
         let totalSubtotal = 0;
         let totalTotal = 0;
-
+    
         // Iterar sobre cada fila de la tabla para sumar los valores de las columnas Subtotal y Total
         $('#receptionTableBody tr').each(function() {
             // Obtener el subtotal y el total de cada fila
             let subtotal = parseFloat($(this).find('td.subtotal').text().replace(/[^0-9.-]+/g, "")) || 0;
             let total = parseFloat($(this).find('td.total').text().replace(/[^0-9.-]+/g, "")) || 0;
-
+    
             // Sumar al total general
             totalSubtotal += subtotal;
             totalTotal += total;
         });
-
+    
         // Colocar los valores calculados en las celdas correspondientes de la fila de totales
-        $('#total-subtotal').text(`$${totalSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-        $('#total-total').text(`$${totalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+        $('#total-subtotal').text(`$${totalSubtotal.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`);
+        $('#total-total').text(`$${totalTotal.toLocaleString('en-US', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`);
     }
+    
+    
 
     // Ejecutar la función cada vez que se actualiza una cantidad recibida o el precio unitario
-    $('.cantidad-recibida, .precio-unitario').on('input', function() {
-        let row = $(this).closest('tr'); // Encontrar la fila correspondiente
-        recalcularFila(row); // Recalcular el subtotal y el total de esa fila
-        recalcularTotales(); // Recalcular los totales generales
-    });
+   // Recalcular la fila al cambiar la cantidad recibida o el precio unitario
+$('.cantidad-recibida, .precio-unitario').on('input', function() {
+    let row = $(this).closest('tr'); // Encontrar la fila correspondiente
+    recalcularFila(row); // Recalcular el subtotal y el total de esa fila
+    recalcularTotales(); // Recalcular los totales generales
+});
 
     // Ejecutar al cargar la página para calcular los valores iniciales
     recalcularTotales();

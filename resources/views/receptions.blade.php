@@ -55,7 +55,7 @@
                                 <div class="col-md-2" id="fletero_fields" style="display: none;">
                                     <label for="numero" class="form-label"># Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner" placeholder="Opcional">
+                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner" placeholder="Obligatorio">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -65,7 +65,7 @@
                                 <div class="col-md-4" id="fletero_fields_name" style="display: none;">
                                     <label for="fletero" class="form-label">Nombre Fletero:</label>
                                     <div class="input-group">
-                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner" placeholder="Opcional">
+                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner" placeholder="Obligatorio">
                                         <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -140,7 +140,9 @@
                                                             <th>UM</th>
                                                             <th>Cantidad Solicitada</th>
                                                             <th>Cantidad Recibida</th>
-                                                            <th>Precio Unitario</th>
+                                                            <th>Precio Sin/Desc.</th> <!-- Nueva columna para el precio original -->
+                                                            <th>%Desc.</th> <!-- Nueva columna para el porcentaje de descuento -->
+                                                            <th>Precio Factura</th> <!-- Columna de precio ya con el descuento aplicado -->
                                                             <th>IVA</th>
                                                             <th>Subtotal</th>
                                                             <th>Total</th>
@@ -161,12 +163,27 @@
                                                                     step="0.0001"
                                                                     max="{{ rtrim(rtrim(number_format($reception->ACMVOIQTP > 0 ? $reception->ACMVOIQTP : $reception->ACMVOIQTO, 4, '.', ''), '0'), '.') }}">
                                                             </td>
+                                                            <!-- Nueva columna para el precio original sin descuento -->
                                                             <td>
-    <input type="text" class="form-control precio-unitario input-no-spinner" name="precio_unitario[{{ $index }}]"
-        value="{{ rtrim(rtrim(number_format($reception->PrecioUnitario, 4, '.', ''), '0'), '.') }}"
-        data-original-value="{{ rtrim(rtrim(number_format($reception->PrecioUnitario, 4, '.', ''), '0'), '.') }}" required>
-</td>
+                                                                <input type="text" class="form-control" name="precio_sin_descuento[{{ $index }}]"
+                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO, 4, '.', ''), '0'), '.') }}" readonly>
+                                                            </td>
 
+                                                            <!-- Nueva columna para el porcentaje de descuento con 2 decimales -->
+                                                            <td>
+                                                                <input type="text" class="form-control" name="porcentaje_descuento[{{ $index }}]"
+                                                                    value="{{ number_format($reception->ACMVOIDSC, 2) }}%" readonly>
+                                                            </td>
+
+                                                            <!-- Columna para el precio unitario ya con el descuento aplicado -->
+                                                            <td>
+                                                                <input type="text" class="form-control precio-unitario input-no-spinner"
+                                                                    name="precio_unitario[{{ $index }}]]"
+                                                                    value="{{ rtrim(rtrim(number_format($reception->ACMVOINPO * (1 - $reception->ACMVOIDSC / 100), 4, '.', ''), '0'), '.') }}"
+                                                                    required
+                                                                    oninput="validatePrice(this)"
+                                                                    placeholder="Ingrese un valor mayor a 0">
+                                                            </td>
                                                             <td>{{ rtrim(rtrim(number_format($reception->ACMVOIIVA, 4, '.', ''), '0'), '.') }}</td>
                                                             <td class="subtotal">$0.00</td>
                                                             <td class="total">$0.00</td>
@@ -182,7 +199,7 @@
                                                     </tbody>
                                                     <tfoot>
                                                         <tr>
-                                                            <td colspan="9" class="text-end"><strong>Total General:</strong></td>
+                                                            <td colspan="11" class="text-end"><strong>Total General:</strong></td>
                                                             <td id="total-subtotal" class="text-center"></td>
                                                             <td id="total-total" class="text-center"></td>
                                                         </tr>
@@ -225,7 +242,17 @@
         <i class="fas fa-arrow-up"></i>
     </button>
 
-
+    <script>
+        // Validación para que no se permita ingresar un valor de 0
+        function validatePrice(input) {
+            let value = parseFloat(input.value) || 0;
+            if (value <= 0) {
+                input.setCustomValidity('El precio unitario no puede ser 0.');
+            } else {
+                input.setCustomValidity(''); // Borrar el mensaje de error cuando el valor es válido
+            }
+        }
+    </script>
     <!-- Carga de jQuery, Bootstrap y otros scripts desde CDN -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
