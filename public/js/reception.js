@@ -134,113 +134,156 @@ $(document).on("input", ".precio-unitario", function () {
         this.value = cleanValue !== '' && !isNaN(cleanValue) ? formatCurrency(cleanValue) : '';
     });
 
-    $("#receptionForm").on("submit", function (e) {
-        e.preventDefault();
-        
-        // Función para validar que al menos una cantidad recibida sea mayor que 0
-        function validateNonZeroQuantities() {
-            let allZero = true;
-            // Recorre todas las cantidades recibidas
-            $(".cantidad-recibida").each(function () {
-                const cantidad = parseFloat(cleanNumber($(this).val())) || 0;
-                if (cantidad > 0) {
-                    allZero = false;
-                    return false; // Sale del loop si encuentra una cantidad mayor a 0
-                }
-            });
-            return allZero;
-        }
+    $(document).ready(function () {
+        // Limpiar el mensaje de error en el Monto Flete al escribir
+        $('#flete').on('input', function () {
+            const freightInput = $(this);
+            freightInput[0].setCustomValidity(""); // Limpiar mensaje de error
+            freightInput.removeClass("is-invalid"); // Remover clase de error
+        });
     
-        // Mostrar/ocultar el mensaje de error
-        function toggleErrorMessage(show) {
-            const errorDiv = $("#reception-error");
-            if (show) {
-                errorDiv.removeClass("d-none");
-            } else {
-                errorDiv.addClass("d-none");
+        $("#receptionForm").on("submit", function (e) {
+            e.preventDefault();
+    
+            // Limpiar los mensajes de error antes de la validación
+            const freightInput = $('#flete');
+            freightInput[0].setCustomValidity(""); // Limpiar mensaje de error
+            freightInput.removeClass("is-invalid"); // Remover clase de error
+    
+            const carrierNumberInput = $('#numero');
+            carrierNumberInput[0].setCustomValidity(""); // Limpiar mensaje de error
+            carrierNumberInput.removeClass("is-invalid"); // Remover clase de error
+    
+            const carrierNameInput = $('#fletero');
+            carrierNameInput[0].setCustomValidity(""); // Limpiar mensaje de error
+            carrierNameInput.removeClass("is-invalid"); // Remover clase de error
+    
+            // Validar que al menos una cantidad recibida sea mayor que 0
+            function validateNonZeroQuantities() {
+                let allZero = true;
+                $(".cantidad-recibida").each(function () {
+                    const cantidad = parseFloat(cleanNumber($(this).val())) || 0;
+                    if (cantidad > 0) {
+                        allZero = false;
+                        return false; // Sale del loop si encuentra una cantidad mayor a 0
+                    }
+                });
+                return allZero;
             }
-        }
     
-        // Verificar si todas las cantidades recibidas son 0
-        if (validateNonZeroQuantities()) {
-            toggleErrorMessage(true); // Mostrar el mensaje de error
-            return; // Detener el envío del formulario
-        }
+            // Validar que el monto de flete no sea 0 o esté vacío
+            const freightValue = parseFloat(cleanNumber(freightInput.val())) || 0;
+            const fleteSelect = document.getElementById('flete_select');
     
-        toggleErrorMessage(false); // Ocultar el mensaje si la validación es correcta
+            if (fleteSelect.value == '1') {
+                // Comprobar si el Monto Flete es 0 o no es un número
+                if (freightValue <= 0 || isNaN(freightValue)) {
+                    freightInput[0].setCustomValidity("El Monto Flete debe ser mayor que 0."); // Establece mensaje de error
+                    freightInput.addClass("is-invalid"); // Añadir clase de error
+                    freightInput.focus(); // Coloca el foco en el campo Monto Flete
+                    return; // Detener el envío del formulario
+                }
     
-        const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
-        loadingModal.show();
+                // Validar que el campo # numero (Fletero) no esté vacío
+                const carrierNumber = carrierNumberInput.val().trim();
+                if (carrierNumber === '') {
+                    carrierNumberInput[0].setCustomValidity("El campo # Fletero es obligatorio."); // Establece mensaje de error
+                    carrierNumberInput.addClass("is-invalid"); // Añadir clase de error
+                    carrierNumberInput.focus(); // Coloca el foco en el campo # Fletero
+                    return; // Detener el envío del formulario
+                }
     
-        // Obtener el formulario para enviarlo
-        const formData = new FormData(this);
+                // Validar que el campo Nombre Fletero no esté vacío
+                const carrierName = carrierNameInput.val().trim();
+                if (carrierName === '') {
+                    carrierNameInput[0].setCustomValidity("El campo Nombre Fletero es obligatorio."); // Establece mensaje de error
+                    carrierNameInput.addClass("is-invalid"); // Añadir clase de error
+                    carrierNameInput.focus(); // Coloca el foco en el campo Nombre Fletero
+                    return; // Detener el envío del formulario
+                }
+            }
     
-        axios.post(this.action, formData)
-            .then(response => {
-                if (response.data.success) {
-                    // Mostrar el mensaje de éxito en el modal
-                    document.querySelector('.modal-body p').innerHTML = `
-                        ${response.data.message}
-                        <br><br>
-                        <button id="printReportButton" class="btn btn-success">Imprimir Reporte</button>
-                        <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
-                    `;
-                    document.querySelector('.spinner-border').classList.add('d-none');
-                    document.getElementById('printReportButton').classList.remove('d-none');
-                    document.getElementById('closeModalButton').classList.add('d-none');
+            // Validar que al menos una cantidad recibida sea mayor que 0
+            if (validateNonZeroQuantities()) {
+                alert("No es posible realizar la recepción si todas las Cantidades Recibidas son 0."); // Mensaje de error
+                return; // Detener el envío del formulario
+            }
     
-                    // Botón para imprimir el reporte
-                    document.getElementById('printReportButton').addEventListener('click', function () {
-                        const ACMROINDOC = response.data.ACMROINDOC;
-                        const ACMROIDOC = response.data.ACMROIDOC;
+            // Si todas las validaciones pasan, proceder con el envío
+            const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+            loadingModal.show();
     
-                        if (ACMROINDOC && ACMROIDOC) {
-                            axios.get(`/print-report/${ACMROINDOC}`, {
-                                responseType: 'blob'
-                            })
-                            .then(pdfResponse => {
-                                const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
-                                window.open(fileURL, '_blank');
-                            })
-                            .catch(error => {
-                                console.error("Error loading the PDF:", error);
-                                alert("Error al cargar el PDF. Inténtalo nuevamente.");
-                            });
-                        } else {
-                            alert("Error: ACMROINDOC o ACMROIDOC faltantes.");
-                        }
+            // Obtener el formulario para enviarlo
+            const formData = new FormData(this);
+            
+            // Código para enviar el formulario utilizando axios
+            axios.post(this.action, formData)
+                .then(response => {
+                    if (response.data.success) {
+                        // Manejo del éxito de la recepción
+                        document.querySelector('.modal-body p').innerHTML = `
+                            ${response.data.message}
+                            <br><br>
+                            <button id="printReportButton" class="btn btn-success">Imprimir Reporte</button>
+                            <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
+                        `;
+                        document.querySelector('.spinner-border').classList.add('d-none');
+                        document.getElementById('printReportButton').classList.remove('d-none');
+                        document.getElementById('closeModalButton').classList.add('d-none');
+    
+                        // Botón para imprimir el reporte
+                        document.getElementById('printReportButton').addEventListener('click', function () {
+                            const ACMROINDOC = response.data.ACMROINDOC;
+                            const ACMROIDOC = response.data.ACMROIDOC;
+    
+                            if (ACMROINDOC && ACMROIDOC) {
+                                axios.get(`/print-report/${ACMROINDOC}`, {
+                                    responseType: 'blob'
+                                })
+                                .then(pdfResponse => {
+                                    const fileURL = URL.createObjectURL(new Blob([pdfResponse.data], { type: 'application/pdf' }));
+                                    window.open(fileURL, '_blank');
+                                })
+                                .catch(error => {
+                                    console.error("Error loading the PDF:", error);
+                                    alert("Error al cargar el PDF. Inténtalo nuevamente.");
+                                });
+                            } else {
+                                alert("Error: ACMROINDOC o ACMROIDOC faltantes.");
+                            }
+                        });
+                    } else {
+                        // Manejo de errores en la recepción
+                        document.querySelector('.modal-body p').innerHTML = `
+                            ${response.data.message || "Ocurrió un error inesperado."}
+                            <br><br>
+                            <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
+                        `;
+                        document.querySelector('.spinner-border').classList.add('d-none');
+                        document.getElementById('goToOrdersButton').classList.remove('d-none');
+                        document.getElementById('closeModalButton').classList.add('d-none');
+                    }
+    
+                    document.getElementById('goToOrdersButton').addEventListener('click', function () {
+                        window.location.href = '/orders';
                     });
-                } else {
-                    // Mostrar mensaje de error en el modal
+                })
+                .catch(error => {
+                    // Manejo de errores durante el envío del formulario
                     document.querySelector('.modal-body p').innerHTML = `
-                        ${response.data.message || "Ocurrió un error inesperado."}
+                        Ocurrió un error durante la recepción.
                         <br><br>
                         <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
                     `;
                     document.querySelector('.spinner-border').classList.add('d-none');
                     document.getElementById('goToOrdersButton').classList.remove('d-none');
                     document.getElementById('closeModalButton').classList.add('d-none');
-                }
     
-                document.getElementById('goToOrdersButton').addEventListener('click', function () {
-                    window.location.href = '/orders';
+                    document.getElementById('goToOrdersButton').addEventListener('click', function () {
+                        window.location.href = '/orders';
+                    });
                 });
-            })
-            .catch(error => {
-                // Manejo de errores durante el envío del formulario
-                document.querySelector('.modal-body p').innerHTML = `
-                    Ocurrió un error durante la recepción.
-                    <br><br>
-                    <button id="goToOrdersButton" class="btn btn-primary">Regresar a Órdenes</button>
-                `;
-                document.querySelector('.spinner-border').classList.add('d-none');
-                document.getElementById('goToOrdersButton').classList.remove('d-none');
-                document.getElementById('closeModalButton').classList.add('d-none');
-    
-                document.getElementById('goToOrdersButton').addEventListener('click', function () {
-                    window.location.href = '/orders';
-                });
-            });
+        });
     });
     
 
@@ -277,21 +320,21 @@ $(document).on("input", ".precio-unitario", function () {
             }
         });
     
-        $(`#${inputId}`).on("keydown", function (e) {
+        $(document).on("keydown", function (e) {
             const dropdown = $(`#${listId}`);
             const items = dropdown.find('li');
             let activeItem = dropdown.find('.active');
             let index = items.index(activeItem);
-    
+        
             if (e.key === "ArrowDown") {
                 e.preventDefault();
                 index = (index + 1) % items.length;
-                items.removeClass('active').eq(index).addClass('active');
+                items.removeClass('active').eq(index).addClass('active'); // Cambia la clase active
                 dropdown.scrollTop(dropdown.scrollTop() + items.eq(index).position().top);
             } else if (e.key === "ArrowUp") {
                 e.preventDefault();
                 index = (index - 1 + items.length) % items.length;
-                items.removeClass('active').eq(index).addClass('active');
+                items.removeClass('active').eq(index).addClass('active'); // Cambia la clase active
                 dropdown.scrollTop(dropdown.scrollTop() + items.eq(index).position().top);
             } else if (e.key === "Enter" && activeItem.length) {
                 e.preventDefault();
@@ -303,6 +346,7 @@ $(document).on("input", ".precio-unitario", function () {
                 dropdown.hide();
             }
         });
+        
     
         $(document).on("click", `#${listId} li`, function () {
             let id = $(this).data("id");
@@ -330,19 +374,29 @@ $(document).on("input", ".precio-unitario", function () {
         const fleteInputDiv = document.getElementById('flete_input_div');
         const fleteroFields = document.getElementById('fletero_fields');
         const fleteroFieldsName = document.getElementById('fletero_fields_name');
-
+    
         if (fleteSelect.value == '1') {
             fleteInputDiv.style.display = 'block';
             fleteroFields.style.display = 'block';
             fleteroFieldsName.style.display = 'block';
+    
+            // Hacer los campos obligatorios
+            document.getElementById('numero').setAttribute('required', 'required');
+            document.getElementById('fletero').setAttribute('required', 'required');
         } else {
             fleteInputDiv.style.display = 'none';
             fleteroFields.style.display = 'none';
             fleteroFieldsName.style.display = 'none';
+    
+            // Remover la obligación de los campos
+            document.getElementById('numero').removeAttribute('required');
+            document.getElementById('fletero').removeAttribute('required');
         }
     }
-
+    
+    // Añadir el evento de cambio para el campo de selección de flete
     $('#flete_select').on('change', toggleFleteInput);
+    
 });
 
 document.addEventListener('DOMContentLoaded', function () {

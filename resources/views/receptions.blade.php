@@ -49,29 +49,30 @@
                                     </select>
                                 </div>
                                 <div id="flete_input_div" class="col-md-2" style="display: none;">
-                                    <label for="flete" class="form-label">Monto Flete:</label>
-                                    <input type="text" id="flete" name="freight" class="form-control input-no-spinner" placeholder="$0.00">
-                                </div>
+    <label for="flete" class="form-label">Monto Flete:</label>
+    <input type="text" id="flete" name="freight" class="form-control input-no-spinner" placeholder="Ejemplo: $100.00" required>
+</div>
+
                                 <div class="col-md-2" id="fletero_fields" style="display: none;">
-                                    <label for="numero" class="form-label"># Fletero:</label>
-                                    <div class="input-group">
-                                        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner" placeholder="Obligatorio">
-                                        <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <ul id="numeroList" class="list-group" style="display: none;"></ul>
-                                </div>
-                                <div class="col-md-4" id="fletero_fields_name" style="display: none;">
-                                    <label for="fletero" class="form-label">Nombre Fletero:</label>
-                                    <div class="input-group">
-                                        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner" placeholder="Obligatorio">
-                                        <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </div>
-                                    <ul id="fleteroList" class="list-group" style="display: none;"></ul>
-                                </div>
+    <label for="numero" class="form-label"># Fletero:</label>
+    <div class="input-group">
+        <input type="text" id="numero" name="carrier_number" class="form-control input-no-spinner" placeholder="Obligatorio" required>
+        <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearNumero">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <ul id="numeroList" class="list-group" style="display: none;"></ul>
+</div>
+<div class="col-md-4" id="fletero_fields_name" style="display: none;">
+    <label for="fletero" class="form-label">Nombre Fletero:</label>
+    <div class="input-group">
+        <input type="text" id="fletero" name="carrier_name" class="form-control input-no-spinner" placeholder="Obligatorio" required>
+        <button class="btn btn-danger btn-outline-light clear-input" type="button" id="clearFletero">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <ul id="fleteroList" class="list-group" style="display: none;"></ul>
+</div>
                                 <div class="col-md-1">
                                     <label for="tipo_doc" class="form-label">Doc. Origen:</label>
                                     <input type="text" id="tipo_doc" name="document_type" class="form-control" value="{{ $order->CNTDOCID }}" readonly required>

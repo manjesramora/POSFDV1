@@ -7,6 +7,26 @@
 .input-no-spinner {
     -moz-appearance: textfield;
 }
+/* Estilo para las opciones de la lista de proveedores al pasar el cursor */
+/* Estilo para la opción activa seleccionada */
+.list-group-item.active {
+    background-color: gray; /* Color de fondo para la opción activa */
+    color: white; /* Color de texto para la opción activa */
+}
+
+/* Evita que el hover cambie el color de la opción activa */
+.list-group-item.active:hover {
+    background-color: gray; /* Mantiene el color de fondo morado */
+    color: white; /* Mantiene el color de texto blanco */
+}
+
+/* Estilo para las opciones en estado hover (sin cambios) */
+.list-group-item:hover {
+    background-color: transparent; /* Sin cambio de fondo */
+    color: inherit; /* Sin cambio de color de texto */
+}
+
+
 
 .input-no-spinner::-webkit-outer-spin-button,
 .input-no-spinner::-webkit-inner-spin-button {
