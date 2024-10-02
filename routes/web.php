@@ -8,10 +8,10 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\LabelcatalogController;
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\InsdosController;
 use App\Http\Controllers\FreightController;
 use App\Http\Controllers\ProviderController;
 use App\Http\Controllers\RcnController;
+use App\Http\Controllers\AssortmentController;
 
 Route::get('/', function () {
     return view('login');
@@ -57,10 +57,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('permissions/{id}', [PermissionController::class, 'destroy'])->name('permissions.destroy');
 
 
-
+    // Rutas relacionadas con ordenes de compra y recepciones
     Route::get('/orders', [OrderController::class, 'index'])->name('orders');
     Route::get('providers/autocomplete', [ProviderController::class, 'autocomplete'])->name('providers.autocomplete')->middleware('permission:ORDENES');
-    Route::get('/receptions/{ACMVOIDOC}', [OrderController::class, 'showReceptions'])->name('receptions.show')->middleware('permission:RECEPCIONES');
+    Route::get('/receptions/{ACMVOIDOC}', [OrderController::class, 'showReceptions'])->name('receptions.show')->middleware('permission:ORDENES');
     Route::post('/receiptOrder/{ACMVOIDOC}', [OrderController::class, 'receiptOrder'])->name('receiptOrder');
     Route::get('/freights', [OrderController::class, 'showFreights'])->name('freights');
 
@@ -68,24 +68,26 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/freights', [FreightController::class, 'index'])->name('freights')->middleware('permission:ETIQUETAS');
     Route::get('/freights/pdf', [FreightController::class, 'generatePDF'])->name('freights.pdf');
 
-
+    // Rutas relacionas con etiquetas 
     Route::get('/check-username', [UserController::class, 'checkUsername'])->name('check-username');
     Route::get('/labelscatalog', [LabelcatalogController::class, 'labelscatalog'])->name('labelscatalog')->middleware('permission:ETIQUETAS');
+    //Route::get('/label_catalog', [LabelcatalogController::class, 'labelscatalog']);
 
     // Rutas relacionadas con rcn
     Route::get('/rcn', [RcnController::class, 'index'])->name('rcn')->middleware('permission:RCN');
     route::get('/rcn/generate-pdf/{ACMROINDOC}', [RcnController::class, 'generatePdf'])->name('rcn.generatePdf');
-    
     route::get('/print-report/{ACMROINDOC}', [RcnController::class, 'generatePdf'])->name('generatePdf');
+
+    //Rutas relacionadas con hoja de surtido 
+    Route::get('/assortment', [AssortmentController::class, 'index'])->name('assortments')->middleware('permission:SURTIDO');
 });
+
+// Rutas relacionadas con login
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::post('/change-password', [LoginController::class, 'changePassword'])->name('changePassword');
 
-// Rutas relacionadas con Catalogo Etiquetas
-
-Route::get('/label_catalog', [LabelcatalogController::class, 'labelscatalog']);
 
 //Rutas Relacionadas con Imprimir Etiquetas
 Route::post('/print-label', [LabelcatalogController::class, 'printLabel'])->name('print.label');

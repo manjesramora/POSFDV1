@@ -92,6 +92,16 @@
         </li>
         @endif
 
+        <!-- Boton Hoja de surtido -->
+        @if(auth()->user()->hasPermission('SURTIDO'))
+        <li class="nav-item">
+            <a class="nav-link d-flex align-items-center" href="{{ route('assortments') }}">
+                <i class="fa-solid fa-file-invoice" style="font-size: 16px; width: 30px;"></i>
+                <span style="font-size: 16px;">HOJA DE SURTIDO</span>
+            </a>
+        </li>
+        @endif
+
         <!-- Divider -->
         <hr class="sidebar-divider">
 
